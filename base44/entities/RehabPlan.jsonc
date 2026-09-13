@@ -1,0 +1,134 @@
+{
+  "name": "RehabPlan",
+  "type": "object",
+  "properties": {
+    "clinic_id": {
+      "type": "string",
+      "description": "Reference to Clinic - required for multi-clinic isolation"
+    },
+    "patient_id": {
+      "type": "string",
+      "description": "Reference to Patient"
+    },
+    "title": {
+      "type": "string",
+      "description": "Plan title"
+    },
+    "description": {
+      "type": "string"
+    },
+    "program_type": {
+      "type": "string",
+      "enum": [
+        "basic",
+        "phased"
+      ],
+      "default": "phased",
+      "description": "Basic = simple recurring bundle; Phased = multi-phase progression"
+    },
+    "start_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "target_end_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "current_phase": {
+      "type": "number",
+      "default": 1
+    },
+    "total_phases": {
+      "type": "number"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "active",
+        "completed",
+        "paused",
+        "archived"
+      ],
+      "default": "active"
+    },
+    "created_by_clinician": {
+      "type": "string"
+    },
+    "basic_config": {
+      "type": "object",
+      "description": "Configuration for Basic programs only",
+      "properties": {
+        "frequency_per_week": {
+          "type": "number",
+          "description": "2, 3, 4, or 7 (daily)"
+        },
+        "weekend_rest_days": {
+          "type": "boolean",
+          "default": true,
+          "description": "If true, Sat & Sun are rest days"
+        },
+        "days_of_week_pattern": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "Monday",
+              "Tuesday",
+              "Wednesday",
+              "Thursday",
+              "Friday",
+              "Saturday",
+              "Sunday"
+            ]
+          },
+          "description": "Days when exercises are scheduled"
+        },
+        "exercise_bundle": {
+          "type": "array",
+          "description": "List of exercises with per-exercise prescription",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "description": {
+                "type": "string"
+              },
+              "sets": {
+                "type": "number"
+              },
+              "reps": {
+                "type": "string"
+              },
+              "weight": {
+                "type": "string"
+              },
+              "hold": {
+                "type": "string"
+              },
+              "tempo": {
+                "type": "string"
+              },
+              "rest": {
+                "type": "string"
+              },
+              "load_notes": {
+                "type": "string"
+              },
+              "video_url": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "required": [
+    "clinic_id",
+    "patient_id",
+    "title"
+  ]
+}

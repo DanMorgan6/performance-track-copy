@@ -1,0 +1,57 @@
+{
+  "name": "PainLog",
+  "type": "object",
+  "properties": {
+    "patient_id": {
+      "type": "string"
+    },
+    "date": {
+      "type": "string",
+      "format": "date"
+    },
+    "pain_level": {
+      "type": "number",
+      "description": "Pain scale 0-10"
+    },
+    "pain_location": {
+      "type": "string"
+    },
+    "pain_type": {
+      "type": "string",
+      "enum": [
+        "sharp",
+        "dull",
+        "aching",
+        "burning",
+        "throbbing",
+        "stabbing",
+        "other"
+      ]
+    },
+    "time_of_day": {
+      "type": "string",
+      "enum": [
+        "morning",
+        "afternoon",
+        "evening",
+        "night"
+      ]
+    },
+    "activity_context": {
+      "type": "string",
+      "description": "What was the patient doing"
+    },
+    "notes": {
+      "type": "string"
+    },
+    "medication_taken": {
+      "type": "boolean",
+      "default": false
+    }
+  },
+  "required": [
+    "patient_id",
+    "date",
+    "pain_level"
+  ]
+}

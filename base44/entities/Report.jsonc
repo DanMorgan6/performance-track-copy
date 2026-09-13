@@ -1,0 +1,60 @@
+{
+  "name": "Report",
+  "type": "object",
+  "properties": {
+    "clinic_id": {
+      "type": "string",
+      "description": "Reference to Clinic"
+    },
+    "patient_id": {
+      "type": "string",
+      "description": "Reference to Patient"
+    },
+    "file_url": {
+      "type": "string",
+      "description": "URL to uploaded PDF report"
+    },
+    "file_uri": {
+      "type": "string",
+      "description": "Private file URI for secure access"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "medical_history",
+        "imaging",
+        "lab_results",
+        "imaging_report",
+        "surgery_report",
+        "consultation",
+        "other"
+      ],
+      "description": "Report type"
+    },
+    "date": {
+      "type": "string",
+      "format": "date",
+      "description": "Date of report"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Clinician notes about the report"
+    },
+    "visible_to_patient": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether patient can view this report"
+    },
+    "created_by": {
+      "type": "string",
+      "description": "Email of clinician who uploaded"
+    }
+  },
+  "required": [
+    "clinic_id",
+    "patient_id",
+    "file_url",
+    "type",
+    "date"
+  ]
+}

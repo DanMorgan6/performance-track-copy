@@ -1,0 +1,55 @@
+{
+  "name": "DailyNote",
+  "type": "object",
+  "properties": {
+    "patient_id": {
+      "type": "string",
+      "description": "Reference to Patient"
+    },
+    "date": {
+      "type": "string",
+      "format": "date"
+    },
+    "mood": {
+      "type": "string",
+      "enum": [
+        "great",
+        "good",
+        "okay",
+        "struggling",
+        "difficult"
+      ],
+      "description": "Overall mood/feeling"
+    },
+    "energy_level": {
+      "type": "number",
+      "description": "Energy level 1-10"
+    },
+    "sleep_quality": {
+      "type": "string",
+      "enum": [
+        "excellent",
+        "good",
+        "fair",
+        "poor"
+      ],
+      "description": "Sleep quality"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Subjective feedback and observations"
+    },
+    "major_win": {
+      "type": "string",
+      "description": "Patient's major win for the week"
+    },
+    "adherence_self_rating": {
+      "type": "number",
+      "description": "Self-rated adherence 1-10"
+    }
+  },
+  "required": [
+    "patient_id",
+    "date"
+  ]
+}

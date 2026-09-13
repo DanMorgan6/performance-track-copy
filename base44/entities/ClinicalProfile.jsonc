@@ -1,0 +1,92 @@
+{
+  "name": "ClinicalProfile",
+  "type": "object",
+  "properties": {
+    "clinic_id": {
+      "type": "string",
+      "description": "Reference to Clinic"
+    },
+    "user_email": {
+      "type": "string",
+      "description": "Email of the clinician (User entity)"
+    },
+    "full_name": {
+      "type": "string",
+      "description": "Clinician full name"
+    },
+    "title": {
+      "type": "string",
+      "description": "Professional title (e.g., Physical Therapist, Coach)"
+    },
+    "qualifications": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "qualification": {
+            "type": "string",
+            "description": "e.g., DPT, CSCS, NASM-PES"
+          },
+          "visible_to_patient": {
+            "type": "boolean",
+            "default": true
+          }
+        }
+      },
+      "description": "Professional qualifications/certifications"
+    },
+    "registrations": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Professional registrations/licenses"
+    },
+    "special_interests": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Areas of specialization (e.g., ACL Rehab, Sports Performance)"
+    },
+    "bio": {
+      "type": "string",
+      "description": "Professional biography"
+    },
+    "photo_url": {
+      "type": "string",
+      "description": "URL to clinician profile photo"
+    },
+    "visibility": {
+      "type": "object",
+      "properties": {
+        "show_qualifications": {
+          "type": "boolean",
+          "default": true
+        },
+        "show_special_interests": {
+          "type": "boolean",
+          "default": true
+        },
+        "show_bio": {
+          "type": "boolean",
+          "default": true
+        },
+        "show_photo": {
+          "type": "boolean",
+          "default": true
+        }
+      },
+      "description": "Controls which fields are visible to patients"
+    },
+    "is_public": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether profile can be viewed by patients"
+    }
+  },
+  "required": [
+    "clinic_id",
+    "user_email"
+  ]
+}

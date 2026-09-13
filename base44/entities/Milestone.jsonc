@@ -1,0 +1,92 @@
+{
+  "name": "Milestone",
+  "type": "object",
+  "properties": {
+    "clinic_id": {
+      "type": "string",
+      "description": "Reference to Clinic - required for multi-clinic isolation"
+    },
+    "patient_id": {
+      "type": "string",
+      "description": "Reference to Patient"
+    },
+    "plan_id": {
+      "type": "string",
+      "description": "Reference to RehabPlan"
+    },
+    "date": {
+      "type": "string",
+      "format": "date",
+      "description": "Date of the milestone"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "testing"
+      ],
+      "default": "testing",
+      "description": "Type of milestone"
+    },
+    "title": {
+      "type": "string",
+      "description": "Milestone title"
+    },
+    "tests": {
+      "type": "array",
+      "description": "Planned tests for this milestone",
+      "items": {
+        "type": "object",
+        "properties": {
+          "test_name": {
+            "type": "string"
+          },
+          "category": {
+            "type": "string"
+          },
+          "expected_benchmark": {
+            "type": "string"
+          },
+          "notes": {
+            "type": "string"
+          },
+          "outcome_value": {
+            "type": "string"
+          },
+          "outcome_unit": {
+            "type": "string"
+          },
+          "outcome_notes": {
+            "type": "string"
+          },
+          "outcome_status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "pass",
+              "fail",
+              "partial"
+            ]
+          }
+        }
+      }
+    },
+    "notes": {
+      "type": "string"
+    },
+    "outcomes_published": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether outcomes are visible to patient"
+    },
+    "created_by": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "clinic_id",
+    "patient_id",
+    "plan_id",
+    "date",
+    "type"
+  ]
+}

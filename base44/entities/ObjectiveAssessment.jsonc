@@ -1,0 +1,68 @@
+{
+  "name": "ObjectiveAssessment",
+  "type": "object",
+  "properties": {
+    "patient_id": {
+      "type": "string",
+      "description": "Reference to Patient"
+    },
+    "assessment_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "assessment_type": {
+      "type": "string",
+      "enum": [
+        "strength",
+        "range_of_motion",
+        "functional_test",
+        "balance",
+        "endurance",
+        "flexibility",
+        "other"
+      ],
+      "description": "Type of assessment"
+    },
+    "test_name": {
+      "type": "string",
+      "description": "Name of the test or measurement"
+    },
+    "body_part": {
+      "type": "string",
+      "description": "Body part being assessed"
+    },
+    "side": {
+      "type": "string",
+      "enum": [
+        "left",
+        "right",
+        "bilateral",
+        "n/a"
+      ],
+      "default": "n/a"
+    },
+    "value": {
+      "type": "string",
+      "description": "Measurement value"
+    },
+    "unit": {
+      "type": "string",
+      "description": "Unit of measurement (kg, degrees, seconds, etc)"
+    },
+    "baseline": {
+      "type": "string",
+      "description": "Baseline or comparison value"
+    },
+    "notes": {
+      "type": "string"
+    },
+    "clinician_name": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "patient_id",
+    "assessment_date",
+    "test_name"
+  ]
+}

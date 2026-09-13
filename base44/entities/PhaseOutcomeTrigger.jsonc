@@ -1,0 +1,41 @@
+{
+  "name": "PhaseOutcomeTrigger",
+  "type": "object",
+  "properties": {
+    "plan_id": {
+      "type": "string",
+      "description": "Reference to RehabPlan"
+    },
+    "phase_number": {
+      "type": "number",
+      "description": "Phase number to trigger on"
+    },
+    "outcome_measure_id": {
+      "type": "string",
+      "description": "Reference to OutcomeMeasure to send"
+    },
+    "trigger_type": {
+      "type": "string",
+      "enum": [
+        "phase_start",
+        "phase_complete"
+      ],
+      "default": "phase_complete",
+      "description": "When to send the outcome measure"
+    },
+    "triggered": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether this trigger has been executed"
+    },
+    "triggered_date": {
+      "type": "string",
+      "format": "date"
+    }
+  },
+  "required": [
+    "plan_id",
+    "phase_number",
+    "outcome_measure_id"
+  ]
+}

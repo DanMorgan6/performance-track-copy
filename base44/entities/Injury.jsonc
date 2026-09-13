@@ -1,0 +1,88 @@
+{
+  "name": "Injury",
+  "type": "object",
+  "properties": {
+    "clinic_id": {
+      "type": "string",
+      "description": "Reference to Clinic"
+    },
+    "patient_id": {
+      "type": "string",
+      "description": "Reference to Patient"
+    },
+    "region_key": {
+      "type": "string",
+      "description": "Region from the injury diagnosis library (e.g., foot_ankle, knee, shoulder)"
+    },
+    "region_label": {
+      "type": "string",
+      "description": "Human-readable region label"
+    },
+    "group_key": {
+      "type": "string",
+      "description": "Group within the region (e.g., ligaments, tendon, muscle)"
+    },
+    "group_label": {
+      "type": "string",
+      "description": "Human-readable group label"
+    },
+    "issue_key": {
+      "type": "string",
+      "description": "Specific diagnosis key (e.g., acl_injury, rotator_cuff_tear)"
+    },
+    "issue_label": {
+      "type": "string",
+      "description": "Human-readable issue label"
+    },
+    "side": {
+      "type": "string",
+      "enum": [
+        "left",
+        "right",
+        "bilateral",
+        "midline"
+      ],
+      "description": "Side of injury"
+    },
+    "severity": {
+      "type": "string",
+      "enum": [
+        "irritation",
+        "sprain",
+        "partial_tear",
+        "full_thickness_tear",
+        "rupture"
+      ],
+      "description": "Severity level if applicable"
+    },
+    "confirmed_status": {
+      "type": "string",
+      "enum": [
+        "suspected",
+        "confirmed"
+      ],
+      "default": "suspected",
+      "description": "Whether the injury is suspected or confirmed"
+    },
+    "modifiers_data": {
+      "type": "object",
+      "description": "Additional structured data for this injury (muscle grading, disc details, meniscus details, etc.)"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Clinician notes about the injury"
+    },
+    "date_of_injury": {
+      "type": "string",
+      "format": "date",
+      "description": "Date of injury"
+    }
+  },
+  "required": [
+    "clinic_id",
+    "patient_id",
+    "region_key",
+    "issue_key",
+    "side"
+  ]
+}

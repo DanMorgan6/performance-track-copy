@@ -1,0 +1,85 @@
+{
+  "name": "ExerciseLibrary",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Exercise name"
+    },
+    "description": {
+      "type": "string",
+      "description": "Detailed instructions"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "strength",
+        "flexibility",
+        "balance",
+        "cardiovascular",
+        "mobility",
+        "stability",
+        "coordination",
+        "plyometric",
+        "functional"
+      ]
+    },
+    "body_part": {
+      "type": "string",
+      "enum": [
+        "upper_body",
+        "lower_body",
+        "core",
+        "full_body",
+        "shoulder",
+        "knee",
+        "hip",
+        "ankle",
+        "back",
+        "neck"
+      ]
+    },
+    "difficulty_level": {
+      "type": "string",
+      "enum": [
+        "beginner",
+        "intermediate",
+        "advanced"
+      ],
+      "default": "beginner"
+    },
+    "default_sets": {
+      "type": "number",
+      "default": 3
+    },
+    "default_reps": {
+      "type": "string",
+      "default": "10"
+    },
+    "default_frequency": {
+      "type": "string",
+      "description": "Deprecated - frequency should be specified in plan/phase, not globally"
+    },
+    "video_url": {
+      "type": "string"
+    },
+    "thumbnail_url": {
+      "type": "string"
+    },
+    "equipment_needed": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "required": [
+    "name"
+  ]
+}

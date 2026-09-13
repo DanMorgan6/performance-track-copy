@@ -1,0 +1,96 @@
+{
+  "name": "DiagnosisExtraction",
+  "type": "object",
+  "properties": {
+    "clinic_id": {
+      "type": "string",
+      "description": "Reference to Clinic"
+    },
+    "patient_id": {
+      "type": "string",
+      "description": "Reference to Patient"
+    },
+    "report_id": {
+      "type": "string",
+      "description": "Reference to Report"
+    },
+    "extraction_data": {
+      "type": "array",
+      "description": "Array of extracted diagnoses",
+      "items": {
+        "type": "object",
+        "properties": {
+          "region_key": {
+            "type": "string",
+            "description": "Region key from injury library"
+          },
+          "region_label": {
+            "type": "string"
+          },
+          "issue_key": {
+            "type": "string",
+            "description": "Issue/diagnosis key from injury library"
+          },
+          "issue_label": {
+            "type": "string"
+          },
+          "side": {
+            "type": "string",
+            "enum": [
+              "left",
+              "right",
+              "bilateral",
+              "midline"
+            ]
+          },
+          "severity": {
+            "type": "string"
+          },
+          "modifiers_data": {
+            "type": "object"
+          },
+          "ai_confidence": {
+            "type": "number",
+            "description": "0-100 confidence score from AI"
+          },
+          "clinician_edited": {
+            "type": "boolean",
+            "default": false
+          }
+        }
+      }
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending_review",
+        "approved",
+        "applied",
+        "rejected"
+      ],
+      "default": "pending_review",
+      "description": "Status of this extraction"
+    },
+    "approved_by": {
+      "type": "string",
+      "description": "Email of clinician who approved"
+    },
+    "approved_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "applied_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "created_by": {
+      "type": "string",
+      "description": "Email of clinician who initiated extraction"
+    }
+  },
+  "required": [
+    "clinic_id",
+    "patient_id",
+    "report_id"
+  ]
+}

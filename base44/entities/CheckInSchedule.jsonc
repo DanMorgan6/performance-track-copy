@@ -1,0 +1,57 @@
+{
+  "name": "CheckInSchedule",
+  "type": "object",
+  "properties": {
+    "clinic_id": {
+      "type": "string",
+      "description": "Reference to Clinic - clinic-level default"
+    },
+    "patient_id": {
+      "type": "string",
+      "description": "Reference to Patient - patient override (optional)"
+    },
+    "clinician_email": {
+      "type": "string",
+      "description": "Clinician email - clinician override (optional)"
+    },
+    "schedule_type": {
+      "type": "string",
+      "enum": [
+        "clinic",
+        "clinician",
+        "patient"
+      ],
+      "default": "clinic",
+      "description": "Which level this schedule applies to"
+    },
+    "days_of_week": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "Monday",
+          "Tuesday",
+          "Wednesday",
+          "Thursday",
+          "Friday",
+          "Saturday",
+          "Sunday"
+        ]
+      },
+      "description": "Days when check-in is due"
+    },
+    "time_of_day": {
+      "type": "string",
+      "description": "Preferred time (e.g., '09:00')"
+    },
+    "enabled": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether this schedule is active"
+    }
+  },
+  "required": [
+    "clinic_id",
+    "days_of_week"
+  ]
+}

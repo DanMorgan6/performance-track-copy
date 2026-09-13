@@ -1,0 +1,1024 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { base44 } from '@/api/base44Client';
+import { createPageUrl } from '@/utils';
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { 
+  ArrowLeft, 
+  Save, 
+  Plus, 
+  Trash2, 
+  Target,
+  FileText,
+  Clock,
+  Layers,
+  Sparkles,
+  Download,
+  Mail,
+  Badge as BadgeIcon
+} from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
+// Badge used in template picker dialog
+import { Link } from 'react-router-dom';
+import { cn } from "@/lib/utils";
+import { generatePlanPDF, uploadAndEmailPDF } from "@/components/reports/PlanPDFGenerator";
+import ProgramTypeSelector from "@/components/plan/ProgramTypeSelector";
+import BasicProgramBuilder from "@/components/plan/BasicProgramBuilder";
+import MobileSelect from "@/components/ui/MobileSelect";
+import ProgrammeScheduleEditor from "@/components/programme/ProgrammeScheduleEditor.jsx";
+
+export default function CreatePlan() {
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const urlParams = new URLSearchParams(window.location.search);
+  const patientId = urlParams.get('patient_id');
+
+  const [saving, setSaving] = useState(false);
+  const submissionInProgressRef = React.useRef(false);
+  const [selectedPhaseIndex, setSelectedPhaseIndex] = useState(0);
+  const [selectedWeekIndex, setSelectedWeekIndex] = useState(0);
+  const [showTemplatePicker, setShowTemplatePicker] = useState(false);
+  const [showAiGenerator, setShowAiGenerator] = useState(false);
+  const [generating, setGenerating] = useState(false);
+  const [loadedTemplateId, setLoadedTemplateId] = useState(null);
+  const [savingTemplate, setSavingTemplate] = useState(false);
+  const [aiInputs, setAiInputs] = useState({
+    condition: '',
+    injury_severity: 'moderate',
+    age: '',
+    activity_level: 'moderate'
+  });
+
+  // Security: Only clinic staff can create plans
+  React.useEffect(() => {
+    const checkAccess = async () => {
+      const user = await base44.auth.me();
+      setCurrentUser(user);
+      if (user.role !== 'admin') {
+        window.location.href = createPageUrl('PatientPortal');
+      }
+    };
+    checkAccess();
+  }, []);
+  
+  const [programType, setProgramType] = useState(null);
+  const [planData, setPlanData] = useState({
+    title: '',
+    description: '',
+    start_date: new Date().toISOString().split('T')[0],
+    target_end_date: '',
+    status: 'active',
+    program_type: 'phased',
+    basic_config: {
+      frequency_per_week: 3,
+      weekend_rest_days: true,
+      days_of_week_pattern: ['Monday', 'Wednesday', 'Friday'],
+      exercise_bundle: []
+    }
+  });
+
+  const createDefaultWeek = () => [
+    { day: 'Monday', type: 'training', exercises: [] },
+    { day: 'Tuesday', type: 'training', exercises: [] },
+    { day: 'Wednesday', type: 'rest', exercises: [] },
+    { day: 'Thursday', type: 'training', exercises: [] },
+    { day: 'Friday', type: 'training', exercises: [] },
+    { day: 'Saturday', type: 'conditioning', exercises: [] },
+    { day: 'Sunday', type: 'rest', exercises: [] }
+  ];
+
+  const [phases, setPhases] = useState([
+    {
+      phase_number: 1,
+      name: 'Phase 1: Initial Recovery',
+      description: '',
+      duration_weeks: 2,
+      exit_criteria: [{ criterion: '', target_value: '', is_met: false }],
+      exercises: [{ name: '', description: '', sets: 3, reps: '10', frequency: 'Daily', video_url: '' }],
+      status: 'pending',
+      use_daily_schedule: false,
+      weeks: [
+        { week_number: 1, daily_schedule: createDefaultWeek() },
+        { week_number: 2, daily_schedule: createDefaultWeek() }
+      ]
+    }
+  ]);
+  const phasesRef = useRef(phases);
+  useEffect(() => { phasesRef.current = phases; }, [phases]);
+  const planDataRef = useRef(planData);
+  useEffect(() => { planDataRef.current = planData; }, [planData]);
+
+  const { data: patient } = useQuery({
+    queryKey: ['patient', patientId],
+    queryFn: () => base44.entities.Patient.filter({ id: patientId }).then(res => res[0]),
+    enabled: !!patientId
+  });
+
+  const { data: templates = [] } = useQuery({
+    queryKey: ['templates'],
+    queryFn: () => base44.entities.RehabTemplate.list('-created_date')
+  });
+
+  const { data: libraryExercises = [] } = useQuery({
+    queryKey: ['exercise-library'],
+    queryFn: () => base44.entities.ExerciseLibrary.list('-created_date')
+  });
+
+  const loadTemplate = (template) => {
+    setPlanData({
+      ...planData,
+      title: template.name,
+      description: template.description
+    });
+    setLoadedTemplateId(template.id);
+    
+    if (template.phases && template.phases.length > 0) {
+      setPhases(template.phases.map((p, i) => {
+        const exercises = p.exercises || [];
+        const duration = p.duration_weeks || 2;
+        
+        // Create weeks structure
+        const weeks = Array.from({ length: duration }, (_, weekIdx) => {
+          const dailySchedule = [
+            { day: 'Monday', type: 'training', exercises: [] },
+            { day: 'Tuesday', type: 'training', exercises: [] },
+            { day: 'Wednesday', type: 'rest', exercises: [] },
+            { day: 'Thursday', type: 'training', exercises: [] },
+            { day: 'Friday', type: 'training', exercises: [] },
+            { day: 'Saturday', type: 'conditioning', exercises: [] },
+            { day: 'Sunday', type: 'rest', exercises: [] }
+          ];
+          
+          // Distribute exercises across training days (only for first week)
+          if (weekIdx === 0) {
+            const trainingDays = [0, 1, 3, 4];
+            const exercisesPerDay = Math.ceil(exercises.length / trainingDays.length);
+            
+            trainingDays.forEach((dayIdx, idx) => {
+              const start = idx * exercisesPerDay;
+              const end = start + exercisesPerDay;
+              dailySchedule[dayIdx].exercises = exercises.slice(start, end);
+            });
+          }
+          
+          return {
+            week_number: weekIdx + 1,
+            daily_schedule: dailySchedule
+          };
+        });
+        
+        return {
+          ...p,
+          phase_number: i + 1,
+          duration_weeks: duration,
+          exit_criteria: p.exit_criteria || [{ criterion: '', target_value: '', is_met: false }],
+          exercises: exercises,
+          status: i === 0 ? 'active' : 'pending',
+          weeks: weeks
+        };
+      }));
+      setSelectedPhaseIndex(0);
+      setSelectedWeekIndex(0);
+    }
+    
+    setShowTemplatePicker(false);
+  };
+
+  const saveTemplate = async () => {
+    if (!loadedTemplateId) {
+      alert('No template loaded to save.');
+      return;
+    }
+
+    setSavingTemplate(true);
+    try {
+      const updatedTemplate = {
+        name: planData.title,
+        description: planData.description,
+        phases: phases.map(p => ({
+          phase_number: p.phase_number,
+          name: p.name,
+          description: p.description,
+          duration_weeks: p.duration_weeks,
+          exit_criteria: p.exit_criteria,
+          exercises: p.exercises
+        }))
+      };
+
+      await base44.entities.RehabTemplate.update(loadedTemplateId, updatedTemplate);
+      alert('Template saved successfully!');
+      queryClient.invalidateQueries({ queryKey: ['templates'] });
+    } catch (error) {
+      alert('Failed to save template. Please try again.');
+      console.error(error);
+    } finally {
+      setSavingTemplate(false);
+    }
+  };
+
+  const generateAiPlan = async () => {
+    setGenerating(true);
+    
+    try {
+      // Get existing templates for context - find similar conditions
+      const relevantTemplates = templates.filter(t => 
+        t.condition_type?.toLowerCase().includes(aiInputs.condition.toLowerCase()) ||
+        aiInputs.condition.toLowerCase().includes(t.condition_type?.toLowerCase())
+      ).slice(0, 3);
+      
+      // If no relevant templates, use any templates as examples
+      const templatesToUse = relevantTemplates.length > 0 ? relevantTemplates : templates.slice(0, 2);
+      
+      const templatesContext = templatesToUse.map(t => ({
+        name: t.name,
+        condition: t.condition_type,
+        phases: t.phases?.map(p => ({
+          name: p.name,
+          description: p.description,
+          duration_weeks: p.duration_weeks,
+          exit_criteria: p.exit_criteria,
+          exercises: p.exercises?.map(e => ({
+            name: e.name,
+            description: e.description,
+            sets: e.sets,
+            reps: e.reps,
+            frequency: e.frequency
+          }))
+        }))
+      }));
+
+      const prompt = `You are an expert physical therapist creating a detailed rehabilitation plan.
+
+Patient Profile:
+- Condition/Injury: ${aiInputs.condition}
+- Injury Severity: ${aiInputs.injury_severity}
+- Age: ${aiInputs.age || patient?.date_of_birth ? new Date().getFullYear() - new Date(patient.date_of_birth).getFullYear() : 'Adult'}
+- Activity Level: ${aiInputs.activity_level}
+- Patient Name: ${patient?.full_name || 'Patient'}
+
+${templatesContext.length > 0 ? `IMPORTANT: Learn from these existing rehabilitation templates. Use similar exercise selections, progression patterns, and phase structures:
+
+${JSON.stringify(templatesContext, null, 2)}
+
+Key patterns to follow:
+1. Use similar exercises from the templates for comparable phases
+2. Follow the progression style (e.g., starting with mobility, then strength, then functional)
+3. Match the phase duration patterns
+4. Use similar exit criteria formats
+5. Apply comparable sets/reps/frequency patterns` : ''}
+
+Create a comprehensive rehabilitation plan with 3-5 phases. Each phase should include:
+- Phase name and description (follow template naming conventions)
+- Duration in weeks (consider template durations)
+- 3-5 specific exit criteria with target values (similar to template format)
+- 4-8 exercises with detailed parameters (select exercises similar to those in templates for comparable phases)
+
+Make the plan progressive, evidence-based, and tailored to the patient's profile while learning from the template patterns above.`;
+
+      const result = await base44.integrations.Core.InvokeLLM({
+        prompt: prompt,
+        response_json_schema: {
+          type: "object",
+          properties: {
+            title: { type: "string" },
+            description: { type: "string" },
+            phases: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  phase_number: { type: "number" },
+                  name: { type: "string" },
+                  description: { type: "string" },
+                  duration_weeks: { type: "number" },
+                  exit_criteria: {
+                    type: "array",
+                    items: {
+                      type: "object",
+                      properties: {
+                        criterion: { type: "string" },
+                        target_value: { type: "string" }
+                      }
+                    }
+                  },
+                  exercises: {
+                    type: "array",
+                    items: {
+                      type: "object",
+                      properties: {
+                        name: { type: "string" },
+                        description: { type: "string" },
+                        sets: { type: "number" },
+                        reps: { type: "string" },
+                        frequency: { type: "string" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      });
+
+      // Load the generated plan
+      setPlanData({
+        ...planData,
+        title: result.title,
+        description: result.description
+      });
+
+      setPhases(result.phases.map((p, i) => {
+        const exercises = p.exercises || [];
+        const duration = p.duration_weeks || 2;
+        
+        // Create weeks structure
+        const weeks = Array.from({ length: duration }, (_, weekIdx) => {
+          const dailySchedule = [
+            { day: 'Monday', type: 'training', exercises: [] },
+            { day: 'Tuesday', type: 'training', exercises: [] },
+            { day: 'Wednesday', type: 'rest', exercises: [] },
+            { day: 'Thursday', type: 'training', exercises: [] },
+            { day: 'Friday', type: 'training', exercises: [] },
+            { day: 'Saturday', type: 'conditioning', exercises: [] },
+            { day: 'Sunday', type: 'rest', exercises: [] }
+          ];
+          
+          // Distribute exercises across training days (only for first week)
+          if (weekIdx === 0) {
+            const trainingDays = [0, 1, 3, 4];
+            const exercisesPerDay = Math.ceil(exercises.length / trainingDays.length);
+            
+            trainingDays.forEach((dayIdx, idx) => {
+              const start = idx * exercisesPerDay;
+              const end = start + exercisesPerDay;
+              dailySchedule[dayIdx].exercises = exercises.slice(start, end);
+            });
+          }
+          
+          return {
+            week_number: weekIdx + 1,
+            daily_schedule: dailySchedule
+          };
+        });
+        
+        return {
+          ...p,
+          phase_number: i + 1,
+          duration_weeks: duration,
+          exit_criteria: p.exit_criteria.map(c => ({ ...c, is_met: false })),
+          status: i === 0 ? 'active' : 'pending',
+          video_url: '',
+          weeks: weeks
+        };
+      }));
+
+      setShowAiGenerator(false);
+      setSelectedPhaseIndex(0);
+    } catch (error) {
+      alert('Failed to generate plan. Please try again.');
+    } finally {
+      setGenerating(false);
+    }
+  };
+
+  const addPhase = () => {
+    const duration = 2;
+    const weeks = Array.from({ length: duration }, (_, i) => ({
+      week_number: i + 1,
+      daily_schedule: createDefaultWeek()
+    }));
+    
+    setPhases([...phases, {
+      phase_number: phases.length + 1,
+      name: `Phase ${phases.length + 1}`,
+      description: '',
+      duration_weeks: duration,
+      exit_criteria: [{ criterion: '', target_value: '', is_met: false }],
+      exercises: [{ name: '', description: '', sets: 3, reps: '10', frequency: 'Daily', video_url: '' }],
+      status: 'pending',
+      use_daily_schedule: false,
+      weeks: weeks
+    }]);
+    setSelectedPhaseIndex(phases.length);
+    setSelectedWeekIndex(0);
+  };
+
+  const removePhase = (index) => {
+    if (phases.length > 1) {
+      const newPhases = phases.filter((_, i) => i !== index);
+      setPhases(newPhases.map((p, i) => ({ ...p, phase_number: i + 1 })));
+    }
+  };
+
+  const updatePhase = (index, field, value) => {
+    const newPhases = [...phases];
+    newPhases[index] = { ...newPhases[index], [field]: value };
+    
+    // If duration_weeks changed, adjust weeks array
+    if (field === 'duration_weeks' && value !== newPhases[index].duration_weeks) {
+      const currentWeekCount = newPhases[index].weeks?.length || 1;
+      if (value > currentWeekCount) {
+        // Add new weeks
+        for (let i = currentWeekCount; i < value; i++) {
+          newPhases[index].weeks.push({
+            week_number: i + 1,
+            daily_schedule: createDefaultWeek()
+          });
+        }
+      } else if (value < currentWeekCount) {
+        // Remove extra weeks
+        newPhases[index].weeks = newPhases[index].weeks.slice(0, value);
+      }
+      // Reset to first week when duration changes
+      setSelectedWeekIndex(0);
+    }
+    
+    setPhases(newPhases);
+  };
+
+  const addExitCriterion = (phaseIndex) => {
+    const newPhases = [...phases];
+    newPhases[phaseIndex].exit_criteria.push({ criterion: '', target_value: '', is_met: false });
+    setPhases(newPhases);
+  };
+
+  const updateExitCriterion = (phaseIndex, criteriaIndex, field, value) => {
+    const newPhases = [...phases];
+    newPhases[phaseIndex].exit_criteria[criteriaIndex][field] = value;
+    setPhases(newPhases);
+  };
+
+  const removeExitCriterion = (phaseIndex, criteriaIndex) => {
+    const newPhases = [...phases];
+    newPhases[phaseIndex].exit_criteria = newPhases[phaseIndex].exit_criteria.filter((_, i) => i !== criteriaIndex);
+    setPhases(newPhases);
+  };
+
+  const [currentUser, setCurrentUser] = useState(null);
+  const [exportingPDF, setExportingPDF] = useState(false);
+
+  const handleExportPDF = async () => {
+    setExportingPDF(true);
+    try {
+      const pdf = await generatePlanPDF(planData, phases, patient);
+      pdf.save(`${planData.title || 'Rehabilitation-Plan'}.pdf`);
+    } catch (error) {
+      alert('Failed to generate PDF. Please try again.');
+      console.error(error);
+    } finally {
+      setExportingPDF(false);
+    }
+  };
+
+  const handleEmailPDF = async () => {
+    if (!patient?.email) {
+      alert('Patient email is not available.');
+      return;
+    }
+    
+    setExportingPDF(true);
+    try {
+      const pdf = await generatePlanPDF(planData, phases, patient);
+      await uploadAndEmailPDF(pdf, planData, patient.email, patient.full_name);
+      alert('PDF has been sent to the patient\'s email!');
+    } catch (error) {
+      alert('Failed to email PDF. Please try again.');
+      console.error(error);
+    } finally {
+      setExportingPDF(false);
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    // Prevent duplicate submissions
+    if (submissionInProgressRef.current) {
+      console.log('DEBUG Submission already in progress, ignoring');
+      return;
+    }
+    
+    submissionInProgressRef.current = true;
+    setSaving(true);
+
+    try {
+      // Use refs to get latest state (avoids stale closure)
+      const currentPhases = phasesRef.current;
+      const currentPlanData = planDataRef.current;
+      // Collect all exercises
+       const allExercises = [];
+       for (const phase of currentPhases) {
+         // Collect from weeks structure
+         if (phase.weeks) {
+           phase.weeks.forEach(week => {
+             week.daily_schedule?.forEach(day => {
+               if (day.exercises) allExercises.push(...day.exercises);
+             });
+           });
+         }
+         // Also collect from regular exercises list
+         allExercises.push(...(phase.exercises || []));
+       }
+
+      // Get unique exercise names
+      const uniqueExerciseNames = [...new Set(allExercises.filter(ex => ex.name).map(ex => ex.name))];
+
+      // Fetch all existing exercises in one call
+      const existingExercises = uniqueExerciseNames.length > 0 
+        ? await base44.entities.ExerciseLibrary.list()
+        : [];
+      
+      const existingNames = new Set(existingExercises.map(ex => ex.name));
+
+      // Create only new exercises
+      const newExercises = allExercises.filter(ex => ex.name && !existingNames.has(ex.name));
+      
+      // Deduplicate by name
+      const seenNames = new Set();
+      const uniqueNewExercises = newExercises.filter(ex => {
+        if (seenNames.has(ex.name)) return false;
+        seenNames.add(ex.name);
+        return true;
+      });
+
+      if (uniqueNewExercises.length > 0) {
+        await base44.entities.ExerciseLibrary.bulkCreate(
+          uniqueNewExercises.map(exercise => ({
+            name: exercise.name,
+            description: exercise.description || '',
+            category: 'functional',
+            body_part: 'full_body',
+            difficulty_level: 'intermediate',
+            default_sets: exercise.sets || 3,
+            default_reps: exercise.reps || '10',
+            default_frequency: exercise.frequency || 'Daily',
+            video_url: exercise.video_url || ''
+          }))
+        );
+      }
+
+      // Validate patient_id is set
+      const finalPatientId = patientId || patient?.id;
+      console.log('DEBUG CreatePlan:', { patientId, patient_id: patient?.id, finalPatientId });
+      
+      if (!finalPatientId) {
+        alert('Error: No patient selected. Please go back and try again.');
+        submissionInProgressRef.current = false;
+        setSaving(false);
+        return;
+      }
+
+      // Archive any existing active plans for this patient
+      const existingPlans = await base44.entities.RehabPlan.filter({ 
+        patient_id: finalPatientId, 
+        status: 'active' 
+      });
+      
+      for (const existingPlan of existingPlans) {
+        await base44.entities.RehabPlan.update(existingPlan.id, { status: 'archived' });
+      }
+
+      // Create the plan with explicit patient_id and clinic_id - MUST be 'active'
+      const planPayload = {
+        title: currentPlanData.title,
+        description: currentPlanData.description,
+        start_date: currentPlanData.start_date,
+        target_end_date: currentPlanData.target_end_date,
+        status: 'active',
+        patient_id: finalPatientId,
+        clinic_id: currentUser?.clinic_id,
+        program_type: currentPlanData.program_type,
+        current_phase: currentPlanData.program_type === 'basic' ? null : 1,
+        total_phases: currentPlanData.program_type === 'basic' ? null : currentPhases.length,
+        basic_config: currentPlanData.program_type === 'basic' ? currentPlanData.basic_config : null,
+        created_by_clinician: currentUser?.email
+      };
+      console.log('DEBUG CreatePlan payload status:', planPayload.status);
+      
+      console.log('DEBUG Plan payload:', planPayload);
+      const plan = await base44.entities.RehabPlan.create(planPayload);
+      console.log('DEBUG Created plan:', plan);
+
+      // Create all phases with bulkCreate (only for phased programs)
+      if (currentPlanData.program_type === 'phased') {
+        console.log('DEBUG Creating phases with bulkCreate:', currentPhases.length);
+        const phasesToCreate = currentPhases.map(phase => ({
+          ...phase,
+          plan_id: plan.id,
+          status: phase.phase_number === 1 ? 'active' : 'pending'
+        }));
+        console.log('DEBUG Phase payload:', phasesToCreate[0]);
+        const createdPhases = await base44.entities.RehabPhase.bulkCreate(phasesToCreate);
+        console.log('DEBUG Created phases:', createdPhases.length, createdPhases[0]);
+      }
+
+      // Wait for database sync before navigating
+      console.log('DEBUG Waiting 1 second for database sync...');
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      // Send email notification to patient (only if they're registered in the app)
+      if (patient?.email) {
+        try {
+          const portalUrl = `${window.location.origin}${createPageUrl('PatientPortal')}`;
+          await base44.integrations.Core.SendEmail({
+            to: patient.email,
+            subject: 'Your Rehabilitation Plan is Ready - Beaches Performance +',
+            body: `Hi ${patient.full_name},
+
+Your personalized rehabilitation plan "${currentPlanData.title}" has been created and is now ready for you.
+
+To access your plan and start your recovery journey:
+1. Visit: ${portalUrl}
+2. Sign in with your email: ${patient.email}
+3. View your exercises, track your progress, and log your pain levels
+
+Your clinician has created a ${currentPhases.length}-phase program designed specifically for your recovery with a detailed daily schedule and video demonstrations for each exercise.
+
+If you have any questions, please contact your clinician.
+
+Best regards,
+Beaches Performance +`
+          });
+        } catch (error) {
+          // Patient not registered yet - email won't be sent
+          console.log('Email not sent - patient not registered in app');
+        }
+      }
+
+      // Invalidate plan cache to force refresh on next page
+      queryClient.invalidateQueries({ queryKey: ['patient-plans'] });
+      navigate(createPageUrl(`PatientDetail?id=${finalPatientId}`));
+    } catch (error) {
+      console.error('Save error:', error);
+      alert('Failed to create plan. Please try again.');
+    } finally {
+      submissionInProgressRef.current = false;
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-slate-50 p-4 lg:p-6 overflow-x-hidden">
+      <div className="max-w-[1600px] mx-auto w-full">
+        <Link 
+          to={createPageUrl(patientId ? `PatientDetail?id=${patientId}` : 'CoachDashboard')}
+          className="inline-flex items-center gap-2 text-slate-500 hover:text-slate-700 mb-8"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Back
+        </Link>
+
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 lg:p-8 mb-6">
+          <div className="mb-8">
+            <h1 className="text-2xl font-bold text-slate-800">Create Rehabilitation Plan</h1>
+            {patient && (
+              <p className="text-slate-500 mt-1">For {patient.full_name}</p>
+            )}
+          </div>
+
+          <form onSubmit={handleSubmit} onKeyDown={(e) => { if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA') e.preventDefault(); }} className="space-y-8">
+             {/* Program Type Selection */}
+             {!programType && (
+               <ProgramTypeSelector 
+                 onSelect={(type) => {
+                   setProgramType(type);
+                   setPlanData({...planData, program_type: type});
+                 }}
+               />
+             )}
+
+             {programType && (
+             <>
+             {/* Plan Details */}
+              <div className="space-y-6">
+               <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                 <h2 className="text-lg font-semibold text-slate-700 flex-1">Plan Details</h2>
+                 <div className="flex flex-wrap gap-2">
+                   <Button 
+                     type="button" 
+                     onClick={() => setShowAiGenerator(true)}
+                     size="sm"
+                     className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white rounded-xl text-xs"
+                   >
+                     <Sparkles className="w-4 h-4 mr-1" />
+                     AI Generate
+                   </Button>
+                   {loadedTemplateId && (
+                     <Button 
+                       type="button" 
+                       onClick={saveTemplate}
+                       disabled={savingTemplate}
+                       size="sm"
+                       className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs"
+                     >
+                       {savingTemplate ? (
+                         <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full mr-1" />
+                       ) : (
+                         <Save className="w-4 h-4 mr-1" />
+                       )}
+                       Save Template
+                     </Button>
+                   )}
+                   <Button 
+                     type="button" 
+                     onClick={() => setShowTemplatePicker(true)}
+                     variant="outline"
+                     size="sm"
+                     className="rounded-xl text-xs"
+                   >
+                     <FileText className="w-4 h-4 mr-1" />
+                     Load Template
+                   </Button>
+                 </div>
+               </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2 md:col-span-2">
+                  <Label>Plan Title *</Label>
+                  <Input
+                    required
+                    value={planData.title}
+                    onChange={(e) => setPlanData({...planData, title: e.target.value})}
+                    placeholder="e.g., ACL Reconstruction Recovery Protocol"
+                    className="rounded-xl"
+                  />
+                </div>
+
+                <div className="space-y-2 md:col-span-2">
+                  <Label>Description</Label>
+                  <Textarea
+                    value={planData.description}
+                    onChange={(e) => setPlanData({...planData, description: e.target.value})}
+                    placeholder="Overview of the rehabilitation plan..."
+                    className="rounded-xl"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Start Date</Label>
+                  <Input
+                    type="date"
+                    value={planData.start_date}
+                    onChange={(e) => setPlanData({...planData, start_date: e.target.value})}
+                    className="rounded-xl"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Target End Date</Label>
+                  <Input
+                    type="date"
+                    value={planData.target_end_date}
+                    onChange={(e) => setPlanData({...planData, target_end_date: e.target.value})}
+                    className="rounded-xl"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Basic Program Builder */}
+            {programType === 'basic' && (
+             <BasicProgramBuilder
+               planData={planData}
+               setPlanData={setPlanData}
+               libraryExercises={libraryExercises}
+             />
+            )}
+
+            {/* Phase Selector (Phased Only) */}
+            {programType === 'phased' && (
+            <div className="space-y-4">
+              <h2 className="text-lg font-semibold text-slate-700">Weekly Schedule</h2>
+
+              <ProgrammeScheduleEditor
+                phases={phases}
+                setPhases={setPhases}
+                libraryExercises={libraryExercises}
+                selectedPhaseIndex={selectedPhaseIndex}
+                setSelectedPhaseIndex={setSelectedPhaseIndex}
+                selectedWeekIndex={selectedWeekIndex}
+                setSelectedWeekIndex={setSelectedWeekIndex}
+                onAddPhase={addPhase}
+                onRemovePhase={removePhase}
+                onUpdatePhase={updatePhase}
+                onAddExitCriterion={addExitCriterion}
+                onUpdateExitCriterion={updateExitCriterion}
+                onRemoveExitCriterion={removeExitCriterion}
+              />
+            </div>
+            )}
+
+                                       <div className="flex justify-end gap-3 pt-4">
+              <Link to={createPageUrl(patientId ? `PatientDetail?id=${patientId}` : 'CoachDashboard')}>
+                <Button type="button" variant="outline" className="rounded-xl">
+                  Cancel
+                </Button>
+              </Link>
+              <Button 
+                type="button"
+                variant="outline"
+                onClick={handleExportPDF}
+                disabled={exportingPDF || !planData.title}
+                className="rounded-xl"
+              >
+                {exportingPDF ? (
+                  <div className="animate-spin w-4 h-4 border-2 border-slate-600 border-t-transparent rounded-full mr-2" />
+                ) : (
+                  <Download className="w-4 h-4 mr-2" />
+                )}
+                Export PDF
+              </Button>
+              <Button 
+                type="button"
+                variant="outline"
+                onClick={handleEmailPDF}
+                disabled={exportingPDF || !planData.title || !patient?.email}
+                className="rounded-xl"
+                title={!patient?.email ? "Patient email not available" : ""}
+              >
+                {exportingPDF ? (
+                  <div className="animate-spin w-4 h-4 border-2 border-slate-600 border-t-transparent rounded-full mr-2" />
+                ) : (
+                  <Mail className="w-4 h-4 mr-2" />
+                )}
+                Email PDF
+              </Button>
+              <Button 
+                type="submit" 
+                disabled={saving}
+                className="bg-purple-600 hover:bg-purple-700 text-white rounded-xl"
+              >
+                {saving ? (
+                  <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full mr-2" />
+                ) : (
+                  <Save className="w-4 h-4 mr-2" />
+                )}
+                Create Plan
+              </Button>
+              </div>
+              </>
+              )}
+              </form>
+              </div>
+
+        {/* AI Generator Dialog */}
+        <Dialog open={showAiGenerator} onOpenChange={setShowAiGenerator}>
+          <DialogContent className="max-w-lg">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-purple-600" />
+                AI Plan Generator
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <p className="text-sm text-slate-500">
+                The AI will create a personalized rehabilitation plan based on patient profile and condition.
+              </p>
+
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Condition/Injury *</Label>
+                  <Input
+                    required
+                    value={aiInputs.condition}
+                    onChange={(e) => setAiInputs({...aiInputs, condition: e.target.value})}
+                    placeholder="e.g., ACL Tear, Rotator Cuff, Lower Back Pain"
+                    className="rounded-xl"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                   <Label>Injury Severity</Label>
+                   <MobileSelect
+                     label="Injury Severity"
+                     value={aiInputs.injury_severity}
+                     onChange={(e) => setAiInputs({...aiInputs, injury_severity: e.target.value})}
+                     options={[
+                       { value: 'mild', label: 'Mild' },
+                       { value: 'moderate', label: 'Moderate' },
+                       { value: 'severe', label: 'Severe' },
+                     ]}
+                   />
+                 </div>
+
+                <div className="space-y-2">
+                  <Label>Patient Age</Label>
+                  <Input
+                    type="number"
+                    value={aiInputs.age}
+                    onChange={(e) => setAiInputs({...aiInputs, age: e.target.value})}
+                    placeholder={patient?.date_of_birth ? `${new Date().getFullYear() - new Date(patient.date_of_birth).getFullYear()}` : 'Age'}
+                    className="rounded-xl"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                   <Label>Activity Level</Label>
+                   <MobileSelect
+                     label="Activity Level"
+                     value={aiInputs.activity_level}
+                     onChange={(e) => setAiInputs({...aiInputs, activity_level: e.target.value})}
+                     options={[
+                       { value: 'sedentary', label: 'Sedentary' },
+                       { value: 'light', label: 'Light Activity' },
+                       { value: 'moderate', label: 'Moderate Activity' },
+                       { value: 'active', label: 'Very Active' },
+                       { value: 'athlete', label: 'Athlete' },
+                     ]}
+                   />
+                 </div>
+              </div>
+
+              <div className="flex justify-end gap-3 pt-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setShowAiGenerator(false)}
+                  disabled={generating}
+                  className="rounded-xl"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="button"
+                  onClick={generateAiPlan}
+                  disabled={generating || !aiInputs.condition}
+                  className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white rounded-xl"
+                >
+                  {generating ? (
+                    <>
+                      <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full mr-2" />
+                      Generating...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-4 h-4 mr-2" />
+                      Generate Plan
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+
+
+        {/* Template Picker Dialog */}
+         <Dialog open={showTemplatePicker} onOpenChange={setShowTemplatePicker}>
+          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Choose a Template</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-3 py-4">
+              {templates.length === 0 ? (
+                <p className="text-slate-400 text-center py-10">No templates available</p>
+              ) : (
+                templates.map((template) => (
+                  <div
+                    key={template.id}
+                    onClick={() => loadTemplate(template)}
+                    className="p-4 border border-slate-200 rounded-xl hover:bg-slate-50 cursor-pointer transition-colors"
+                  >
+                    <div className="flex items-start justify-between mb-2">
+                      <h4 className="font-medium text-slate-800">{template.name}</h4>
+                      {template.condition_type && (
+                        <Badge variant="outline" className="text-xs">
+                          {template.condition_type}
+                        </Badge>
+                      )}
+                    </div>
+                    <p className="text-sm text-slate-500 mb-3">{template.description}</p>
+                    <div className="flex items-center gap-4 text-xs text-slate-400">
+                      <div className="flex items-center gap-1">
+                        <Layers className="w-3 h-3" />
+                        {template.total_phases || template.phases?.length || 0} phases
+                      </div>
+                      {template.estimated_duration_weeks && (
+                        <div className="flex items-center gap-1">
+                          <Clock className="w-3 h-3" />
+                          {template.estimated_duration_weeks} weeks
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
+      </div>
+    </div>
+  );
+}

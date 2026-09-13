@@ -1,0 +1,68 @@
+{
+  "name": "PatientOutcomeMeasure",
+  "type": "object",
+  "properties": {
+    "patient_id": {
+      "type": "string",
+      "description": "Reference to Patient"
+    },
+    "outcome_measure_id": {
+      "type": "string",
+      "description": "Reference to OutcomeMeasure"
+    },
+    "sent_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "completed_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "completed"
+      ],
+      "default": "pending"
+    },
+    "frequency": {
+      "type": "string",
+      "enum": [
+        "one-time",
+        "weekly",
+        "bi-weekly",
+        "monthly"
+      ],
+      "default": "one-time",
+      "description": "How often this outcome measure should be sent"
+    },
+    "responses": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "question_index": {
+            "type": "number"
+          },
+          "answer": {
+            "type": "string"
+          },
+          "score": {
+            "type": "number"
+          }
+        }
+      }
+    },
+    "total_score": {
+      "type": "number"
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "patient_id",
+    "outcome_measure_id"
+  ]
+}

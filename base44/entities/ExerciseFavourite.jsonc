@@ -1,0 +1,31 @@
+{
+  "name": "ExerciseFavourite",
+  "type": "object",
+  "properties": {
+    "clinic_id": {
+      "type": "string",
+      "description": "Reference to Clinic - for clinic-wide recommendations"
+    },
+    "exercise_library_id": {
+      "type": "string",
+      "description": "Reference to ExerciseLibrary"
+    },
+    "added_by": {
+      "type": "string",
+      "description": "Email of clinician who added to favorites"
+    },
+    "usage_count": {
+      "type": "number",
+      "default": 0,
+      "description": "Number of times used in plans"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Internal notes about why this is a favorite"
+    }
+  },
+  "required": [
+    "clinic_id",
+    "exercise_library_id"
+  ]
+}

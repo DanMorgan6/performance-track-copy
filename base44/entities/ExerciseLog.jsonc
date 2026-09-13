@@ -1,0 +1,58 @@
+{
+  "name": "ExerciseLog",
+  "type": "object",
+  "properties": {
+    "patient_id": {
+      "type": "string"
+    },
+    "phase_id": {
+      "type": "string"
+    },
+    "date": {
+      "type": "string",
+      "format": "date"
+    },
+    "exercise_name": {
+      "type": "string"
+    },
+    "sets_completed": {
+      "type": "number"
+    },
+    "reps_completed": {
+      "type": "string"
+    },
+    "weight": {
+      "type": "number",
+      "description": "Weight used in kg or lbs"
+    },
+    "pain_during": {
+      "type": "number",
+      "description": "Pain level during exercise 0-10"
+    },
+    "pain_after": {
+      "type": "number",
+      "description": "Pain level after exercise 0-10"
+    },
+    "difficulty": {
+      "type": "string",
+      "enum": [
+        "too_easy",
+        "appropriate",
+        "challenging",
+        "too_hard"
+      ]
+    },
+    "notes": {
+      "type": "string"
+    },
+    "completed": {
+      "type": "boolean",
+      "default": false
+    }
+  },
+  "required": [
+    "patient_id",
+    "date",
+    "exercise_name"
+  ]
+}

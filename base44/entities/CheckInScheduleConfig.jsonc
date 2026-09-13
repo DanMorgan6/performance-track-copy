@@ -1,0 +1,45 @@
+{
+  "name": "CheckInScheduleConfig",
+  "type": "object",
+  "properties": {
+    "clinic_id": {
+      "type": "string",
+      "description": "Reference to Clinic - clinic default schedule"
+    },
+    "days_of_week": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "Monday",
+          "Tuesday",
+          "Wednesday",
+          "Thursday",
+          "Friday",
+          "Saturday",
+          "Sunday"
+        ]
+      },
+      "description": "Days when check-in is due"
+    },
+    "time_of_day": {
+      "type": "string",
+      "description": "Preferred time in HH:MM format (e.g., 09:00)"
+    },
+    "enabled": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether check-in reminders are active"
+    },
+    "reminder_hours_before": {
+      "type": "number",
+      "default": 12,
+      "description": "Hours before scheduled time to send reminder"
+    }
+  },
+  "required": [
+    "clinic_id",
+    "days_of_week",
+    "time_of_day"
+  ]
+}

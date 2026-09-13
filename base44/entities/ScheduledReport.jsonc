@@ -1,0 +1,56 @@
+{
+  "name": "ScheduledReport",
+  "type": "object",
+  "properties": {
+    "patient_id": {
+      "type": "string",
+      "description": "Reference to Patient"
+    },
+    "clinician_email": {
+      "type": "string",
+      "description": "Email of clinician who scheduled the report"
+    },
+    "report_name": {
+      "type": "string",
+      "description": "Name of the report"
+    },
+    "frequency": {
+      "type": "string",
+      "enum": [
+        "weekly",
+        "bi-weekly",
+        "monthly"
+      ],
+      "default": "weekly"
+    },
+    "next_generation_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "last_generated_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "include_sections": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Sections to include: progress, assessments, outcomes, pain, exercises, interventions"
+    },
+    "send_to_email": {
+      "type": "string",
+      "description": "Email to send report to"
+    },
+    "active": {
+      "type": "boolean",
+      "default": true
+    }
+  },
+  "required": [
+    "patient_id",
+    "clinician_email",
+    "report_name",
+    "frequency"
+  ]
+}

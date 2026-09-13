@@ -1,0 +1,53 @@
+{
+  "name": "OutcomeMeasure",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Name of the outcome measure"
+    },
+    "condition": {
+      "type": "string",
+      "description": "Condition this measure is for"
+    },
+    "description": {
+      "type": "string"
+    },
+    "total_score_max": {
+      "type": "number",
+      "description": "Maximum possible score"
+    },
+    "interpretation_guide": {
+      "type": "string",
+      "description": "How to interpret the scores"
+    },
+    "questions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "question": {
+            "type": "string"
+          },
+          "options": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "label": {
+                  "type": "string"
+                },
+                "score": {
+                  "type": "number"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "required": [
+    "name"
+  ]
+}

@@ -1,0 +1,82 @@
+{
+  "name": "ClinicianTask",
+  "type": "object",
+  "properties": {
+    "patient_id": {
+      "type": "string",
+      "description": "Reference to Patient"
+    },
+    "assigned_to": {
+      "type": "string",
+      "description": "Email of assigned clinician"
+    },
+    "assigned_by": {
+      "type": "string",
+      "description": "Email of clinician who created task"
+    },
+    "title": {
+      "type": "string",
+      "description": "Task title"
+    },
+    "description": {
+      "type": "string",
+      "description": "Task details"
+    },
+    "priority": {
+      "type": "string",
+      "enum": [
+        "low",
+        "medium",
+        "high",
+        "urgent"
+      ],
+      "default": "medium"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "in_progress",
+        "completed"
+      ],
+      "default": "pending"
+    },
+    "task_type": {
+      "type": "string",
+      "enum": [
+        "follow_up_call",
+        "review_progress",
+        "adjust_plan",
+        "assessment_needed",
+        "consultation",
+        "other"
+      ],
+      "default": "other"
+    },
+    "due_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "completed_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "notes": {
+      "type": "string"
+    },
+    "auto_generated": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether this task was automatically created by the system"
+    },
+    "trigger_reason": {
+      "type": "string",
+      "description": "Why this task was auto-generated (e.g., 'Low adherence detected')"
+    }
+  },
+  "required": [
+    "patient_id",
+    "assigned_to",
+    "title"
+  ]
+}

@@ -1,0 +1,118 @@
+{
+  "name": "Intervention",
+  "type": "object",
+  "properties": {
+    "clinic_id": {
+      "type": "string",
+      "description": "Reference to Clinic"
+    },
+    "patient_id": {
+      "type": "string",
+      "description": "Reference to Patient"
+    },
+    "intervention_type": {
+      "type": "string",
+      "enum": [
+        "injection",
+        "manipulation",
+        "dry_needling",
+        "taping",
+        "mobilization",
+        "soft_tissue_therapy",
+        "shockwave_therapy",
+        "other"
+      ],
+      "description": "Type of intervention"
+    },
+    "title": {
+      "type": "string",
+      "description": "Optional intervention title"
+    },
+    "intervention_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Date of intervention"
+    },
+    "intervention_time": {
+      "type": "string",
+      "description": "Optional time in HH:MM format"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "planned",
+        "completed",
+        "cancelled"
+      ],
+      "default": "planned",
+      "description": "Intervention status"
+    },
+    "location": {
+      "type": "string",
+      "description": "Body location where intervention was/will be performed"
+    },
+    "medication_or_details": {
+      "type": "string",
+      "description": "Medication name for injections or other details"
+    },
+    "performed_by": {
+      "type": "string",
+      "description": "Clinician who performed/will perform the intervention"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Additional notes about the intervention"
+    },
+    "attachments": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "file_url": {
+            "type": "string"
+          },
+          "file_name": {
+            "type": "string"
+          }
+        }
+      },
+      "description": "Links to reports or files"
+    },
+    "visible_to_patient": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether patient can see this intervention"
+    },
+    "follow_up_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Optional follow-up date"
+    },
+    "shockwave_type": {
+      "type": "string",
+      "enum": [
+        "focused",
+        "radial"
+      ],
+      "description": "Type of shockwave therapy (Focused or Radial)"
+    },
+    "shockwave_frequency": {
+      "type": "string",
+      "description": "Frequency in Hz"
+    },
+    "shockwave_energy": {
+      "type": "string",
+      "description": "Energy in mJ/mm\u00b2"
+    },
+    "shockwave_impulses": {
+      "type": "string",
+      "description": "Number of impulses"
+    }
+  },
+  "required": [
+    "clinic_id",
+    "patient_id",
+    "intervention_type",
+    "intervention_date"
+  ]
+}

@@ -1,0 +1,77 @@
+{
+  "name": "InviteToken",
+  "type": "object",
+  "properties": {
+    "clinic_id": {
+      "type": "string",
+      "description": "Reference to Clinic"
+    },
+    "token": {
+      "type": "string",
+      "description": "Signed/opaque token (unique, URL-safe)"
+    },
+    "invite_type": {
+      "type": "string",
+      "enum": [
+        "clinician",
+        "patient"
+      ],
+      "description": "Type of invite"
+    },
+    "email": {
+      "type": "string",
+      "description": "Email of invited user"
+    },
+    "role_target": {
+      "type": "string",
+      "enum": [
+        "clinician",
+        "admin",
+        "patient"
+      ],
+      "default": "clinician",
+      "description": "Target role to assign on acceptance"
+    },
+    "patient_id": {
+      "type": "string",
+      "description": "Reference to Patient (for patient invites only)"
+    },
+    "expires_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Token expiration timestamp"
+    },
+    "used_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When token was redeemed"
+    },
+    "revoked_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When token was revoked/superseded"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "used",
+        "expired",
+        "revoked"
+      ],
+      "default": "active",
+      "description": "Current status of token"
+    },
+    "created_by": {
+      "type": "string",
+      "description": "Email of user who created the invite"
+    }
+  },
+  "required": [
+    "clinic_id",
+    "token",
+    "invite_type",
+    "email",
+    "expires_at"
+  ]
+}

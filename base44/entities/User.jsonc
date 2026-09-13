@@ -1,0 +1,51 @@
+{
+  "name": "User",
+  "type": "object",
+  "properties": {
+    "role": {
+      "type": "string",
+      "enum": [
+        "clinic_admin",
+        "clinician",
+        "patient"
+      ],
+      "default": "patient",
+      "description": "User role in the system"
+    },
+    "clinic_id": {
+      "type": "string",
+      "description": "Reference to Clinic - required for clinic_admin and clinician roles"
+    },
+    "job_title": {
+      "type": "string",
+      "description": "Job title (for clinicians)"
+    },
+    "specialties": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Professional specialties (for clinicians)"
+    },
+    "onboarding_completed": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether user has completed onboarding"
+    },
+    "booking_enabled": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether clinician booking is enabled"
+    },
+    "booking_url": {
+      "type": "string",
+      "description": "External booking system URL"
+    }
+  },
+  "required": [
+    "clinic_id",
+    "job_title",
+    "specialties",
+    "booking_url"
+  ]
+}

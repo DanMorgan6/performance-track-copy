@@ -1,0 +1,43 @@
+{
+  "name": "AuditLog",
+  "type": "object",
+  "properties": {
+    "clinic_id": {
+      "type": "string",
+      "description": "Reference to Clinic"
+    },
+    "patient_id": {
+      "type": "string",
+      "description": "Reference to Patient"
+    },
+    "report_id": {
+      "type": "string",
+      "description": "Reference to Report (if applicable)"
+    },
+    "action": {
+      "type": "string",
+      "enum": [
+        "report_uploaded",
+        "report_visibility_changed",
+        "extraction_created",
+        "extraction_approved",
+        "extraction_applied",
+        "report_viewed"
+      ],
+      "description": "Type of action"
+    },
+    "details": {
+      "type": "object",
+      "description": "Action-specific details (e.g., visibility change, extraction summary)"
+    },
+    "created_by": {
+      "type": "string",
+      "description": "Email of user who performed action"
+    }
+  },
+  "required": [
+    "clinic_id",
+    "action",
+    "created_by"
+  ]
+}

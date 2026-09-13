@@ -1,0 +1,41 @@
+{
+  "name": "DayNote",
+  "type": "object",
+  "properties": {
+    "clinic_id": {
+      "type": "string",
+      "description": "Reference to Clinic - required for multi-clinic isolation"
+    },
+    "patient_id": {
+      "type": "string",
+      "description": "Reference to Patient"
+    },
+    "plan_id": {
+      "type": "string",
+      "description": "Reference to RehabPlan"
+    },
+    "date": {
+      "type": "string",
+      "format": "date",
+      "description": "Date of the note"
+    },
+    "clinician_note": {
+      "type": "string",
+      "description": "Note from clinician about this day"
+    },
+    "patient_note": {
+      "type": "string",
+      "description": "Optional note from patient about this day"
+    },
+    "created_by": {
+      "type": "string",
+      "description": "Email of clinician who created the note"
+    }
+  },
+  "required": [
+    "clinic_id",
+    "patient_id",
+    "plan_id",
+    "date"
+  ]
+}
