@@ -23,7 +23,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { cn } from "@/lib/utils";
 import { isPractitioner } from '@/lib/roles';
 import TemplatePDFExport from "@/components/templates/TemplatePDFExport";
 

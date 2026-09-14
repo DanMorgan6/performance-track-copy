@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { format } from 'date-fns';
-import { TrendingUp, Filter } from 'lucide-react';
+import { TrendingUp } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 
 export default function AssessmentsSummary({ assessments }) {

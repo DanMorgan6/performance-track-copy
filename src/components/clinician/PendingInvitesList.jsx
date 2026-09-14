@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from "@/components/ui/button";
-import { Copy, QrCode, Trash2, CheckCircle2, Clock, AlertCircle } from 'lucide-react';
+import { Copy, QrCode, Trash2, Clock } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
 
 export default function PendingInvitesList({ clinicId }) {

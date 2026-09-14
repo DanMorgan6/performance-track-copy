@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { createPageUrl } from '@/utils';
@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import { isSubscriptionActive, calculateMonthlyPrice, formatPrice, SELF_SERVICE_MAX_PRACTITIONERS } from '@/components/utils/subscriptionUtils';
 import { isPractitioner } from '@/lib/roles';
-import { Mail, Send, Loader2, AlertCircle, CheckCircle2, CreditCard, Copy, QrCode, X } from 'lucide-react';
+import { Mail, Send, Loader2, AlertCircle, CheckCircle2, CreditCard, Copy, QrCode } from 'lucide-react';
 
 // Generate cryptographically secure random token
 function generateSecureToken() {

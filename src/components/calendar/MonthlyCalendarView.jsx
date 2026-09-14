@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths, startOfWeek, endOfWeek, isToday } from 'date-fns';
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, addMonths, subMonths, startOfWeek, endOfWeek, isToday } from 'date-fns';
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, Plus, Dumbbell, Zap, Moon, TestTube, CheckCircle2, ClipboardList } from 'lucide-react';
 import { cn } from "@/lib/utils";
-import { Badge } from "@/components/ui/badge";
 import { getWeekScheduleForDate } from '@/components/plan/PhaseProgressionEngine';
 import CalendarFilterToggle from './CalendarFilterToggle';
 import InterventionBadge from './InterventionBadge';

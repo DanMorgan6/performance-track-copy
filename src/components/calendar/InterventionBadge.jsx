@@ -1,6 +1,5 @@
 import React from 'react';
 import { Syringe, AlertCircle } from 'lucide-react';
-import { cn } from '@/lib/utils';
 
 export default function InterventionBadge({ interventions }) {
   if (!interventions || interventions.length === 0) return null;

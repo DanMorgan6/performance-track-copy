@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
-import { Sparkles, X, RefreshCw } from 'lucide-react';
+import { Sparkles, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export default function MotivationalBanner({ patient, exerciseLogs, painLogs, dailyNotes, adherenceRate, avgPainLevel }) {

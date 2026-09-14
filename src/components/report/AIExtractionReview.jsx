@@ -9,7 +9,6 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Loader2, AlertCircle, CheckCircle2 } from 'lucide-react';
-import { cn } from "@/lib/utils";
 
 export default function AIExtractionReview({ 
   open, 

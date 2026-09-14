@@ -12,7 +12,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Plus, Trash2, Search } from 'lucide-react';
-import { cn } from "@/lib/utils";
 
 export default function TestingMilestoneDialog({ 
   open, 

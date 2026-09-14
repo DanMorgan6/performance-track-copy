@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import { format, startOfWeek, addDays } from 'date-fns';
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { ChevronLeft, ChevronRight, MessageSquare, CheckCircle, AlertCircle, Dumbbell } from 'lucide-react';
+import { ChevronLeft, ChevronRight, CheckCircle, Dumbbell } from 'lucide-react';
 import { cn } from "@/lib/utils";
 
 export default function WeekCalendarOverview({

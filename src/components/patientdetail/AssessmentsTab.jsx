@@ -2,7 +2,6 @@ import React from 'react';
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { Plus, TrendingUp, Edit, Trash2 } from 'lucide-react';
-import { cn } from '@/lib/utils';
 import AssessmentForm from '@/components/assessment/AssessmentForm';
 import AssessmentDataExtractor from '@/components/assessment/AssessmentDataExtractor';
 import AssessmentTrendChart from '@/components/analytics/AssessmentTrendChart';

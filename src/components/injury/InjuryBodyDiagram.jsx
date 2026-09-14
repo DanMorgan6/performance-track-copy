@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { cn } from '@/lib/utils';
 
 export default function InjuryBodyDiagram({ injuries = [], view = 'front', onRegionSelect }) {
   const [hoveredRegion, setHoveredRegion] = useState(null);

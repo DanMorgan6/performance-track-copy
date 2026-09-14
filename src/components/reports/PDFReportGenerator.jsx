@@ -1,10 +1,9 @@
 import React, { useState } from 'react';
-import { base44 } from '@/api/base44Client';
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { format } from 'date-fns';
-import { FileText, Download } from 'lucide-react';
+import { Download } from 'lucide-react';
 import {
   Dialog,
   DialogContent,

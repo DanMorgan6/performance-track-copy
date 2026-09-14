@@ -1,15 +1,7 @@
 import React from 'react';
 import { format, subDays } from 'date-fns';
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  Legend
-} from 'recharts';
+
+
 import { TrendingDown, TrendingUp, Minus } from 'lucide-react';
 import { cn } from "@/lib/utils";
 

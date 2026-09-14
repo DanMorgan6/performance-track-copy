@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { format, differenceInDays, subDays } from 'date-fns';
-import { TrendingUp, Users, Activity, Clock, Star, Search, ChevronRight, AlertTriangle, BarChart3 } from 'lucide-react';
+import { differenceInDays, subDays } from 'date-fns';
+import { Users, Activity, Clock, Star, Search, ChevronRight, AlertTriangle } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import StatCard from '@/components/dashboard/StatCard';
 import AdherenceMetricsChart from '@/components/analytics/AdherenceMetricsChart.jsx';

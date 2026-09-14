@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
-import { GripVertical, Plus, Trash2, Copy, ChevronDown, ChevronUp, RefreshCw, Unlink, MoreVertical } from 'lucide-react';
+import { GripVertical, Trash2, Copy, ChevronDown, ChevronUp, RefreshCw, Unlink, MoreVertical } from 'lucide-react';
 import { Droppable } from '@hello-pangea/dnd';
 import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
 const BLOCK_STYLES = {

@@ -1,6 +1,6 @@
 import React from 'react';
 import { format } from 'date-fns';
-import { TrendingDown, Activity } from 'lucide-react';
+import { Activity } from 'lucide-react';
 import { cn } from "@/lib/utils";
 import ProgressSummaryCard from './ProgressSummaryCard';
 

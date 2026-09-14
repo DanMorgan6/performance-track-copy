@@ -1,7 +1,6 @@
 import React from 'react';
 import { format } from 'date-fns';
-import { TrendingUp, TrendingDown, Activity, AlertCircle, CheckCircle } from 'lucide-react';
-import { cn } from "@/lib/utils";
+import { Activity, AlertCircle, CheckCircle } from 'lucide-react';
 
 export default function PatientProgressReport({ data }) {
   return (

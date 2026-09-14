@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { base44 } from '@/api/base44Client';
 import { differenceInDays, parseISO } from 'date-fns';
-import { AlertCircle, CheckCircle2 } from 'lucide-react';
+import { AlertCircle } from 'lucide-react';
 
 export default function PROMMNotificationEngine({ patientOutcomeMeasures, outcomeMeasures }) {
   const [notifications, setNotifications] = useState([]);

@@ -6,16 +6,12 @@ import { createPageUrl } from '@/utils';
 import { format } from 'date-fns';
 import { 
   ArrowLeft, 
-  Plus, 
-  User,
+  Plus,
   Mail,
-  Phone,
-  Calendar,
   Activity,
   ClipboardList,
   Edit,
   Trash2,
-  TrendingUp,
   MoreVertical,
   UserX,
   StopCircle,
@@ -28,22 +24,12 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import PhaseTimeline from "@/components/ui/PhaseTimeline";
 import ExitCriteriaCard from "@/components/ui/ExitCriteriaCard";
-import AssessmentForm from "@/components/assessment/AssessmentForm";
-import AssessmentDataExtractor from "@/components/assessment/AssessmentDataExtractor";
 import SendOutcomeMeasureDialog from "@/components/outcome/SendOutcomeMeasureDialog";
 import InterventionForm from "@/components/intervention/InterventionForm";
-import ProgressDashboard from "@/components/analytics/ProgressDashboard";
-import AdherenceChart from "@/components/analytics/AdherenceChart";
 import PatientProgressTimeline from "@/components/clinician/PatientProgressTimeline";
 import AutoProgressReport from "@/components/reports/AutoProgressReport";
 import PhaseTriggersManager from "@/components/outcome/PhaseTriggersManager";
-import TaskManager from "@/components/clinician/TaskManager";
-import AutoTaskSuggestions from "@/components/clinician/AutoTaskSuggestions";
-import AssessmentTrendChart from "@/components/analytics/AssessmentTrendChart";
 import OutcomeMeasureTrendChart from "@/components/analytics/OutcomeMeasureTrendChart";
-import CohortComparison from "@/components/analytics/CohortComparison";
-import SessionLoadChart from "@/components/analytics/SessionLoadChart";
-import LoadPerformanceInsights from "@/components/analytics/LoadPerformanceInsights";
 import PDFReportGenerator from "@/components/reports/PDFReportGenerator";
 import ScheduledReportManager from "@/components/reports/ScheduledReportManager";
 import MonthlyCalendarView from "@/components/calendar/MonthlyCalendarView";
@@ -90,20 +76,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  Area,
-  AreaChart
-} from 'recharts';
+
+
 
 export default function PatientDetail() {
   const queryClient = useQueryClient();

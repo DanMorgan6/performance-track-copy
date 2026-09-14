@@ -1,8 +1,6 @@
 import React from 'react';
-import { format, subDays } from 'date-fns';
+import { format } from 'date-fns';
 import {
-  LineChart,
-  Line,
   XAxis,
   YAxis,
   CartesianGrid,

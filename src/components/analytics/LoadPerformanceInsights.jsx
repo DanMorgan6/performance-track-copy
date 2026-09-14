@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Button } from "@/components/ui/button";
 import { Sparkles, TrendingUp, AlertTriangle, CheckCircle, Activity } from 'lucide-react';
-import { format, subWeeks } from 'date-fns';
+import { format } from 'date-fns';
 
 export default function LoadPerformanceInsights({ patient, exerciseLogs }) {
   const [insights, setInsights] = useState(null);

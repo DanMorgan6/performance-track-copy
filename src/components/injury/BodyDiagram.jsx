@@ -1,5 +1,4 @@
 import React, { useMemo } from 'react';
-import { cn } from '@/lib/utils';
 import injuryLibrary from './injury_diagnosis_library.json';
 
 export default function BodyDiagram({ view, selectedRegion, onRegionSelect }) {

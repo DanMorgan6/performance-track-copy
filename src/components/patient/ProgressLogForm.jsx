@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import PainSlider from "@/components/ui/PainSlider";
-import { Activity, Target, MessageSquare } from 'lucide-react';
+import { Activity } from 'lucide-react';
 
 export default function ProgressLogForm({ currentPhase, onSubmit, onCancel }) {
   const [logData, setLogData] = useState({

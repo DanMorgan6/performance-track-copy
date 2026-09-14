@@ -1,10 +1,8 @@
 import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
-import { useQuery } from '@tanstack/react-query';
 import { createPageUrl } from '@/utils';
 import { isPractitioner } from '@/lib/roles';
 import { ArrowLeft } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import ClinicalProfileEditor from '@/components/clinician/ClinicalProfileEditor';
 
 export default function ClinicalProfile() {

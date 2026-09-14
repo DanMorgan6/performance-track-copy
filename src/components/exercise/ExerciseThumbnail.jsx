@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Play, Dumbbell } from 'lucide-react';
 import { cn } from "@/lib/utils";
-import ExerciseVideoPreview from './ExerciseVideoPreview';
 
 export default function ExerciseThumbnail({ 
   exercise, 

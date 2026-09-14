@@ -3,13 +3,11 @@ import { base44 } from '@/api/base44Client';
 import { Button } from "@/components/ui/button";
 import { 
   TrendingUp, 
-  TrendingDown, 
   Minus, 
   AlertCircle, 
   CheckCircle2,
   Loader2,
-  FileText,
-  Download
+  FileText
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from "@/lib/utils";

@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
-import { Sparkles, AlertCircle, TrendingUp } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { Sparkles, TrendingUp } from 'lucide-react';
 
 export default function ProgressSummaryCard({ painLogs = [], patientOutcomeMeasures = [], assessments = [], dailyNotes = [] }) {
   const [summary, setSummary] = useState(null);

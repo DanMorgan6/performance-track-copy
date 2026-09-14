@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { base44 } from '@/api/base44Client';
 import { generatePlanPDF, uploadAndEmailPDF } from './PlanPDFGenerator';
 import { Button } from '@/components/ui/button';
 import { Download, Mail, FileText } from 'lucide-react';

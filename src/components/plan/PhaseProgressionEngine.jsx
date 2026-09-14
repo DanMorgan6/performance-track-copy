@@ -1,4 +1,4 @@
-import { format, addWeeks, differenceInDays, startOfDay } from 'date-fns';
+import { addWeeks, differenceInDays, startOfDay } from 'date-fns';
 
 /**
  * Phase Progression Engine

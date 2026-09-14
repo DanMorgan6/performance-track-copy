@@ -1,5 +1,5 @@
 import React from 'react';
-import { format, subDays, startOfDay, isAfter } from 'date-fns';
+import { format, subDays, startOfDay } from 'date-fns';
 import {
   BarChart,
   Bar,

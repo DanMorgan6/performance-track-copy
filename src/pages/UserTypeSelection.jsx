@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { createPageUrl } from '@/utils';
 import { isClinicAdmin, isPractitioner } from '@/lib/roles';
-import { Button } from "@/components/ui/button";
 import { Stethoscope, Users } from 'lucide-react';
 
 export default function UserTypeSelection() {

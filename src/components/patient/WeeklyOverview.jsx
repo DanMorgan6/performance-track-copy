@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { format, addDays, startOfWeek } from 'date-fns';
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight, Calendar, Check } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Check } from 'lucide-react';
 import { cn } from "@/lib/utils";
 import { getWeekScheduleForDate } from '@/components/plan/PhaseProgressionEngine';
 

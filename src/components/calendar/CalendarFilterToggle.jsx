@@ -1,6 +1,6 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Dumbbell, Zap, ClipboardList, MessageSquare, Syringe, X } from 'lucide-react';
+import { Dumbbell, ClipboardList, MessageSquare, Syringe, X } from 'lucide-react';
 
 export default function CalendarFilterToggle({ filters, onChange }) {
   const toggleFilter = (filterKey) => {

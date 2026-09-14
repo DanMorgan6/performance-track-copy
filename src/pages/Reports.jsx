@@ -1,15 +1,10 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { format, subDays, subMonths, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from 'date-fns';
+import { format, subMonths } from 'date-fns';
 import { 
-  FileText, 
-  Download, 
-  Calendar,
-  TrendingUp,
-  Users,
+  FileText,
   Plus,
-  Settings,
   BarChart3,
   Trash2
 } from 'lucide-react';
@@ -17,7 +12,6 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import PatientProgressReport from "@/components/reports/PatientProgressReport";
 import ClinicianPerformanceReport from "@/components/reports/ClinicianPerformanceReport";
-import { cn } from "@/lib/utils";
 import { isPractitioner } from '@/lib/roles';
 import {
   Dialog,

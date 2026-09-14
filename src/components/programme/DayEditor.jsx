@@ -3,7 +3,6 @@ import { X, ClipboardList, Plus, Layers, Zap, Copy, ClipboardPaste } from 'lucid
 import { Droppable } from '@hello-pangea/dnd';
 import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
 import SessionBlock from './SessionBlock';
 import { EMPHASIS_OPTIONS } from './DayCard';
 import TrainingProgramPDFButton from './TrainingProgramPDF';

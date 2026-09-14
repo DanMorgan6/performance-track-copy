@@ -5,7 +5,6 @@ import { Badge } from "@/components/ui/badge";
 import { Edit, Send, MessageSquare, Eye } from 'lucide-react';
 import { createPageUrl } from '@/utils';
 import { Link } from 'react-router-dom';
-import { cn } from "@/lib/utils";
 
 export default function PatientOverviewCard({ 
   plan, 

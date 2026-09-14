@@ -1,6 +1,6 @@
 import React from 'react';
 import { format } from 'date-fns';
-import { Activity, AlertCircle, CheckCircle2, ClipboardList, MessageSquare } from 'lucide-react';
+import { Activity, AlertCircle, ClipboardList, MessageSquare } from 'lucide-react';
 import { cn } from "@/lib/utils";
 
 export default function PatientProgressTimeline({ 

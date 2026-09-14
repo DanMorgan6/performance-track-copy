@@ -2,33 +2,22 @@ import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { createPageUrl } from '@/utils';
-import { Link } from 'react-router-dom';
 import { isSubscriptionActive } from '@/components/utils/subscriptionUtils';
 import BillingPaywall from '@/components/billing/BillingPaywall';
 import { format } from 'date-fns';
-import CheckInReminder from '@/components/patient/CheckInReminder';
 import PROMMNotificationEngine from '@/components/outcome/PROMMNotificationEngine';
 import { 
-  Activity, 
-  Target,
+  Activity,
   Calendar,
-  Plus,
-  TrendingUp,
-  ChevronRight,
-  BarChart3,
   ClipboardList,
   MessageSquare,
   AlertCircle,
-  Menu,
-  X
+  Menu
 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import ExerciseCard from "@/components/patient/ExerciseCard";
 import PainSlider from "@/components/ui/PainSlider";
 import OutcomeMeasureForm from "@/components/outcome/OutcomeMeasureForm";
-import WeeklyPlanView from "@/components/patient/WeeklyPlanView";
 import DailyCheckIn from "@/components/patient/DailyCheckIn";
 import ProgressLogForm from "@/components/patient/ProgressLogForm";
 import PatientOnboarding from "@/components/patient/PatientOnboarding";

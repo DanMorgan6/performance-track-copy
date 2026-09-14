@@ -9,17 +9,13 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { 
   ArrowLeft, 
-  Save, 
-  Plus, 
-  Trash2, 
-  Target,
+  Save,
   FileText,
   Clock,
   Layers,
   Sparkles,
   Download,
-  Mail,
-  Badge as BadgeIcon
+  Mail
 } from 'lucide-react';
 import {
   Dialog,
@@ -30,7 +26,6 @@ import {
 import { Badge } from "@/components/ui/badge";
 // Badge used in template picker dialog
 import { Link } from 'react-router-dom';
-import { cn } from "@/lib/utils";
 import { isPractitioner } from '@/lib/roles';
 import { generatePlanPDF, uploadAndEmailPDF } from "@/components/reports/PlanPDFGenerator";
 import ProgramTypeSelector from "@/components/plan/ProgramTypeSelector";

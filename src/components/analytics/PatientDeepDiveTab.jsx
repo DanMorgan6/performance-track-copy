@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { format, subDays, eachDayOfInterval, startOfDay } from 'date-fns';
+import { format, subDays } from 'date-fns';
 import {
   LineChart, Line, AreaChart, Area, ScatterChart, Scatter,
-  XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine
+  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine
 } from 'recharts';
 import { cn } from '@/lib/utils';
 import AdherenceHeatmap from './AdherenceHeatmap';

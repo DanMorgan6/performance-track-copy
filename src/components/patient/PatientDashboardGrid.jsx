@@ -1,10 +1,6 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
-import { createPageUrl } from '@/utils';
-import { format, subDays, addDays } from 'date-fns';
-import {
-  Activity, Target, Calendar, ChevronRight, ClipboardList,
-  TrendingUp, AlertCircle, FileText, Zap, CheckCircle, Clock
+import { format } from 'date-fns';
+import { Target, Calendar, ChevronRight, ClipboardList, AlertCircle, FileText, Zap, CheckCircle, Clock
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getWeekScheduleForDate } from '@/components/plan/PhaseProgressionEngine';
