@@ -24,6 +24,7 @@ import {
   UserPlus
 } from 'lucide-react';
 import { cn } from "@/lib/utils";
+import { isPractitioner } from '@/lib/roles';
 import AssignOutcomeMeasureDialog from "@/components/outcome/AssignOutcomeMeasureDialog";
 
 export default function CreateOutcomeMeasure() {
@@ -62,7 +63,7 @@ export default function CreateOutcomeMeasure() {
   React.useEffect(() => {
     const checkAccess = async () => {
       const currentUser = await base44.auth.me();
-      if (currentUser.role !== 'admin') {
+      if (!isPractitioner(currentUser)) {
         window.location.href = createPageUrl('PatientPortal');
       }
     };
