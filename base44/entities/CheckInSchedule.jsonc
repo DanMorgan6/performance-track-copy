@@ -1,33 +1,17 @@
 {
   "name": "CheckInSchedule",
-  "type": "object",
   "properties": {
     "clinic_id": {
-      "type": "string",
-      "description": "Reference to Clinic - clinic-level default"
-    },
-    "patient_id": {
-      "type": "string",
-      "description": "Reference to Patient - patient override (optional)"
+      "description": "Reference to Clinic - clinic-level default",
+      "type": "string"
     },
     "clinician_email": {
-      "type": "string",
-      "description": "Clinician email - clinician override (optional)"
-    },
-    "schedule_type": {
-      "type": "string",
-      "enum": [
-        "clinic",
-        "clinician",
-        "patient"
-      ],
-      "default": "clinic",
-      "description": "Which level this schedule applies to"
+      "description": "Clinician email - clinician override (optional)",
+      "type": "string"
     },
     "days_of_week": {
-      "type": "array",
+      "description": "Days when check-in is due",
       "items": {
-        "type": "string",
         "enum": [
           "Monday",
           "Tuesday",
@@ -36,22 +20,121 @@
           "Friday",
           "Saturday",
           "Sunday"
-        ]
+        ],
+        "type": "string"
       },
-      "description": "Days when check-in is due"
-    },
-    "time_of_day": {
-      "type": "string",
-      "description": "Preferred time (e.g., '09:00')"
+      "type": "array"
     },
     "enabled": {
-      "type": "boolean",
       "default": true,
-      "description": "Whether this schedule is active"
+      "description": "Whether this schedule is active",
+      "type": "boolean"
+    },
+    "patient_id": {
+      "description": "Reference to Patient - patient override (optional)",
+      "type": "string"
+    },
+    "schedule_type": {
+      "default": "clinic",
+      "description": "Which level this schedule applies to",
+      "enum": [
+        "clinic",
+        "clinician",
+        "patient"
+      ],
+      "type": "string"
+    },
+    "time_of_day": {
+      "description": "Preferred time (e.g., '09:00')",
+      "type": "string"
     }
   },
   "required": [
     "clinic_id",
     "days_of_week"
-  ]
+  ],
+  "rls": {
+    "create": {
+      "$and": [
+        {
+          "$or": [
+            {
+              "user_condition": {
+                "role": "admin"
+              }
+            },
+            {
+              "user_condition": {
+                "role": "clinic_admin"
+              }
+            },
+            {
+              "user_condition": {
+                "role": "clinician"
+              }
+            }
+          ]
+        },
+        {
+          "data.clinic_id": "{{user.data.clinic_id}}"
+        }
+      ]
+    },
+    "delete": {
+      "$and": [
+        {
+          "$or": [
+            {
+              "user_condition": {
+                "role": "admin"
+              }
+            },
+            {
+              "user_condition": {
+                "role": "clinic_admin"
+              }
+            },
+            {
+              "user_condition": {
+                "role": "clinician"
+              }
+            }
+          ]
+        },
+        {
+          "data.clinic_id": "{{user.data.clinic_id}}"
+        }
+      ]
+    },
+    "read": {
+      "data.clinic_id": "{{user.data.clinic_id}}"
+    },
+    "update": {
+      "$and": [
+        {
+          "$or": [
+            {
+              "user_condition": {
+                "role": "admin"
+              }
+            },
+            {
+              "user_condition": {
+                "role": "clinic_admin"
+              }
+            },
+            {
+              "user_condition": {
+                "role": "clinician"
+              }
+            }
+          ]
+        },
+        {
+          "data.clinic_id": "{{user.data.clinic_id}}"
+        }
+      ]
+    }
+  },
+  "type": "object"
 }
