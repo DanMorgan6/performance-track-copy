@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
+import { isClinicAdmin, isPractitioner } from '@/lib/roles';
 import { 
   ClipboardList, 
   Users, 
@@ -29,9 +30,9 @@ export default function Home() {
         }
         
         // Redirect based on role
-        if (currentUser.role === 'admin') {
+        if (isPractitioner(currentUser)) {
           // Clinic staff - redirect to clinic dashboard
-          if (!currentUser.onboarding_completed) {
+          if (isClinicAdmin(currentUser) && !currentUser.onboarding_completed) {
             window.location.href = createPageUrl('ClinicOnboarding');
           } else {
             window.location.href = createPageUrl('CoachDashboard');
