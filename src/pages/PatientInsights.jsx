@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { createPageUrl } from '@/utils';
+import { isPractitioner } from '@/lib/roles';
 import { Link } from 'react-router-dom';
 import { ChevronLeft } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -22,7 +23,7 @@ export default function PatientInsights() {
         setUser(currentUser);
 
         // Clinic staff should not access patient insights
-        if (currentUser.role === 'admin') {
+        if (isPractitioner(currentUser)) {
           window.location.href = createPageUrl('CoachDashboard');
           return;
         }
