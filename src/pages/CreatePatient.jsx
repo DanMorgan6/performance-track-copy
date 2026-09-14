@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { createPageUrl } from '@/utils';
+import { isPractitioner } from '@/lib/roles';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -33,7 +34,7 @@ export default function CreatePatient() {
   React.useEffect(() => {
     const checkAccess = async () => {
       const user = await base44.auth.me();
-      if (user.role !== 'admin') {
+      if (!isPractitioner(user)) {
         window.location.href = createPageUrl('PatientPortal');
         return;
       }
