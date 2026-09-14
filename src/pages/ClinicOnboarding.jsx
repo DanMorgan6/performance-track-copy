@@ -84,7 +84,11 @@ export default function ClinicOnboarding() {
         ...clinicData,
         owner_email: currentUser.email,
         subscription_status: 'trial',
-        trial_end_date: trialEndDate.toISOString().split('T')[0]
+        trial_end_date: trialEndDate.toISOString()
+      });
+      await base44.entities.Clinic.update(clinic.id, {
+        clinic_id: clinic.id,
+        monthly_price_pence: 3000
       });
 
       // Update user profile
