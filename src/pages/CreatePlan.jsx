@@ -556,6 +556,7 @@ Make the plan progressive, evidence-based, and tailored to the patient's profile
       if (uniqueNewExercises.length > 0) {
         await base44.entities.ExerciseLibrary.bulkCreate(
           uniqueNewExercises.map(exercise => ({
+            clinic_id: currentUser?.clinic_id,
             name: exercise.name,
             description: exercise.description || '',
             category: 'functional',
@@ -605,23 +606,18 @@ Make the plan progressive, evidence-based, and tailored to the patient's profile
         basic_config: currentPlanData.program_type === 'basic' ? currentPlanData.basic_config : null,
         created_by_clinician: currentUser?.email
       };
-      console.log('DEBUG CreatePlan payload status:', planPayload.status);
-      
-      console.log('DEBUG Plan payload:', planPayload);
       const plan = await base44.entities.RehabPlan.create(planPayload);
-      console.log('DEBUG Created plan:', plan);
 
       // Create all phases with bulkCreate (only for phased programs)
       if (currentPlanData.program_type === 'phased') {
-        console.log('DEBUG Creating phases with bulkCreate:', currentPhases.length);
         const phasesToCreate = currentPhases.map(phase => ({
           ...phase,
+          clinic_id: plan.clinic_id,
+          patient_id: finalPatientId,
           plan_id: plan.id,
           status: phase.phase_number === 1 ? 'active' : 'pending'
         }));
-        console.log('DEBUG Phase payload:', phasesToCreate[0]);
-        const createdPhases = await base44.entities.RehabPhase.bulkCreate(phasesToCreate);
-        console.log('DEBUG Created phases:', createdPhases.length, createdPhases[0]);
+        await base44.entities.RehabPhase.bulkCreate(phasesToCreate);
       }
 
       // Wait for database sync before navigating
