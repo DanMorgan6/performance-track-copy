@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { LayoutDashboard, Calendar, TrendingUp, Settings } from 'lucide-react';
+import { LayoutDashboard, Calendar, TrendingUp, ShieldCheck } from 'lucide-react';
 import { createPageUrl } from '@/utils';
 import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
@@ -10,7 +10,7 @@ const tabs = [
   { label: 'Home',      icon: LayoutDashboard, page: 'PatientPortal',  portalTab: 'dashboard' },
   { label: 'Calendar',  icon: Calendar,         page: 'PatientPortal',  portalTab: 'month'     },
   { label: 'Insights',  icon: TrendingUp,       page: 'PatientInsights' },
-  { label: 'Settings',  icon: Settings,         page: 'PrivacyPolicy'  },
+  { label: 'Privacy',   icon: ShieldCheck,      page: 'PrivacyPolicy'  },
 ];
 
 function getSavedRoutes() {

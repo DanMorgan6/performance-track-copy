@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import ClinicianBottomTabs from '@/components/mobile/ClinicianBottomTabs';
+import PatientBottomTabs from '@/components/mobile/PatientBottomTabs';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { createPageUrl } from '@/utils';
@@ -143,9 +144,11 @@ export default function Layout({ children, currentPageName }) {
   }
 
   if (user && isPatient) {
+    const showPatientNavigation = currentPageName === 'PatientInsights';
+
     return (
       <div className="performance-shell performance-patient-shell min-h-screen bg-[#171719] text-zinc-100">
-        <main className="pb-safe">
+        <main className={cn('pb-safe', showPatientNavigation && 'pb-24')}>
           <AnimatePresence mode="wait">
             <motion.div
               key={currentPageName}
@@ -158,6 +161,7 @@ export default function Layout({ children, currentPageName }) {
             </motion.div>
           </AnimatePresence>
         </main>
+        {showPatientNavigation && <PatientBottomTabs currentPageName={currentPageName} />}
       </div>
     );
   }

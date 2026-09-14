@@ -31,6 +31,43 @@ import PullToRefresh from "@/components/ui/PullToRefresh";
 import MobileSelect from "@/components/ui/MobileSelect";
 import { useQueryClient } from '@tanstack/react-query';
 
+const DAY_IN_MS = 24 * 60 * 60 * 1000;
+
+function isWithinPastDays(dateValue, numberOfDays) {
+  if (!dateValue) return false;
+
+  const parsedDate = new Date(dateValue);
+  if (Number.isNaN(parsedDate.getTime())) return false;
+
+  const today = new Date();
+  const todayUtc = Date.UTC(today.getFullYear(), today.getMonth(), today.getDate());
+  const dateUtc = Date.UTC(
+    parsedDate.getUTCFullYear(),
+    parsedDate.getUTCMonth(),
+    parsedDate.getUTCDate()
+  );
+  const daysAgo = Math.round((todayUtc - dateUtc) / DAY_IN_MS);
+
+  return daysAgo >= 0 && daysAgo < numberOfDays;
+}
+
+async function fetchRecordsByPatient(entity, patientIds, sort, limit) {
+  if (patientIds.length === 0) return [];
+
+  const recordGroups = [];
+  const chunkSize = 10;
+
+  for (let index = 0; index < patientIds.length; index += chunkSize) {
+    const patientIdChunk = patientIds.slice(index, index + chunkSize);
+    const chunkResults = await Promise.all(
+      patientIdChunk.map((patientId) => entity.filter({ patient_id: patientId }, sort, limit))
+    );
+    recordGroups.push(...chunkResults);
+  }
+
+  return recordGroups.flat();
+}
+
 export default function CoachDashboard() {
   const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState('');
@@ -40,42 +77,69 @@ export default function CoachDashboard() {
   const [showInviteDialog, setShowInviteDialog] = useState(false);
   const [clinic, setClinic] = useState(null);
   const [showPaywall, setShowPaywall] = useState(false);
+  const [isCheckingAccess, setIsCheckingAccess] = useState(true);
+  const [accessError, setAccessError] = useState('');
 
   // Security: Only clinic staff can access clinician dashboard
   useEffect(() => {
-    const checkAccess = async () => {
-      const user = await base44.auth.me();
-      // Base44 exposes clinic practitioners through the admin role.
-      if (user.role !== 'admin') {
-        window.location.href = createPageUrl('PatientPortal');
-        return;
-      }
-      // Check if onboarding is complete
-      if (!user.onboarding_completed) {
-        window.location.href = createPageUrl('ClinicOnboarding');
-        return;
-      }
-      setCurrentUser(user);
+    let active = true;
 
-      // Check subscription status
-      if (user.clinic_id) {
-        const clinics = await base44.entities.Clinic.filter({ id: user.clinic_id });
-        if (clinics.length > 0) {
-          setClinic(clinics[0]);
-          if (!isSubscriptionActive(clinics[0])) {
-            setShowPaywall(true);
-          }
+    const checkAccess = async () => {
+      try {
+        const user = await base44.auth.me();
+        if (!active) return;
+
+        // Base44 exposes clinic practitioners through the admin role.
+        if (user.role !== 'admin') {
+          window.location.replace(createPageUrl('PatientPortal'));
+          return;
         }
+
+        if (!user.onboarding_completed) {
+          window.location.replace(createPageUrl('ClinicOnboarding'));
+          return;
+        }
+
+        if (!user.clinic_id) {
+          setAccessError('Your practitioner account is not linked to a clinic workspace.');
+          return;
+        }
+
+        setCurrentUser(user);
+
+        const clinics = await base44.entities.Clinic.filter({ id: user.clinic_id });
+        if (!active) return;
+
+        if (clinics.length === 0) {
+          setAccessError('Your clinic workspace could not be found. Please contact support.');
+          return;
+        }
+
+        setClinic(clinics[0]);
+        setShowPaywall(!isSubscriptionActive(clinics[0]));
+      } catch (error) {
+        if (!active) return;
+        console.error('Unable to load clinician dashboard access:', error);
+        setAccessError('We could not verify access to this clinic workspace. Please refresh and try again.');
+      } finally {
+        if (active) setIsCheckingAccess(false);
       }
     };
+
     checkAccess();
+    return () => {
+      active = false;
+    };
   }, []);
 
   // Only load patients assigned to current clinician
   const { data: patients = [], isLoading: patientsLoading } = useQuery({
     queryKey: ['patients', currentUser?.email],
     queryFn: async () => {
-      const fetchedPatients = await base44.entities.Patient.filter({ assigned_coach: currentUser.email }, '-created_date');
+      const fetchedPatients = await base44.entities.Patient.filter({
+        assigned_coach: currentUser.email,
+        clinic_id: currentUser.clinic_id
+      }, '-created_date');
       // Sort alphabetically by surname
       return fetchedPatients.sort((a, b) => {
         const surnameA = a.full_name?.split(' ').pop()?.toLowerCase() || '';
@@ -83,50 +147,55 @@ export default function CoachDashboard() {
         return surnameA.localeCompare(surnameB);
       });
     },
-    enabled: !!currentUser?.email
+    enabled: !!currentUser?.email && !!currentUser?.clinic_id
   });
+
+  const patientIds = patients.map((patient) => patient.id);
 
   // Only load plans for this clinician's patients
   const { data: plans = [] } = useQuery({
-    queryKey: ['plans', currentUser?.email],
-    queryFn: async () => {
-      const allPlans = await base44.entities.RehabPlan.list('-created_date');
-      const patientIds = patients.map(p => p.id);
-      return allPlans.filter(plan => patientIds.includes(plan.patient_id));
-    },
-    enabled: !!currentUser?.email && patients.length > 0
+    queryKey: ['plans', currentUser?.email, patientIds],
+    queryFn: () => fetchRecordsByPatient(
+      base44.entities.RehabPlan,
+      patientIds,
+      '-created_date'
+    ),
+    enabled: !!currentUser?.email && patientIds.length > 0
   });
 
   // Only load pain logs for this clinician's patients
   const { data: recentPainLogs = [] } = useQuery({
-    queryKey: ['recent-pain', currentUser?.email],
-    queryFn: async () => {
-      const allLogs = await base44.entities.PainLog.list('-date', 100);
-      const patientIds = patients.map(p => p.id);
-      return allLogs.filter(log => patientIds.includes(log.patient_id));
-    },
-    enabled: !!currentUser?.email && patients.length > 0
+    queryKey: ['recent-pain', currentUser?.email, patientIds],
+    queryFn: () => fetchRecordsByPatient(
+      base44.entities.PainLog,
+      patientIds,
+      '-date',
+      100
+    ),
+    enabled: !!currentUser?.email && patientIds.length > 0
   });
 
   // Only load exercise logs for this clinician's patients
   const { data: exerciseLogs = [] } = useQuery({
-    queryKey: ['recent-exercise-logs', currentUser?.email],
-    queryFn: async () => {
-      const allLogs = await base44.entities.ExerciseLog.list('-created_date', 500);
-      const patientIds = patients.map(p => p.id);
-      return allLogs.filter(log => patientIds.includes(log.patient_id));
-    },
-    enabled: !!currentUser?.email && patients.length > 0
+    queryKey: ['recent-exercise-logs', currentUser?.email, patientIds],
+    queryFn: () => fetchRecordsByPatient(
+      base44.entities.ExerciseLog,
+      patientIds,
+      '-created_date',
+      500
+    ),
+    enabled: !!currentUser?.email && patientIds.length > 0
   });
 
   const { data: patientOutcomeMeasures = [] } = useQuery({
-    queryKey: ['all-patient-outcomes', currentUser?.email],
-    queryFn: async () => {
-      const allOutcomes = await base44.entities.PatientOutcomeMeasure.list('-sent_date', 500);
-      const patientIds = patients.map(p => p.id);
-      return allOutcomes.filter(om => patientIds.includes(om.patient_id));
-    },
-    enabled: !!currentUser?.email && patients.length > 0
+    queryKey: ['all-patient-outcomes', currentUser?.email, patientIds],
+    queryFn: () => fetchRecordsByPatient(
+      base44.entities.PatientOutcomeMeasure,
+      patientIds,
+      '-sent_date',
+      500
+    ),
+    enabled: !!currentUser?.email && patientIds.length > 0
   });
 
   const { data: allPatientInvites = [] } = useQuery({
@@ -141,19 +210,19 @@ export default function CoachDashboard() {
   const activePatients = patients.filter(p => p.status === 'active');
   const activePlans = plans.filter(p => p.status === 'active');
   
-  // Get high pain alerts (pain > 7 in last week)
-  const highPainAlerts = recentPainLogs.filter(log => log.pain_level >= 7);
+  // Count patients with a high pain entry in the last seven calendar days.
+  const highPainAlertCount = new Set(
+    recentPainLogs
+      .filter((log) => log.pain_level >= 7 && isWithinPastDays(log.date, 7))
+      .map((log) => log.patient_id)
+  ).size;
 
   // Calculate adherence for each patient
   const patientAdherence = patients.map(patient => {
     const patientLogs = exerciseLogs.filter(log => log.patient_id === patient.id);
     
     // Get last 7 days of logs
-    const last7Days = patientLogs.filter(log => {
-      const logDate = new Date(log.date);
-      const daysDiff = Math.floor((new Date() - logDate) / (1000 * 60 * 60 * 24));
-      return daysDiff <= 7;
-    });
+    const last7Days = patientLogs.filter((log) => isWithinPastDays(log.date, 7));
     
     const completedCount = last7Days.filter(log => log.completed).length;
     const totalCount = last7Days.length;
@@ -166,13 +235,34 @@ export default function CoachDashboard() {
     };
   });
 
-  const avgAdherence = patientAdherence.length > 0
-    ? Math.round(patientAdherence.reduce((sum, p) => sum + p.adherenceRate, 0) / patientAdherence.length)
+  const patientsWithRecentLogs = patientAdherence.filter((patient) => patient.recentLogs > 0);
+  const avgAdherence = patientsWithRecentLogs.length > 0
+    ? Math.round(patientsWithRecentLogs.reduce((sum, p) => sum + p.adherenceRate, 0) / patientsWithRecentLogs.length)
     : 0;
 
   const handleLogout = () => {
     base44.auth.logout();
   };
+
+  if (isCheckingAccess) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="h-9 w-9 animate-spin rounded-full border-2 border-[#d8ff5f] border-t-transparent" aria-label="Loading dashboard" />
+      </div>
+    );
+  }
+
+  if (accessError) {
+    return (
+      <div className="flex min-h-screen items-center justify-center p-6">
+        <div className="max-w-md rounded-2xl border border-rose-300/20 bg-rose-400/10 p-6 text-center">
+          <AlertCircle className="mx-auto mb-3 h-7 w-7 text-rose-300" />
+          <h1 className="font-bold text-white">Dashboard unavailable</h1>
+          <p className="mt-2 text-sm leading-relaxed text-zinc-400">{accessError}</p>
+        </div>
+      </div>
+    );
+  }
 
   // Show billing paywall if subscription is invalid
   if (showPaywall) {
@@ -294,10 +384,10 @@ export default function CoachDashboard() {
           />
           <StatCard
             title="Pain Alerts"
-            value={highPainAlerts.length}
+            value={highPainAlertCount}
             subtitle="Needs attention"
             icon={AlertCircle}
-            color={highPainAlerts.length > 0 ? "rose" : "emerald"}
+            color={highPainAlertCount > 0 ? "rose" : "emerald"}
           />
         </div>
 

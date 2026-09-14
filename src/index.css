@@ -99,6 +99,23 @@
   --pt-line: rgba(255, 255, 255, 0.08);
   --pt-muted: #a1a1aa;
   --pt-highlight: #d8ff5f;
+  --background: 240 4% 9%;
+  --foreground: 0 0% 98%;
+  --card: 240 4% 15%;
+  --card-foreground: 0 0% 98%;
+  --popover: 240 4% 13%;
+  --popover-foreground: 0 0% 98%;
+  --primary: 74 100% 69%;
+  --primary-foreground: 240 6% 10%;
+  --secondary: 240 4% 17%;
+  --secondary-foreground: 0 0% 98%;
+  --muted: 240 4% 17%;
+  --muted-foreground: 240 5% 64%;
+  --accent: 240 4% 19%;
+  --accent-foreground: 0 0% 98%;
+  --border: 240 4% 22%;
+  --input: 240 4% 22%;
+  --ring: 74 100% 69%;
   color-scheme: dark;
   background:
     radial-gradient(circle at 82% 4%, rgba(216, 255, 95, 0.07), transparent 24rem),

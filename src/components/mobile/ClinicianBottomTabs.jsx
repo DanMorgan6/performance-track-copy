@@ -1,5 +1,5 @@
 import React from 'react';
-import { LayoutDashboard, UserPlus, FileText, Settings } from 'lucide-react';
+import { Building2, LayoutDashboard, UserPlus, FileText } from 'lucide-react';
 import { createPageUrl } from '@/utils';
 import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
@@ -8,7 +8,7 @@ const tabs = [
   { label: 'Dashboard', icon: LayoutDashboard, page: 'CoachDashboard' },
   { label: 'Add Patient', icon: UserPlus,       page: 'CreatePatient'  },
   { label: 'Templates', icon: FileText,         page: 'Templates'      },
-  { label: 'Profile',   icon: Settings,         page: 'ClinicSettings' },
+  { label: 'Clinic',    icon: Building2,        page: 'ClinicSettings' },
 ];
 
 export default function ClinicianBottomTabs({ currentPageName }) {

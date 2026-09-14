@@ -112,7 +112,9 @@ export default function PatientGlanceCard({
       {aiInsight && (
         <div className="mb-3">
           <button
+            type="button"
             onClick={() => setShowInsight(!showInsight)}
+            aria-expanded={showInsight}
             className="w-full rounded-xl border border-[#d8ff5f]/15 bg-[#d8ff5f]/[0.07] p-3 text-left transition-colors hover:bg-[#d8ff5f]/10"
           >
             <div className="flex items-center gap-2">
