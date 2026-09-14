@@ -1,51 +1,62 @@
 {
   "name": "Injury",
-  "type": "object",
   "properties": {
     "clinic_id": {
-      "type": "string",
-      "description": "Reference to Clinic"
+      "description": "Reference to Clinic",
+      "type": "string"
     },
-    "patient_id": {
-      "type": "string",
-      "description": "Reference to Patient"
+    "confirmed_status": {
+      "default": "suspected",
+      "description": "Whether the injury is suspected or confirmed",
+      "enum": [
+        "suspected",
+        "confirmed"
+      ],
+      "type": "string"
     },
-    "region_key": {
-      "type": "string",
-      "description": "Region from the injury diagnosis library (e.g., foot_ankle, knee, shoulder)"
-    },
-    "region_label": {
-      "type": "string",
-      "description": "Human-readable region label"
+    "date_of_injury": {
+      "description": "Date of injury",
+      "format": "date",
+      "type": "string"
     },
     "group_key": {
-      "type": "string",
-      "description": "Group within the region (e.g., ligaments, tendon, muscle)"
+      "description": "Group within the region (e.g., ligaments, tendon, muscle)",
+      "type": "string"
     },
     "group_label": {
-      "type": "string",
-      "description": "Human-readable group label"
+      "description": "Human-readable group label",
+      "type": "string"
     },
     "issue_key": {
-      "type": "string",
-      "description": "Specific diagnosis key (e.g., acl_injury, rotator_cuff_tear)"
+      "description": "Specific diagnosis key (e.g., acl_injury, rotator_cuff_tear)",
+      "type": "string"
     },
     "issue_label": {
-      "type": "string",
-      "description": "Human-readable issue label"
+      "description": "Human-readable issue label",
+      "type": "string"
     },
-    "side": {
-      "type": "string",
-      "enum": [
-        "left",
-        "right",
-        "bilateral",
-        "midline"
-      ],
-      "description": "Side of injury"
+    "modifiers_data": {
+      "description": "Additional structured data for this injury (muscle grading, disc details, meniscus details, etc.)",
+      "type": "object"
+    },
+    "notes": {
+      "description": "Clinician notes about the injury",
+      "type": "string"
+    },
+    "patient_id": {
+      "description": "Reference to Patient",
+      "type": "string"
+    },
+    "region_key": {
+      "description": "Region from the injury diagnosis library (e.g., foot_ankle, knee, shoulder)",
+      "type": "string"
+    },
+    "region_label": {
+      "description": "Human-readable region label",
+      "type": "string"
     },
     "severity": {
-      "type": "string",
+      "description": "Severity level if applicable",
       "enum": [
         "irritation",
         "sprain",
@@ -53,29 +64,17 @@
         "full_thickness_tear",
         "rupture"
       ],
-      "description": "Severity level if applicable"
+      "type": "string"
     },
-    "confirmed_status": {
-      "type": "string",
+    "side": {
+      "description": "Side of injury",
       "enum": [
-        "suspected",
-        "confirmed"
+        "left",
+        "right",
+        "bilateral",
+        "midline"
       ],
-      "default": "suspected",
-      "description": "Whether the injury is suspected or confirmed"
-    },
-    "modifiers_data": {
-      "type": "object",
-      "description": "Additional structured data for this injury (muscle grading, disc details, meniscus details, etc.)"
-    },
-    "notes": {
-      "type": "string",
-      "description": "Clinician notes about the injury"
-    },
-    "date_of_injury": {
-      "type": "string",
-      "format": "date",
-      "description": "Date of injury"
+      "type": "string"
     }
   },
   "required": [
@@ -84,5 +83,119 @@
     "region_key",
     "issue_key",
     "side"
-  ]
+  ],
+  "rls": {
+    "create": {
+      "$and": [
+        {
+          "$or": [
+            {
+              "user_condition": {
+                "role": "admin"
+              }
+            },
+            {
+              "user_condition": {
+                "role": "clinic_admin"
+              }
+            },
+            {
+              "user_condition": {
+                "role": "clinician"
+              }
+            }
+          ]
+        },
+        {
+          "data.clinic_id": "{{user.data.clinic_id}}"
+        }
+      ]
+    },
+    "delete": {
+      "$and": [
+        {
+          "$or": [
+            {
+              "user_condition": {
+                "role": "admin"
+              }
+            },
+            {
+              "user_condition": {
+                "role": "clinic_admin"
+              }
+            },
+            {
+              "user_condition": {
+                "role": "clinician"
+              }
+            }
+          ]
+        },
+        {
+          "data.clinic_id": "{{user.data.clinic_id}}"
+        }
+      ]
+    },
+    "read": {
+      "$or": [
+        {
+          "$and": [
+            {
+              "$or": [
+                {
+                  "user_condition": {
+                    "role": "admin"
+                  }
+                },
+                {
+                  "user_condition": {
+                    "role": "clinic_admin"
+                  }
+                },
+                {
+                  "user_condition": {
+                    "role": "clinician"
+                  }
+                }
+              ]
+            },
+            {
+              "data.clinic_id": "{{user.data.clinic_id}}"
+            }
+          ]
+        },
+        {
+          "data.patient_id": "{{user.data.patient_id}}"
+        }
+      ]
+    },
+    "update": {
+      "$and": [
+        {
+          "$or": [
+            {
+              "user_condition": {
+                "role": "admin"
+              }
+            },
+            {
+              "user_condition": {
+                "role": "clinic_admin"
+              }
+            },
+            {
+              "user_condition": {
+                "role": "clinician"
+              }
+            }
+          ]
+        },
+        {
+          "data.clinic_id": "{{user.data.clinic_id}}"
+        }
+      ]
+    }
+  },
+  "type": "object"
 }
