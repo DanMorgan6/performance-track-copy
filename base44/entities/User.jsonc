@@ -52,5 +52,90 @@
     "specialties",
     "booking_url"
   ],
+  "rls": {
+    "create": false,
+    "delete": {
+      "$and": [
+        {
+          "$or": [
+            {
+              "user_condition": {
+                "role": "admin"
+              }
+            },
+            {
+              "user_condition": {
+                "role": "clinic_admin"
+              }
+            }
+          ]
+        },
+        {
+          "data.clinic_id": "{{user.data.clinic_id}}"
+        }
+      ]
+    },
+    "read": {
+      "$or": [
+        {
+          "data.email": "{{user.email}}"
+        },
+        {
+          "$and": [
+            {
+              "$or": [
+                {
+                  "user_condition": {
+                    "role": "admin"
+                  }
+                },
+                {
+                  "user_condition": {
+                    "role": "clinic_admin"
+                  }
+                },
+                {
+                  "user_condition": {
+                    "role": "clinician"
+                  }
+                }
+              ]
+            },
+            {
+              "data.clinic_id": "{{user.data.clinic_id}}"
+            }
+          ]
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "data.email": "{{user.email}}"
+        },
+        {
+          "$and": [
+            {
+              "$or": [
+                {
+                  "user_condition": {
+                    "role": "admin"
+                  }
+                },
+                {
+                  "user_condition": {
+                    "role": "clinic_admin"
+                  }
+                }
+              ]
+            },
+            {
+              "data.clinic_id": "{{user.data.clinic_id}}"
+            }
+          ]
+        }
+      ]
+    }
+  },
   "type": "object"
 }
