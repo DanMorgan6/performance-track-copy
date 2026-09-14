@@ -1,38 +1,37 @@
 {
   "name": "Message",
-  "type": "object",
   "properties": {
-    "patient_id": {
-      "type": "string",
-      "description": "Reference to Patient"
-    },
     "clinic_id": {
-      "type": "string",
-      "description": "Reference to Clinic for isolation"
+      "description": "Reference to Clinic for isolation",
+      "type": "string"
+    },
+    "content": {
+      "description": "Message text content",
+      "type": "string"
+    },
+    "patient_id": {
+      "description": "Reference to Patient",
+      "type": "string"
+    },
+    "read_by_clinician": {
+      "default": false,
+      "type": "boolean"
+    },
+    "read_by_patient": {
+      "default": false,
+      "type": "boolean"
+    },
+    "sender_name": {
+      "description": "Display name of sender",
+      "type": "string"
     },
     "sender_role": {
-      "type": "string",
+      "description": "Who sent this message",
       "enum": [
         "clinician",
         "patient"
       ],
-      "description": "Who sent this message"
-    },
-    "sender_name": {
-      "type": "string",
-      "description": "Display name of sender"
-    },
-    "content": {
-      "type": "string",
-      "description": "Message text content"
-    },
-    "read_by_clinician": {
-      "type": "boolean",
-      "default": false
-    },
-    "read_by_patient": {
-      "type": "boolean",
-      "default": false
+      "type": "string"
     }
   },
   "required": [
@@ -40,5 +39,133 @@
     "clinic_id",
     "sender_role",
     "content"
-  ]
+  ],
+  "rls": {
+    "create": {
+      "$or": [
+        {
+          "$and": [
+            {
+              "$or": [
+                {
+                  "user_condition": {
+                    "role": "admin"
+                  }
+                },
+                {
+                  "user_condition": {
+                    "role": "clinic_admin"
+                  }
+                },
+                {
+                  "user_condition": {
+                    "role": "clinician"
+                  }
+                }
+              ]
+            },
+            {
+              "data.clinic_id": "{{user.data.clinic_id}}"
+            }
+          ]
+        },
+        {
+          "data.patient_id": "{{user.data.patient_id}}"
+        }
+      ]
+    },
+    "delete": {
+      "$and": [
+        {
+          "$or": [
+            {
+              "user_condition": {
+                "role": "admin"
+              }
+            },
+            {
+              "user_condition": {
+                "role": "clinic_admin"
+              }
+            },
+            {
+              "user_condition": {
+                "role": "clinician"
+              }
+            }
+          ]
+        },
+        {
+          "data.clinic_id": "{{user.data.clinic_id}}"
+        }
+      ]
+    },
+    "read": {
+      "$or": [
+        {
+          "$and": [
+            {
+              "$or": [
+                {
+                  "user_condition": {
+                    "role": "admin"
+                  }
+                },
+                {
+                  "user_condition": {
+                    "role": "clinic_admin"
+                  }
+                },
+                {
+                  "user_condition": {
+                    "role": "clinician"
+                  }
+                }
+              ]
+            },
+            {
+              "data.clinic_id": "{{user.data.clinic_id}}"
+            }
+          ]
+        },
+        {
+          "data.patient_id": "{{user.data.patient_id}}"
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "$and": [
+            {
+              "$or": [
+                {
+                  "user_condition": {
+                    "role": "admin"
+                  }
+                },
+                {
+                  "user_condition": {
+                    "role": "clinic_admin"
+                  }
+                },
+                {
+                  "user_condition": {
+                    "role": "clinician"
+                  }
+                }
+              ]
+            },
+            {
+              "data.clinic_id": "{{user.data.clinic_id}}"
+            }
+          ]
+        },
+        {
+          "data.patient_id": "{{user.data.patient_id}}"
+        }
+      ]
+    }
+  },
+  "type": "object"
 }
