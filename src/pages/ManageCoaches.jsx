@@ -7,6 +7,8 @@ import { Input } from "@/components/ui/input";
 import SeatLimitNotice from "@/components/billing/SeatLimitNotice";
 import ClinicianInviteManager from "@/components/clinician/ClinicianInviteManager";
 import PendingInvitesList from "@/components/clinician/PendingInvitesList";
+import { isClinicAdmin, isPractitioner } from '@/lib/roles';
+import { createPageUrl } from '@/utils';
 
 export default function ManageCoaches() {
   const [showInviteDialog, setShowInviteDialog] = useState(false);
@@ -23,6 +25,10 @@ export default function ManageCoaches() {
     const loadUser = async () => {
       try {
         const user = await base44.auth.me();
+        if (!isClinicAdmin(user)) {
+          window.location.href = createPageUrl('CoachDashboard');
+          return;
+        }
         setCurrentUser(user);
         
         // Load clinic data for seat limits
@@ -54,7 +60,7 @@ export default function ManageCoaches() {
     enabled: !!currentUser?.clinic_id
   });
 
-  const coaches = users.filter(u => u.clinic_id === currentUser?.clinic_id && (u.role === 'admin'));
+  const coaches = users.filter(u => u.clinic_id === currentUser?.clinic_id && isPractitioner(u));
   
   const filteredCoaches = coaches.filter(coach => 
     coach.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
