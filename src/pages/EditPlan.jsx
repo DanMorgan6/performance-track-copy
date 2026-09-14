@@ -260,6 +260,8 @@ export default function EditPlan() {
     // Update/create phases
     for (const phase of phases) {
       const phaseData = {
+        clinic_id: planData.clinic_id,
+        patient_id: planData.patient_id,
         plan_id: planId,
         phase_number: phase.phase_number,
         name: phase.name,
