@@ -145,7 +145,10 @@ Generate:
   });
 
   const createMutation = useMutation({
-    mutationFn: (data) => base44.entities.ExerciseLibrary.create(data),
+    mutationFn: async (data) => {
+      const user = await base44.auth.me();
+      return base44.entities.ExerciseLibrary.create({ ...data, clinic_id: user.clinic_id });
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['exercise-library'] });
       setShowDialog(false);
@@ -171,6 +174,7 @@ Generate:
 
   const importFromTemplatesMutation = useMutation({
     mutationFn: async () => {
+      const user = await base44.auth.me();
       // Fetch all existing exercises once
       const existingExercises = await base44.entities.ExerciseLibrary.list();
       const existingNames = new Set(existingExercises.map(e => e.name?.toLowerCase()));
@@ -192,6 +196,7 @@ Generate:
                   if (!existingNames.has(nameLower) && !seenNames.has(nameLower)) {
                     seenNames.add(nameLower);
                     exercisesToImport.push({
+                      clinic_id: user.clinic_id,
                       name: exercise.name,
                       description: exercise.description || '',
                       category: 'functional',
