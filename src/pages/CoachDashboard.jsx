@@ -4,6 +4,7 @@ import { base44 } from '@/api/base44Client';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { isSubscriptionActive } from '@/components/utils/subscriptionUtils';
+import { isClinicAdmin, isPractitioner } from '@/lib/roles';
 import BillingPaywall from '@/components/billing/BillingPaywall';
 import { 
   Users, 
@@ -90,7 +91,7 @@ export default function CoachDashboard() {
         if (!active) return;
 
         // Base44 exposes clinic practitioners through the admin role.
-        if (user.role !== 'admin') {
+        if (!isPractitioner(user)) {
           window.location.replace(createPageUrl('PatientPortal'));
           return;
         }
@@ -329,7 +330,7 @@ export default function CoachDashboard() {
             </p>
           </div>
           <div className="flex flex-wrap gap-2 lg:justify-end">
-            {currentUser?.role === 'admin' && (
+            {isClinicAdmin(currentUser) && (
               <Button 
                 onClick={() => setShowInviteDialog(true)}
                 variant="outline"
