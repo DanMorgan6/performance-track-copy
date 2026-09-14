@@ -5,7 +5,6 @@ import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { isSubscriptionActive } from '@/components/utils/subscriptionUtils';
 import BillingPaywall from '@/components/billing/BillingPaywall';
-import { format } from 'date-fns';
 import { 
   Users, 
   ClipboardList, 
@@ -14,7 +13,6 @@ import {
   Plus,
   ChevronRight,
   Search,
-  Filter,
   Key,
   Copy,
   User,
@@ -39,7 +37,6 @@ export default function CoachDashboard() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [currentUser, setCurrentUser] = useState(null);
   const [aiInsights, setAiInsights] = useState({});
-  const [viewMode, setViewMode] = useState('list'); // 'list' or 'glance'
   const [showInviteDialog, setShowInviteDialog] = useState(false);
   const [clinic, setClinic] = useState(null);
   const [showPaywall, setShowPaywall] = useState(false);
@@ -48,7 +45,7 @@ export default function CoachDashboard() {
   useEffect(() => {
     const checkAccess = async () => {
       const user = await base44.auth.me();
-      // Only admin, clinic_admin and clinician roles can access
+      // Base44 exposes clinic practitioners through the admin role.
       if (user.role !== 'admin') {
         window.location.href = createPageUrl('PatientPortal');
         return;
@@ -222,35 +219,31 @@ export default function CoachDashboard() {
 
   return (
     <PullToRefresh
-      className="min-h-screen bg-slate-50 overflow-x-hidden"
+      className="min-h-screen overflow-x-hidden"
       onRefresh={() => queryClient.invalidateQueries()}
     >
-    <div className="p-4 lg:p-8">
+    <div className="p-4 sm:p-6 lg:p-8">
       <div className="max-w-7xl mx-auto w-full">
-        {/* Header */}
-        <div className="flex flex-col items-center gap-4 mb-8">
-          {/* Clinic Logo - centered and prominent */}
-          <div className="flex flex-col items-center gap-3">
-            {clinic?.logo_url ? (
-              <img src={clinic.logo_url} alt={clinic.name} className="h-20 w-auto object-contain" />
-            ) : (
-              <img
-                src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6946eba1f08e607df3f62d4a/7490e353e_ChatGPTImageJan26202610_22_18PM.png"
-                alt="Performance Track +"
-                className="h-20 w-auto object-contain"
-              />
-            )}
-            <div className="text-center">
-              <h1 className="text-2xl font-bold text-slate-800">Welcome back</h1>
-              <p className="text-slate-500 mt-0.5 text-sm">Manage your patients and rehabilitation plans</p>
+        {/* Dashboard command header */}
+        <div className="mb-8 flex flex-col gap-5 rounded-[28px] border border-white/[0.08] bg-gradient-to-br from-white/[0.06] to-transparent p-5 sm:p-7 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-[#d8ff5f]/15 bg-[#d8ff5f]/[0.07] px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.14em] text-[#d8ff5f]">
+              <Activity className="h-3.5 w-3.5" />
+              Clinic command centre
             </div>
+            <h1 className="text-3xl font-black tracking-[-0.04em] text-white sm:text-4xl">
+              Welcome back{currentUser?.full_name ? `, ${currentUser.full_name.split(' ')[0]}` : ''}
+            </h1>
+            <p className="mt-2 max-w-xl text-sm leading-relaxed text-zinc-500 sm:text-base">
+              Review patient progress, spot clinical priorities and keep every rehabilitation plan moving.
+            </p>
           </div>
-          <div className="flex gap-2 flex-wrap justify-center">
-            {currentUser?.role === 'clinic_admin' && (
+          <div className="flex flex-wrap gap-2 lg:justify-end">
+            {currentUser?.role === 'admin' && (
               <Button 
                 onClick={() => setShowInviteDialog(true)}
                 variant="outline"
-                className="rounded-xl border-slate-200 text-sm"
+                className="rounded-xl border-white/10 bg-white/[0.03] text-sm text-zinc-300 hover:bg-white/[0.07] hover:text-white"
                 size="sm"
               >
                 <Plus className="w-4 h-4 mr-2" />
@@ -258,17 +251,17 @@ export default function CoachDashboard() {
               </Button>
             )}
             <Link to={createPageUrl('ClinicalProfile')}>
-              <Button variant="outline" className="rounded-xl text-sm" size="sm">
+              <Button variant="outline" className="rounded-xl border-white/10 bg-white/[0.03] text-sm text-zinc-300 hover:bg-white/[0.07] hover:text-white" size="sm">
                 <User className="w-4 h-4 mr-2" />
                 Profile
               </Button>
             </Link>
-            <Button onClick={handleLogout} variant="outline" className="rounded-xl text-sm" size="sm">
+            <Button onClick={handleLogout} variant="outline" className="rounded-xl border-white/10 bg-white/[0.03] text-sm text-zinc-300 hover:bg-white/[0.07] hover:text-white" size="sm">
               <LogOut className="w-4 h-4 mr-2" />
               Logout
             </Button>
             <Link to={createPageUrl('CreatePatient')}>
-              <Button className="bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-sm" size="sm">
+              <Button className="rounded-xl bg-[#d8ff5f] text-sm font-bold text-zinc-950 shadow-[0_0_22px_rgba(216,255,95,0.15)] hover:bg-[#e4ff91]" size="sm">
                 <Plus className="w-4 h-4 mr-2" />
                 Add Patient
               </Button>
@@ -277,7 +270,7 @@ export default function CoachDashboard() {
         </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <div className="mb-8 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
           <StatCard
             title="Active Patients"
             value={activePatients.length}
@@ -310,20 +303,20 @@ export default function CoachDashboard() {
 
         {/* Main Content Tabs */}
         <Tabs defaultValue="patients" className="w-full">
-          <TabsList className="bg-white border border-slate-100 rounded-xl p-1 mb-4 md:mb-6 h-auto w-full grid grid-cols-2">
-            <TabsTrigger value="patients" className="rounded-lg text-xs sm:text-sm select-none min-h-[44px]">Patients</TabsTrigger>
-            <TabsTrigger value="glance" className="rounded-lg text-xs sm:text-sm select-none min-h-[44px]">At-a-Glance</TabsTrigger>
+          <TabsList className="mb-4 grid h-auto w-full max-w-md grid-cols-2 rounded-2xl border border-white/[0.08] bg-[#242427] p-1 md:mb-6">
+            <TabsTrigger value="patients" className="min-h-[44px] select-none rounded-xl text-xs text-zinc-500 sm:text-sm">Patients</TabsTrigger>
+            <TabsTrigger value="glance" className="min-h-[44px] select-none rounded-xl text-xs text-zinc-500 sm:text-sm">At-a-Glance</TabsTrigger>
 
           </TabsList>
 
           <TabsContent value="glance">
             <div className="space-y-5">
               {/* AI Insights Generator */}
-              <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm">
+              <div className="rounded-[24px] border border-white/[0.08] bg-[#242427] p-5 shadow-xl shadow-black/10">
                 <div className="flex items-center justify-between mb-4">
                   <div>
-                    <h3 className="text-lg font-semibold text-slate-900">Patient Overview</h3>
-                    <p className="text-sm text-slate-500">Quick summary with AI-powered insights</p>
+                    <h3 className="text-lg font-bold text-white">Patient overview</h3>
+                    <p className="text-sm text-zinc-500">A concise summary with practitioner-approved AI support</p>
                   </div>
                   <AIInsightsGenerator
                     patients={patients}
@@ -357,7 +350,7 @@ export default function CoachDashboard() {
               </div>
 
               {patientMetrics.length === 0 && (
-                <div className="bg-white rounded-2xl p-10 border border-slate-100 text-center shadow-sm">
+                <div className="rounded-[24px] border border-white/[0.08] bg-[#242427] p-10 text-center shadow-xl shadow-black/10">
                   <Users className="w-12 h-12 text-slate-200 mx-auto mb-3" />
                   <p className="text-slate-500">No patients found</p>
                 </div>
@@ -367,10 +360,13 @@ export default function CoachDashboard() {
 
           <TabsContent value="patients">
         {/* Patient List */}
-        <div className="bg-white rounded-2xl border border-slate-100 overflow-hidden shadow-sm">
-          <div className="p-5 border-b border-slate-100">
+        <div className="overflow-hidden rounded-[24px] border border-white/[0.08] bg-[#242427] shadow-2xl shadow-black/10">
+          <div className="border-b border-white/[0.08] p-5">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <h2 className="text-base font-semibold text-slate-800">Patients</h2>
+              <div>
+                <h2 className="text-base font-bold text-white">Patients</h2>
+                <p className="mt-1 text-xs text-zinc-500">{filteredPatients.length} shown · {activePatients.length} active</p>
+              </div>
 
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                 {/* Bulk messaging toggle */}
@@ -381,7 +377,7 @@ export default function CoachDashboard() {
                     <Button
                       variant="outline"
                       size="sm"
-                      className="rounded-xl text-xs whitespace-nowrap"
+                      className="whitespace-nowrap rounded-xl border-white/10 bg-white/[0.03] text-xs text-zinc-300 hover:bg-white/[0.07] hover:text-white"
                       onClick={async () => {
                         const newState = !allEnabled;
                         await Promise.all(
@@ -401,7 +397,7 @@ export default function CoachDashboard() {
                     placeholder="Search patients..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-9 rounded-xl border-slate-200"
+                    className="rounded-xl border-white/10 bg-black/10 pl-9 text-white"
                   />
                 </div>
                 <MobileSelect
@@ -423,7 +419,7 @@ export default function CoachDashboard() {
 
           {patientsLoading ? (
             <div className="p-10 text-center">
-              <div className="animate-spin w-8 h-8 border-2 border-teal-500 border-t-transparent rounded-full mx-auto" />
+              <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-[#d8ff5f] border-t-transparent" />
             </div>
           ) : filteredPatients.length === 0 ? (
             <div className="p-10 text-center">
@@ -441,12 +437,12 @@ export default function CoachDashboard() {
                 const activeInvite = allPatientInvites.find(inv => inv.patient_email === patient.email && inv.status === 'active');
 
                 return (
-                 <div key={patient.id} className="flex items-center gap-2 md:gap-5 p-3 md:p-5 hover:bg-slate-50 transition-colors group">
+                 <div key={patient.id} className="group flex items-center gap-2 p-3 transition-colors hover:bg-white/[0.035] md:gap-5 md:p-5">
                  <Link 
                    to={createPageUrl(`PatientDetail?id=${patient.id}`)}
                    className="flex-1 flex items-center gap-3 md:gap-5 min-w-0 select-none"
                  >
-                   <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl md:rounded-2xl bg-gradient-to-br from-purple-500 to-purple-700 flex items-center justify-center text-white font-semibold text-base flex-shrink-0">
+                   <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-[#d8ff5f] text-base font-black text-zinc-950 md:h-12 md:w-12 md:rounded-2xl">
                      {patient.full_name?.charAt(0)?.toUpperCase()}
                    </div>
 
@@ -474,7 +470,7 @@ export default function CoachDashboard() {
                             Phase {activePlan.current_phase}/{activePlan.total_phases}
                           </span>
                         )}
-                        {latestPain?.pain_level && (
+                        {Number.isFinite(latestPain?.pain_level) && (
                           <span className={cn(
                             "px-2 py-0.5 rounded-full text-xs font-medium md:hidden",
                             latestPain.pain_level <= 3 && "bg-emerald-100 text-emerald-700",
@@ -518,7 +514,7 @@ export default function CoachDashboard() {
                     </div>
 
                     <div className="hidden md:block text-right">
-                       {latestPain?.pain_level && (
+                       {Number.isFinite(latestPain?.pain_level) && (
                          <div className="flex items-center gap-2">
                            <span className="text-xs text-slate-400">Last pain:</span>
                            <span className={cn(
@@ -547,7 +543,7 @@ export default function CoachDashboard() {
                     </Link>
                     <Link 
                       to={createPageUrl(`CreatePlan?patient_id=${patient.id}`)}
-                      className="hidden md:block px-3 py-1 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-medium transition-colors whitespace-nowrap"
+                      className="hidden whitespace-nowrap rounded-xl bg-[#d8ff5f] px-3 py-2 text-xs font-bold text-zinc-950 transition-colors hover:bg-[#e4ff91] md:block"
                     >
                       Create Plan
                     </Link>

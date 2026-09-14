@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { base44 } from '@/api/base44Client';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
 import { Button } from "@/components/ui/button";
 import { 
   TrendingUp, 
@@ -11,9 +11,7 @@ import {
   Activity,
   Mail,
   ChevronRight,
-  Sparkles,
-  Check,
-  X
+  Sparkles
 } from 'lucide-react';
 import { cn } from "@/lib/utils";
 
@@ -25,7 +23,6 @@ export default function PatientGlanceCard({
   pendingOutcomes,
   aiInsight 
 }) {
-  const queryClient = useQueryClient();
   const [showInsight, setShowInsight] = useState(false);
 
   const sendReminderMutation = useMutation({
@@ -50,24 +47,25 @@ export default function PatientGlanceCard({
     }
   });
 
-  const painColor = !avgPainLevel ? 'text-slate-400' : avgPainLevel <= 3 ? 'text-emerald-600' : avgPainLevel <= 6 ? 'text-amber-600' : 'text-rose-600';
+  const hasPainData = Number.isFinite(avgPainLevel);
+  const painColor = !hasPainData ? 'text-slate-400' : avgPainLevel <= 3 ? 'text-emerald-600' : avgPainLevel <= 6 ? 'text-amber-600' : 'text-rose-600';
   const adherenceColor = adherenceRate >= 75 ? 'text-emerald-600' : adherenceRate >= 50 ? 'text-amber-600' : 'text-rose-600';
 
   return (
-    <div className="bg-white rounded-2xl p-5 border border-slate-100 hover:shadow-lg transition-all">
+    <article className="group rounded-[24px] border border-white/[0.08] bg-[#242427] p-5 transition-all duration-300 hover:-translate-y-0.5 hover:border-[#d8ff5f]/25 hover:shadow-2xl hover:shadow-black/20">
       {/* Header */}
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-start gap-3">
-          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-purple-700 flex items-center justify-center text-white font-bold text-lg flex-shrink-0">
+          <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-2xl bg-[#d8ff5f] text-lg font-black text-zinc-950 shadow-[0_0_22px_rgba(216,255,95,0.12)]">
             {patient.full_name?.charAt(0)?.toUpperCase()}
           </div>
           <div>
-            <h3 className="font-semibold text-slate-900">{patient.full_name}</h3>
-            <p className="text-xs text-slate-500">{patient.injury_type || 'No condition'}</p>
+            <h3 className="font-bold text-white">{patient.full_name}</h3>
+            <p className="mt-0.5 text-xs text-zinc-500">{patient.injury_type || 'No condition'}</p>
           </div>
         </div>
         <Link to={createPageUrl(`PatientDetail?id=${patient.id}`)}>
-          <Button variant="ghost" size="sm" className="rounded-xl">
+          <Button variant="ghost" size="sm" className="rounded-xl text-zinc-500 hover:bg-white/5 hover:text-white" aria-label={`View ${patient.full_name}`}>
             <ChevronRight className="w-4 h-4" />
           </Button>
         </Link>
@@ -75,7 +73,7 @@ export default function PatientGlanceCard({
 
       {/* Metrics Grid */}
       <div className="grid grid-cols-3 gap-2 mb-4">
-        <div className="bg-slate-50 rounded-lg p-2 text-center">
+        <div className="rounded-xl border border-white/[0.06] bg-black/[0.15] p-2 text-center">
           <div className="flex items-center justify-center gap-1 mb-1">
             <Activity className="w-3 h-3 text-slate-500" />
             <span className="text-xs text-slate-600">Adherence</span>
@@ -85,14 +83,14 @@ export default function PatientGlanceCard({
           </p>
         </div>
 
-        <div className="bg-slate-50 rounded-lg p-2 text-center">
+        <div className="rounded-xl border border-white/[0.06] bg-black/[0.15] p-2 text-center">
           <div className="flex items-center justify-center gap-1 mb-1">
             <AlertCircle className="w-3 h-3 text-slate-500" />
             <span className="text-xs text-slate-600">Pain</span>
           </div>
           <div className="flex items-center justify-center gap-1">
             <p className={cn("text-lg font-bold", painColor)}>
-              {avgPainLevel ? avgPainLevel.toFixed(1) : 'N/A'}
+              {hasPainData ? avgPainLevel.toFixed(1) : 'N/A'}
             </p>
             {painTrend !== 'stable' && (
               painTrend === 'increasing' ? 
@@ -102,7 +100,7 @@ export default function PatientGlanceCard({
           </div>
         </div>
 
-        <div className="bg-slate-50 rounded-lg p-2 text-center">
+        <div className="rounded-xl border border-white/[0.06] bg-black/[0.15] p-2 text-center">
           <span className="text-xs text-slate-600 block mb-1">Pending</span>
           <p className="text-lg font-bold text-slate-900">
             {pendingOutcomes}
@@ -115,14 +113,14 @@ export default function PatientGlanceCard({
         <div className="mb-3">
           <button
             onClick={() => setShowInsight(!showInsight)}
-            className="w-full text-left p-3 bg-purple-50 rounded-xl border border-purple-100 hover:bg-purple-100 transition-colors"
+            className="w-full rounded-xl border border-[#d8ff5f]/15 bg-[#d8ff5f]/[0.07] p-3 text-left transition-colors hover:bg-[#d8ff5f]/10"
           >
             <div className="flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-purple-600" />
-              <span className="text-sm font-medium text-purple-900">AI Insight</span>
+              <Sparkles className="h-4 w-4 text-[#d8ff5f]" />
+              <span className="text-sm font-semibold text-[#d8ff5f]">AI Insight</span>
             </div>
             {showInsight && (
-              <p className="text-xs text-purple-700 mt-2">{aiInsight}</p>
+              <p className="mt-2 text-xs leading-relaxed text-zinc-300">{aiInsight}</p>
             )}
           </button>
         </div>
@@ -135,7 +133,7 @@ export default function PatientGlanceCard({
           disabled={sendReminderMutation.isPending}
           variant="outline"
           size="sm"
-          className="flex-1 rounded-xl text-xs"
+          className="flex-1 rounded-xl border-white/10 bg-white/[0.03] text-xs text-zinc-300 hover:bg-white/[0.07] hover:text-white"
         >
           <Mail className="w-3 h-3 mr-1" />
           Exercise
@@ -146,13 +144,13 @@ export default function PatientGlanceCard({
             disabled={sendReminderMutation.isPending}
             variant="outline"
             size="sm"
-            className="flex-1 rounded-xl text-xs"
+            className="flex-1 rounded-xl border-white/10 bg-white/[0.03] text-xs text-zinc-300 hover:bg-white/[0.07] hover:text-white"
           >
             <Mail className="w-3 h-3 mr-1" />
             Outcomes
           </Button>
         )}
       </div>
-    </div>
+    </article>
   );
 }
