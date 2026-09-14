@@ -94,7 +94,8 @@ export default function PatientInviteAccept() {
       // Update user profile
       await base44.auth.updateMe({
         clinic_id: invite.clinic_id,
-        role_type: 'patient',
+        patient_id: patient.id,
+        role: 'patient',
         onboarding_completed: true
       });
 
