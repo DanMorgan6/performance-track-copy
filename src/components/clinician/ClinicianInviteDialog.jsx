@@ -19,6 +19,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { isSubscriptionActive, calculateMonthlyPrice, formatPrice } from '@/components/utils/subscriptionUtils';
+import { isPractitioner } from '@/lib/roles';
 import { Mail, Send, Loader2, AlertCircle, CheckCircle2, CreditCard } from 'lucide-react';
 
 export default function ClinicianInviteDialog({ clinicId, open, onOpenChange }) {
@@ -46,7 +47,7 @@ export default function ClinicianInviteDialog({ clinicId, open, onOpenChange }) 
     queryFn: async () => {
       if (!clinicId) return [];
       const users = await base44.entities.User.list();
-      return users.filter(u => u.role === 'admin' && u.clinic_id === clinicId);
+      return users.filter(u => isPractitioner(u) && u.clinic_id === clinicId);
     },
     enabled: !!clinicId
   });
