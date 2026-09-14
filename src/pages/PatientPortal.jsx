@@ -268,6 +268,7 @@ export default function PatientPortal() {
   const createPainLogMutation = useMutation({
     mutationFn: (data) => base44.entities.PainLog.create({
       ...data,
+      clinic_id: patient.clinic_id,
       patient_id: patient.id,
       date: new Date().toISOString().split('T')[0]
     }),
@@ -289,6 +290,7 @@ export default function PatientPortal() {
   const createExerciseLogMutation = useMutation({
     mutationFn: (data) => base44.entities.ExerciseLog.create({
       ...data,
+      clinic_id: patient.clinic_id,
       patient_id: patient.id,
       phase_id: currentPhase?.id,
       date: new Date().toISOString().split('T')[0]
@@ -309,6 +311,7 @@ export default function PatientPortal() {
   const createDailyNoteMutation = useMutation({
     mutationFn: (data) => base44.entities.DailyNote.create({
       ...data,
+      clinic_id: patient.clinic_id,
       patient_id: patient.id,
       date: new Date().toISOString().split('T')[0]
     }),
