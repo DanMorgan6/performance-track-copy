@@ -1,38 +1,30 @@
 {
   "name": "OutcomeMeasure",
-  "type": "object",
   "properties": {
-    "name": {
-      "type": "string",
-      "description": "Name of the outcome measure"
+    "clinic_id": {
+      "description": "Owning clinic; measures are private to the clinic",
+      "type": "string"
     },
     "condition": {
-      "type": "string",
-      "description": "Condition this measure is for"
+      "description": "Condition this measure is for",
+      "type": "string"
     },
     "description": {
       "type": "string"
     },
-    "total_score_max": {
-      "type": "number",
-      "description": "Maximum possible score"
-    },
     "interpretation_guide": {
-      "type": "string",
-      "description": "How to interpret the scores"
+      "description": "How to interpret the scores",
+      "type": "string"
+    },
+    "name": {
+      "description": "Name of the outcome measure",
+      "type": "string"
     },
     "questions": {
-      "type": "array",
       "items": {
-        "type": "object",
         "properties": {
-          "question": {
-            "type": "string"
-          },
           "options": {
-            "type": "array",
             "items": {
-              "type": "object",
               "properties": {
                 "label": {
                   "type": "string"
@@ -40,14 +32,26 @@
                 "score": {
                   "type": "number"
                 }
-              }
-            }
+              },
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "question": {
+            "type": "string"
           }
-        }
-      }
+        },
+        "type": "object"
+      },
+      "type": "array"
+    },
+    "total_score_max": {
+      "description": "Maximum possible score",
+      "type": "number"
     }
   },
   "required": [
     "name"
-  ]
+  ],
+  "type": "object"
 }
