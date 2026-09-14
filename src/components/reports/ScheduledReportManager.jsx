@@ -46,6 +46,7 @@ export default function ScheduledReportManager({ patientId, patientName }) {
 
       return base44.entities.ScheduledReport.create({
         ...data,
+        clinic_id: user.clinic_id,
         patient_id: patientId,
         clinician_email: user.email,
         next_generation_date: nextDate.toISOString().split('T')[0],
