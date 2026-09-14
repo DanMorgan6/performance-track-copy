@@ -20,6 +20,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { isPractitioner } from '@/lib/roles';
 import ExerciseThumbnail from "@/components/exercise/ExerciseThumbnail";
 import ExerciseVideoPreview from "@/components/exercise/ExerciseVideoPreview";
 import {
@@ -47,7 +48,7 @@ export default function ExerciseLibrary() {
   React.useEffect(() => {
     const checkAccess = async () => {
       const currentUser = await base44.auth.me();
-      if (currentUser.role !== 'admin') {
+      if (!isPractitioner(currentUser)) {
         window.location.href = createPageUrl('PatientPortal');
       }
     };
