@@ -81,35 +81,28 @@
   ],
   "rls": {
     "create": {
-      "$or": [
+      "$and": [
         {
-          "$and": [
+          "$or": [
             {
-              "$or": [
-                {
-                  "user_condition": {
-                    "role": "admin"
-                  }
-                },
-                {
-                  "user_condition": {
-                    "role": "clinic_admin"
-                  }
-                },
-                {
-                  "user_condition": {
-                    "role": "clinician"
-                  }
-                }
-              ]
+              "user_condition": {
+                "role": "admin"
+              }
             },
             {
-              "data.clinic_id": "{{user.data.clinic_id}}"
+              "user_condition": {
+                "role": "clinic_admin"
+              }
+            },
+            {
+              "user_condition": {
+                "role": "clinician"
+              }
             }
           ]
         },
         {
-          "data.email": "{{user.email}}"
+          "data.clinic_id": "{{user.data.clinic_id}}"
         }
       ]
     },
