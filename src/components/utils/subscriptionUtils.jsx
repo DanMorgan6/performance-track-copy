@@ -1,81 +1,71 @@
 /**
- * Subscription utilities for managing clinic billing
+ * Subscription utilities for clinic billing.
+ * Prices are inclusive monthly subscription amounts in pence.
  */
 
-// Calculate monthly price in pence based on seat count
-// Formula: £25 + (max(0, seats - 1) * £15)
-export function calculateMonthlyPrice(seatCount) {
-  const basePriceGBP = 25;
-  const additionalSeatPriceGBP = 15;
-  
-  const totalPriceGBP = basePriceGBP + Math.max(0, seatCount - 1) * additionalSeatPriceGBP;
-  return Math.round(totalPriceGBP * 100); // Convert to pence
+export const SMALL_CLINIC_MAX_PRACTITIONERS = 5;
+export const SELF_SERVICE_MAX_PRACTITIONERS = 10;
+
+export function calculateMonthlyPrice(practitionerCount = 0) {
+  const count = Math.max(0, Number(practitionerCount) || 0);
+  if (count > SELF_SERVICE_MAX_PRACTITIONERS) return null;
+  return count <= SMALL_CLINIC_MAX_PRACTITIONERS ? 3000 : 4500;
 }
 
-// Check if clinic subscription is active/valid
+export function isTrialStatus(status) {
+  return status === 'trial' || status === 'trialing';
+}
+
+export function isTrialValid(clinic) {
+  if (!clinic || !isTrialStatus(clinic.subscription_status) || !clinic.trial_end_date) return false;
+  return new Date(clinic.trial_end_date).getTime() > Date.now();
+}
+
 export function isSubscriptionActive(clinic) {
   if (!clinic) return false;
-  
-  const validStatuses = ['trialing', 'active'];
-  return validStatuses.includes(clinic.subscription_status);
+  if (clinic.subscription_status === 'active') return true;
+  return isTrialValid(clinic);
 }
 
-// Check if trial is still valid
-export function isTrialValid(clinic) {
-  if (!clinic || clinic.subscription_status !== 'trialing') return false;
-  if (!clinic.trial_end_date) return false;
-  
-  return new Date(clinic.trial_end_date) > new Date();
-}
-
-// Get days remaining in trial (returns negative if expired)
 export function getTrialDaysRemaining(clinic) {
   if (!clinic?.trial_end_date) return 0;
-  
-  const now = new Date();
-  const trialEnd = new Date(clinic.trial_end_date);
-  const daysRemaining = Math.ceil((trialEnd - now) / (1000 * 60 * 60 * 24));
-  
-  return daysRemaining;
+  const trialEnd = new Date(clinic.trial_end_date).getTime();
+  if (!Number.isFinite(trialEnd)) return 0;
+  return Math.ceil((trialEnd - Date.now()) / 86400000);
 }
 
-// Get human-readable trial status
 export function getTrialStatus(clinic) {
-  if (!clinic) return 'unknown';
-  if (clinic.subscription_status === 'trialing') {
-    const daysRemaining = getTrialDaysRemaining(clinic);
-    if (daysRemaining > 0) {
-      return `${daysRemaining} days remaining`;
-    }
-    return 'Expired';
-  }
-  return 'Not on trial';
+  if (!clinic) return 'Unknown';
+  if (!isTrialStatus(clinic.subscription_status)) return 'Not on trial';
+  const daysRemaining = getTrialDaysRemaining(clinic);
+  return daysRemaining > 0 ? `${daysRemaining} days remaining` : 'Expired';
 }
 
-// Format price for display
 export function formatPrice(pricePence) {
-  const poundsAndPence = (pricePence / 100).toFixed(2);
-  return `£${poundsAndPence}`;
+  if (pricePence === null || pricePence === undefined) return 'Contact us';
+  const pounds = pricePence / 100;
+  return new Intl.NumberFormat('en-GB', {
+    style: 'currency',
+    currency: 'GBP',
+    minimumFractionDigits: pounds % 1 === 0 ? 0 : 2,
+  }).format(pounds);
 }
 
-// Get subscription reason for billing paywall
 export function getSubscriptionBlockReason(clinic) {
-  if (!clinic) return 'Unable to verify subscription';
-  
-  if (clinic.subscription_status === 'trialing') {
+  if (!clinic) return 'Unable to verify subscription.';
+
+  if (isTrialStatus(clinic.subscription_status)) {
     const daysRemaining = getTrialDaysRemaining(clinic);
-    if (daysRemaining <= 0) {
-      return 'Your trial has ended. Please subscribe to continue.';
-    }
+    if (daysRemaining <= 0) return 'Your trial has ended. Please subscribe to continue.';
     return `Your trial ends in ${daysRemaining} days. Set up billing now.`;
   }
-  
+
   const reasonMap = {
-    'past_due': 'Your payment is overdue. Please update your payment method.',
-    'unpaid': 'Your subscription payment failed. Please update your payment method.',
-    'canceled': 'Your subscription has been canceled. Reactivate to continue.',
-    'incomplete': 'Your subscription setup is incomplete. Please complete checkout.'
+    past_due: 'Your payment is overdue. Please update your payment method.',
+    unpaid: 'Your subscription payment failed. Please update your payment method.',
+    canceled: 'Your subscription has been cancelled. Reactivate to continue.',
+    incomplete: 'Your subscription setup is incomplete. Please complete checkout.',
   };
-  
+
   return reasonMap[clinic.subscription_status] || 'Please contact support.';
 }
