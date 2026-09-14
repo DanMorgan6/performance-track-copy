@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { Button } from "@/components/ui/button";
 import { AlertCircle, Calendar, CreditCard, ArrowRight } from 'lucide-react';
-import { getSubscriptionBlockReason, getTrialDaysRemaining } from '@/components/utils/subscriptionUtils';
+import { getSubscriptionBlockReason, getTrialDaysRemaining, isTrialStatus } from '@/components/utils/subscriptionUtils';
 
 /**
  * Billing paywall shown when subscription is invalid
@@ -32,13 +32,13 @@ export default function BillingPaywall({ clinic, userRole }) {
           {/* Heading */}
           <div className="text-center space-y-2">
             <h1 className="text-2xl font-bold text-slate-900">
-              {clinic?.subscription_status === 'trialing' ? 'Trial Ending' : 'Subscription Required'}
+              {isTrialStatus(clinic?.subscription_status) ? 'Trial Ending' : 'Subscription Required'}
             </h1>
             <p className="text-slate-600">{reason}</p>
           </div>
 
           {/* Trial Info (if trialing) */}
-          {clinic?.subscription_status === 'trialing' && daysRemaining > 0 && (
+          {isTrialStatus(clinic?.subscription_status) && daysRemaining > 0 && (
             <div className="bg-blue-50 border border-blue-200 rounded-2xl p-4 space-y-3">
               <div className="flex items-center gap-3">
                 <Calendar className="w-5 h-5 text-blue-600 flex-shrink-0" />
