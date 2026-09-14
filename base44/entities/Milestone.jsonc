@@ -1,45 +1,38 @@
 {
   "name": "Milestone",
-  "type": "object",
   "properties": {
     "clinic_id": {
-      "type": "string",
-      "description": "Reference to Clinic - required for multi-clinic isolation"
+      "description": "Reference to Clinic - required for multi-clinic isolation",
+      "type": "string"
     },
-    "patient_id": {
-      "type": "string",
-      "description": "Reference to Patient"
-    },
-    "plan_id": {
-      "type": "string",
-      "description": "Reference to RehabPlan"
+    "created_by": {
+      "type": "string"
     },
     "date": {
-      "type": "string",
+      "description": "Date of the milestone",
       "format": "date",
-      "description": "Date of the milestone"
+      "type": "string"
     },
-    "type": {
-      "type": "string",
-      "enum": [
-        "testing"
-      ],
-      "default": "testing",
-      "description": "Type of milestone"
+    "notes": {
+      "type": "string"
     },
-    "title": {
-      "type": "string",
-      "description": "Milestone title"
+    "outcomes_published": {
+      "default": false,
+      "description": "Whether outcomes are visible to patient",
+      "type": "boolean"
+    },
+    "patient_id": {
+      "description": "Reference to Patient",
+      "type": "string"
+    },
+    "plan_id": {
+      "description": "Reference to RehabPlan",
+      "type": "string"
     },
     "tests": {
-      "type": "array",
       "description": "Planned tests for this milestone",
       "items": {
-        "type": "object",
         "properties": {
-          "test_name": {
-            "type": "string"
-          },
           "category": {
             "type": "string"
           },
@@ -49,36 +42,42 @@
           "notes": {
             "type": "string"
           },
-          "outcome_value": {
-            "type": "string"
-          },
-          "outcome_unit": {
-            "type": "string"
-          },
           "outcome_notes": {
             "type": "string"
           },
           "outcome_status": {
-            "type": "string",
             "enum": [
               "pending",
               "pass",
               "fail",
               "partial"
-            ]
+            ],
+            "type": "string"
+          },
+          "outcome_unit": {
+            "type": "string"
+          },
+          "outcome_value": {
+            "type": "string"
+          },
+          "test_name": {
+            "type": "string"
           }
-        }
-      }
+        },
+        "type": "object"
+      },
+      "type": "array"
     },
-    "notes": {
+    "title": {
+      "description": "Milestone title",
       "type": "string"
     },
-    "outcomes_published": {
-      "type": "boolean",
-      "default": false,
-      "description": "Whether outcomes are visible to patient"
-    },
-    "created_by": {
+    "type": {
+      "default": "testing",
+      "description": "Type of milestone",
+      "enum": [
+        "testing"
+      ],
       "type": "string"
     }
   },
@@ -88,5 +87,119 @@
     "plan_id",
     "date",
     "type"
-  ]
+  ],
+  "rls": {
+    "create": {
+      "$and": [
+        {
+          "$or": [
+            {
+              "user_condition": {
+                "role": "admin"
+              }
+            },
+            {
+              "user_condition": {
+                "role": "clinic_admin"
+              }
+            },
+            {
+              "user_condition": {
+                "role": "clinician"
+              }
+            }
+          ]
+        },
+        {
+          "data.clinic_id": "{{user.data.clinic_id}}"
+        }
+      ]
+    },
+    "delete": {
+      "$and": [
+        {
+          "$or": [
+            {
+              "user_condition": {
+                "role": "admin"
+              }
+            },
+            {
+              "user_condition": {
+                "role": "clinic_admin"
+              }
+            },
+            {
+              "user_condition": {
+                "role": "clinician"
+              }
+            }
+          ]
+        },
+        {
+          "data.clinic_id": "{{user.data.clinic_id}}"
+        }
+      ]
+    },
+    "read": {
+      "$or": [
+        {
+          "$and": [
+            {
+              "$or": [
+                {
+                  "user_condition": {
+                    "role": "admin"
+                  }
+                },
+                {
+                  "user_condition": {
+                    "role": "clinic_admin"
+                  }
+                },
+                {
+                  "user_condition": {
+                    "role": "clinician"
+                  }
+                }
+              ]
+            },
+            {
+              "data.clinic_id": "{{user.data.clinic_id}}"
+            }
+          ]
+        },
+        {
+          "data.patient_id": "{{user.data.patient_id}}"
+        }
+      ]
+    },
+    "update": {
+      "$and": [
+        {
+          "$or": [
+            {
+              "user_condition": {
+                "role": "admin"
+              }
+            },
+            {
+              "user_condition": {
+                "role": "clinic_admin"
+              }
+            },
+            {
+              "user_condition": {
+                "role": "clinician"
+              }
+            }
+          ]
+        },
+        {
+          "data.clinic_id": "{{user.data.clinic_id}}"
+        }
+      ]
+    }
+  },
+  "type": "object"
 }
