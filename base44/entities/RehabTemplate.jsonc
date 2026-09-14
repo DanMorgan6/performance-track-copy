@@ -1,176 +1,141 @@
 {
   "name": "RehabTemplate",
-  "type": "object",
   "properties": {
-    "name": {
-      "type": "string",
-      "description": "Template name"
-    },
-    "description": {
+    "clinic_id": {
+      "description": "Owning clinic; templates are private to the clinic",
       "type": "string"
     },
     "condition_type": {
-      "type": "string",
-      "description": "e.g., ACL Recovery, Rotator Cuff, Lower Back Pain"
+      "description": "e.g., ACL Recovery, Rotator Cuff, Lower Back Pain",
+      "type": "string"
     },
-    "total_phases": {
-      "type": "number"
+    "description": {
+      "type": "string"
     },
     "estimated_duration_weeks": {
       "type": "number"
     },
     "is_public": {
-      "type": "boolean",
       "default": false,
-      "description": "Whether this template is shared with other clinicians"
+      "description": "Whether this template is shared with other clinicians",
+      "type": "boolean"
+    },
+    "name": {
+      "description": "Template name",
+      "type": "string"
     },
     "phases": {
-      "type": "array",
       "items": {
-        "type": "object",
         "properties": {
-          "phase_number": {
-            "type": "number"
-          },
-          "name": {
-            "type": "string"
-          },
           "description": {
             "type": "string"
           },
           "duration_weeks": {
             "type": "number"
           },
-          "exit_criteria": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "criterion": {
-                  "type": "string"
-                },
-                "target_value": {
-                  "type": "string"
-                },
-                "is_met": {
-                  "type": "boolean"
-                }
-              }
-            }
-          },
           "exercises": {
-            "type": "array",
             "items": {
-              "type": "object",
               "properties": {
+                "description": {
+                  "type": "string"
+                },
+                "frequency": {
+                  "type": "string"
+                },
                 "library_exercise_id": {
                   "type": "string"
                 },
                 "name": {
                   "type": "string"
                 },
-                "description": {
+                "reps": {
                   "type": "string"
                 },
                 "sets": {
                   "type": "number"
                 },
-                "reps": {
-                  "type": "string"
-                },
-                "frequency": {
-                  "type": "string"
-                },
                 "video_url": {
                   "type": "string"
                 }
-              }
-            }
+              },
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "exit_criteria": {
+            "items": {
+              "properties": {
+                "criterion": {
+                  "type": "string"
+                },
+                "is_met": {
+                  "type": "boolean"
+                },
+                "target_value": {
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "name": {
+            "type": "string"
+          },
+          "phase_number": {
+            "type": "number"
           },
           "weeks": {
-            "type": "array",
             "items": {
-              "type": "object",
               "properties": {
-                "week_number": {
-                  "type": "number"
-                },
                 "daily_schedule": {
-                  "type": "array",
                   "items": {
-                    "type": "object",
                     "properties": {
-                      "day": {
-                        "type": "string"
-                      },
-                      "type": {
-                        "type": "string"
-                      },
-                      "emphasis": {
-                        "type": "string"
-                      },
-                      "session_title": {
-                        "type": "string"
-                      },
-                      "duration": {
-                        "type": "string"
-                      },
-                      "load_target": {
-                        "type": "string"
-                      },
-                      "session_note": {
-                        "type": "string"
-                      },
-                      "exercises": {
-                        "type": "array",
-                        "items": {
-                          "type": "object",
-                          "properties": {
-                            "name": {
-                              "type": "string"
-                            },
-                            "description": {
-                              "type": "string"
-                            },
-                            "sets": {
-                              "type": "number"
-                            },
-                            "reps": {
-                              "type": "string"
-                            },
-                            "weight": {
-                              "type": "string"
-                            },
-                            "hold": {
-                              "type": "string"
-                            },
-                            "tempo": {
-                              "type": "string"
-                            },
-                            "duration": {
-                              "type": "string"
-                            },
-                            "rest": {
-                              "type": "string"
-                            },
-                            "rpe": {
-                              "type": "string"
-                            },
-                            "notes": {
-                              "type": "string"
-                            },
-                            "video_url": {
-                              "type": "string"
-                            }
-                          }
-                        }
-                      },
                       "blocks": {
-                        "type": "array",
                         "items": {
-                          "type": "object",
                           "properties": {
-                            "type": {
+                            "exercises": {
+                              "items": {
+                                "properties": {
+                                  "duration": {
+                                    "type": "string"
+                                  },
+                                  "hold": {
+                                    "type": "string"
+                                  },
+                                  "name": {
+                                    "type": "string"
+                                  },
+                                  "notes": {
+                                    "type": "string"
+                                  },
+                                  "reps": {
+                                    "type": "string"
+                                  },
+                                  "rest": {
+                                    "type": "string"
+                                  },
+                                  "rpe": {
+                                    "type": "string"
+                                  },
+                                  "sets": {
+                                    "type": "string"
+                                  },
+                                  "tempo": {
+                                    "type": "string"
+                                  },
+                                  "video_url": {
+                                    "type": "string"
+                                  },
+                                  "weight": {
+                                    "type": "string"
+                                  }
+                                },
+                                "type": "object"
+                              },
+                              "type": "array"
+                            },
+                            "note": {
                               "type": "string"
                             },
                             "rest_after": {
@@ -179,64 +144,103 @@
                             "rounds": {
                               "type": "string"
                             },
-                            "note": {
+                            "type": {
+                              "type": "string"
+                            }
+                          },
+                          "type": "object"
+                        },
+                        "type": "array"
+                      },
+                      "day": {
+                        "type": "string"
+                      },
+                      "duration": {
+                        "type": "string"
+                      },
+                      "emphasis": {
+                        "type": "string"
+                      },
+                      "exercises": {
+                        "items": {
+                          "properties": {
+                            "description": {
                               "type": "string"
                             },
-                            "exercises": {
-                              "type": "array",
-                              "items": {
-                                "type": "object",
-                                "properties": {
-                                  "name": {
-                                    "type": "string"
-                                  },
-                                  "sets": {
-                                    "type": "string"
-                                  },
-                                  "reps": {
-                                    "type": "string"
-                                  },
-                                  "tempo": {
-                                    "type": "string"
-                                  },
-                                  "rest": {
-                                    "type": "string"
-                                  },
-                                  "weight": {
-                                    "type": "string"
-                                  },
-                                  "hold": {
-                                    "type": "string"
-                                  },
-                                  "duration": {
-                                    "type": "string"
-                                  },
-                                  "notes": {
-                                    "type": "string"
-                                  },
-                                  "video_url": {
-                                    "type": "string"
-                                  },
-                                  "rpe": {
-                                    "type": "string"
-                                  }
-                                }
-                              }
+                            "duration": {
+                              "type": "string"
+                            },
+                            "hold": {
+                              "type": "string"
+                            },
+                            "name": {
+                              "type": "string"
+                            },
+                            "notes": {
+                              "type": "string"
+                            },
+                            "reps": {
+                              "type": "string"
+                            },
+                            "rest": {
+                              "type": "string"
+                            },
+                            "rpe": {
+                              "type": "string"
+                            },
+                            "sets": {
+                              "type": "number"
+                            },
+                            "tempo": {
+                              "type": "string"
+                            },
+                            "video_url": {
+                              "type": "string"
+                            },
+                            "weight": {
+                              "type": "string"
                             }
-                          }
-                        }
+                          },
+                          "type": "object"
+                        },
+                        "type": "array"
+                      },
+                      "load_target": {
+                        "type": "string"
+                      },
+                      "session_note": {
+                        "type": "string"
+                      },
+                      "session_title": {
+                        "type": "string"
+                      },
+                      "type": {
+                        "type": "string"
                       }
-                    }
-                  }
+                    },
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                "week_number": {
+                  "type": "number"
                 }
-              }
-            }
+              },
+              "type": "object"
+            },
+            "type": "array"
           }
-        }
-      }
+        },
+        "type": "object"
+      },
+      "type": "array"
+    },
+    "total_phases": {
+      "type": "number"
     }
   },
   "required": [
     "name"
-  ]
+  ],
+  "type": "object"
 }
