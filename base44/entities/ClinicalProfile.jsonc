@@ -1,92 +1,175 @@
 {
   "name": "ClinicalProfile",
-  "type": "object",
   "properties": {
-    "clinic_id": {
-      "type": "string",
-      "description": "Reference to Clinic"
+    "bio": {
+      "description": "Professional biography",
+      "type": "string"
     },
-    "user_email": {
-      "type": "string",
-      "description": "Email of the clinician (User entity)"
+    "clinic_id": {
+      "description": "Reference to Clinic",
+      "type": "string"
     },
     "full_name": {
-      "type": "string",
-      "description": "Clinician full name"
-    },
-    "title": {
-      "type": "string",
-      "description": "Professional title (e.g., Physical Therapist, Coach)"
-    },
-    "qualifications": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "properties": {
-          "qualification": {
-            "type": "string",
-            "description": "e.g., DPT, CSCS, NASM-PES"
-          },
-          "visible_to_patient": {
-            "type": "boolean",
-            "default": true
-          }
-        }
-      },
-      "description": "Professional qualifications/certifications"
-    },
-    "registrations": {
-      "type": "array",
-      "items": {
-        "type": "string"
-      },
-      "description": "Professional registrations/licenses"
-    },
-    "special_interests": {
-      "type": "array",
-      "items": {
-        "type": "string"
-      },
-      "description": "Areas of specialization (e.g., ACL Rehab, Sports Performance)"
-    },
-    "bio": {
-      "type": "string",
-      "description": "Professional biography"
-    },
-    "photo_url": {
-      "type": "string",
-      "description": "URL to clinician profile photo"
-    },
-    "visibility": {
-      "type": "object",
-      "properties": {
-        "show_qualifications": {
-          "type": "boolean",
-          "default": true
-        },
-        "show_special_interests": {
-          "type": "boolean",
-          "default": true
-        },
-        "show_bio": {
-          "type": "boolean",
-          "default": true
-        },
-        "show_photo": {
-          "type": "boolean",
-          "default": true
-        }
-      },
-      "description": "Controls which fields are visible to patients"
+      "description": "Clinician full name",
+      "type": "string"
     },
     "is_public": {
-      "type": "boolean",
       "default": true,
-      "description": "Whether profile can be viewed by patients"
+      "description": "Whether profile can be viewed by patients",
+      "type": "boolean"
+    },
+    "photo_url": {
+      "description": "URL to clinician profile photo",
+      "type": "string"
+    },
+    "qualifications": {
+      "description": "Professional qualifications/certifications",
+      "items": {
+        "properties": {
+          "qualification": {
+            "description": "e.g., DPT, CSCS, NASM-PES",
+            "type": "string"
+          },
+          "visible_to_patient": {
+            "default": true,
+            "type": "boolean"
+          }
+        },
+        "type": "object"
+      },
+      "type": "array"
+    },
+    "registrations": {
+      "description": "Professional registrations/licenses",
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "special_interests": {
+      "description": "Areas of specialization (e.g., ACL Rehab, Sports Performance)",
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "title": {
+      "description": "Professional title (e.g., Physical Therapist, Coach)",
+      "type": "string"
+    },
+    "user_email": {
+      "description": "Email of the clinician (User entity)",
+      "type": "string"
+    },
+    "visibility": {
+      "description": "Controls which fields are visible to patients",
+      "properties": {
+        "show_bio": {
+          "default": true,
+          "type": "boolean"
+        },
+        "show_photo": {
+          "default": true,
+          "type": "boolean"
+        },
+        "show_qualifications": {
+          "default": true,
+          "type": "boolean"
+        },
+        "show_special_interests": {
+          "default": true,
+          "type": "boolean"
+        }
+      },
+      "type": "object"
     }
   },
   "required": [
     "clinic_id",
     "user_email"
-  ]
+  ],
+  "rls": {
+    "create": {
+      "$and": [
+        {
+          "$or": [
+            {
+              "user_condition": {
+                "role": "admin"
+              }
+            },
+            {
+              "user_condition": {
+                "role": "clinic_admin"
+              }
+            },
+            {
+              "user_condition": {
+                "role": "clinician"
+              }
+            }
+          ]
+        },
+        {
+          "data.clinic_id": "{{user.data.clinic_id}}"
+        }
+      ]
+    },
+    "delete": {
+      "$and": [
+        {
+          "$or": [
+            {
+              "user_condition": {
+                "role": "admin"
+              }
+            },
+            {
+              "user_condition": {
+                "role": "clinic_admin"
+              }
+            },
+            {
+              "user_condition": {
+                "role": "clinician"
+              }
+            }
+          ]
+        },
+        {
+          "data.clinic_id": "{{user.data.clinic_id}}"
+        }
+      ]
+    },
+    "read": {
+      "data.clinic_id": "{{user.data.clinic_id}}"
+    },
+    "update": {
+      "$and": [
+        {
+          "$or": [
+            {
+              "user_condition": {
+                "role": "admin"
+              }
+            },
+            {
+              "user_condition": {
+                "role": "clinic_admin"
+              }
+            },
+            {
+              "user_condition": {
+                "role": "clinician"
+              }
+            }
+          ]
+        },
+        {
+          "data.clinic_id": "{{user.data.clinic_id}}"
+        }
+      ]
+    }
+  },
+  "type": "object"
 }
