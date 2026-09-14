@@ -1,17 +1,12 @@
 {
   "name": "TestLibrary",
-  "type": "object",
   "properties": {
-    "clinic_id": {
-      "type": "string",
-      "description": "Reference to Clinic - for clinic-specific tests"
-    },
-    "name": {
-      "type": "string",
-      "description": "Test name"
+    "benchmark_reference": {
+      "description": "Reference benchmark values",
+      "type": "string"
     },
     "category": {
-      "type": "string",
+      "description": "Test category",
       "enum": [
         "strength",
         "endurance",
@@ -21,27 +16,122 @@
         "functional",
         "other"
       ],
-      "description": "Test category"
+      "type": "string"
+    },
+    "clinic_id": {
+      "description": "Reference to Clinic - for clinic-specific tests",
+      "type": "string"
     },
     "description": {
       "type": "string"
     },
-    "unit": {
-      "type": "string",
-      "description": "Measurement unit (e.g., kg, degrees, seconds)"
-    },
-    "benchmark_reference": {
-      "type": "string",
-      "description": "Reference benchmark values"
-    },
     "is_global": {
-      "type": "boolean",
       "default": false,
-      "description": "Available to all clinics"
+      "description": "Available to all clinics",
+      "type": "boolean"
+    },
+    "name": {
+      "description": "Test name",
+      "type": "string"
+    },
+    "unit": {
+      "description": "Measurement unit (e.g., kg, degrees, seconds)",
+      "type": "string"
     }
   },
   "required": [
     "name",
     "category"
-  ]
+  ],
+  "rls": {
+    "create": {
+      "$and": [
+        {
+          "$or": [
+            {
+              "user_condition": {
+                "role": "admin"
+              }
+            },
+            {
+              "user_condition": {
+                "role": "clinic_admin"
+              }
+            },
+            {
+              "user_condition": {
+                "role": "clinician"
+              }
+            }
+          ]
+        },
+        {
+          "data.clinic_id": "{{user.data.clinic_id}}"
+        }
+      ]
+    },
+    "delete": {
+      "$and": [
+        {
+          "$or": [
+            {
+              "user_condition": {
+                "role": "admin"
+              }
+            },
+            {
+              "user_condition": {
+                "role": "clinic_admin"
+              }
+            },
+            {
+              "user_condition": {
+                "role": "clinician"
+              }
+            }
+          ]
+        },
+        {
+          "data.clinic_id": "{{user.data.clinic_id}}"
+        }
+      ]
+    },
+    "read": {
+      "$or": [
+        {
+          "data.clinic_id": "{{user.data.clinic_id}}"
+        },
+        {
+          "data.is_global": true
+        }
+      ]
+    },
+    "update": {
+      "$and": [
+        {
+          "$or": [
+            {
+              "user_condition": {
+                "role": "admin"
+              }
+            },
+            {
+              "user_condition": {
+                "role": "clinic_admin"
+              }
+            },
+            {
+              "user_condition": {
+                "role": "clinician"
+              }
+            }
+          ]
+        },
+        {
+          "data.clinic_id": "{{user.data.clinic_id}}"
+        }
+      ]
+    }
+  },
+  "type": "object"
 }
