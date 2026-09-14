@@ -21,6 +21,7 @@ import ClinicianBottomTabs from '@/components/mobile/ClinicianBottomTabs';
 import PatientBottomTabs from '@/components/mobile/PatientBottomTabs';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { isClinicAdmin, isPractitioner } from '@/lib/roles';
 import { createPageUrl } from '@/utils';
 
 const clinicianNav = [
@@ -88,15 +89,15 @@ export default function Layout({ children, currentPageName }) {
         if (!active) return;
         setUser(currentUser);
 
-        if (currentUser.role === 'admin' && !currentUser.onboarding_completed && currentPageName !== 'ClinicOnboarding') {
+        if (isClinicAdmin(currentUser) && !currentUser.onboarding_completed && currentPageName !== 'ClinicOnboarding') {
           window.location.assign(createPageUrl('ClinicOnboarding'));
           return;
         }
 
         const onPatientPage = patientPages.includes(currentPageName);
-        setIsPatient(currentUser.role !== 'admin' || onPatientPage);
+        setIsPatient(!isPractitioner(currentUser) || onPatientPage);
 
-        if (currentUser.role === 'admin' && currentPageName === 'Home') {
+        if (isPractitioner(currentUser) && currentPageName === 'Home') {
           window.location.assign(createPageUrl('CoachDashboard'));
           return;
         }
