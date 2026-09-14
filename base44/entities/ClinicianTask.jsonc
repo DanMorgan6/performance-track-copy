@@ -1,48 +1,63 @@
 {
   "name": "ClinicianTask",
-  "type": "object",
   "properties": {
-    "patient_id": {
-      "type": "string",
-      "description": "Reference to Patient"
+    "assigned_by": {
+      "description": "Email of clinician who created task",
+      "type": "string"
     },
     "assigned_to": {
-      "type": "string",
-      "description": "Email of assigned clinician"
+      "description": "Email of assigned clinician",
+      "type": "string"
     },
-    "assigned_by": {
-      "type": "string",
-      "description": "Email of clinician who created task"
+    "auto_generated": {
+      "default": false,
+      "description": "Whether this task was automatically created by the system",
+      "type": "boolean"
     },
-    "title": {
-      "type": "string",
-      "description": "Task title"
+    "clinic_id": {
+      "description": "Reference to Clinic for tenant isolation",
+      "type": "string"
+    },
+    "completed_date": {
+      "format": "date",
+      "type": "string"
     },
     "description": {
-      "type": "string",
-      "description": "Task details"
+      "description": "Task details",
+      "type": "string"
+    },
+    "due_date": {
+      "format": "date",
+      "type": "string"
+    },
+    "notes": {
+      "type": "string"
+    },
+    "patient_id": {
+      "description": "Reference to Patient",
+      "type": "string"
     },
     "priority": {
-      "type": "string",
+      "default": "medium",
       "enum": [
         "low",
         "medium",
         "high",
         "urgent"
       ],
-      "default": "medium"
+      "type": "string"
     },
     "status": {
-      "type": "string",
+      "default": "pending",
       "enum": [
         "pending",
         "in_progress",
         "completed"
       ],
-      "default": "pending"
+      "type": "string"
     },
     "task_type": {
-      "type": "string",
+      "default": "other",
       "enum": [
         "follow_up_call",
         "review_progress",
@@ -51,32 +66,21 @@
         "consultation",
         "other"
       ],
-      "default": "other"
-    },
-    "due_date": {
-      "type": "string",
-      "format": "date"
-    },
-    "completed_date": {
-      "type": "string",
-      "format": "date"
-    },
-    "notes": {
       "type": "string"
     },
-    "auto_generated": {
-      "type": "boolean",
-      "default": false,
-      "description": "Whether this task was automatically created by the system"
+    "title": {
+      "description": "Task title",
+      "type": "string"
     },
     "trigger_reason": {
-      "type": "string",
-      "description": "Why this task was auto-generated (e.g., 'Low adherence detected')"
+      "description": "Why this task was auto-generated (e.g., 'Low adherence detected')",
+      "type": "string"
     }
   },
   "required": [
     "patient_id",
     "assigned_to",
     "title"
-  ]
+  ],
+  "type": "object"
 }
