@@ -505,10 +505,7 @@ Make the plan progressive, evidence-based, and tailored to the patient's profile
     e.preventDefault();
     
     // Prevent duplicate submissions
-    if (submissionInProgressRef.current) {
-      console.log('DEBUG Submission already in progress, ignoring');
-      return;
-    }
+    if (submissionInProgressRef.current) return;
     
     submissionInProgressRef.current = true;
     setSaving(true);
@@ -572,7 +569,6 @@ Make the plan progressive, evidence-based, and tailored to the patient's profile
 
       // Validate patient_id is set
       const finalPatientId = patientId || patient?.id;
-      console.log('DEBUG CreatePlan:', { patientId, patient_id: patient?.id, finalPatientId });
       
       if (!finalPatientId) {
         alert('Error: No patient selected. Please go back and try again.');
@@ -619,10 +615,6 @@ Make the plan progressive, evidence-based, and tailored to the patient's profile
         }));
         await base44.entities.RehabPhase.bulkCreate(phasesToCreate);
       }
-
-      // Wait for database sync before navigating
-      console.log('DEBUG Waiting 1 second for database sync...');
-      await new Promise(resolve => setTimeout(resolve, 1000));
 
       // Send email notification to patient (only if they're registered in the app)
       if (patient?.email) {
