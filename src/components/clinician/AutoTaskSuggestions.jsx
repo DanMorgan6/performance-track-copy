@@ -13,6 +13,7 @@ export default function AutoTaskSuggestions({ patient, adherenceRate, avgPainLev
       const user = await base44.auth.me();
       return base44.entities.ClinicianTask.create({
         ...taskData,
+        clinic_id: user.clinic_id,
         patient_id: patient.id,
         assigned_to: user.email,
         assigned_by: user.email,
