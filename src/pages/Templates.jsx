@@ -24,6 +24,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
+import { isPractitioner } from '@/lib/roles';
 import TemplatePDFExport from "@/components/templates/TemplatePDFExport";
 
 export default function Templates() {
@@ -34,7 +35,7 @@ export default function Templates() {
   React.useEffect(() => {
     const checkAccess = async () => {
       const currentUser = await base44.auth.me();
-      if (currentUser.role !== 'admin') {
+      if (!isPractitioner(currentUser)) {
         window.location.href = createPageUrl('PatientPortal');
       }
     };
