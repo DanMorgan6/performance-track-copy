@@ -1,11 +1,16 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
-import Stripe from 'npm:stripe@14.21.0';
+import Stripe from 'npm:stripe@22.4.0';
 
-const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY'));
+const stripeSecretKey = Deno.env.get('STRIPE_SECRET_KEY');
+if (!stripeSecretKey) throw new Error('Stripe is not configured');
+const stripe = new Stripe(stripeSecretKey);
 
 Deno.serve(async (req) => {
   const signature = req.headers.get('stripe-signature');
   const webhookSecret = Deno.env.get('STRIPE_WEBHOOK_SECRET');
+  if (!signature || !webhookSecret) {
+    return Response.json({ error: 'Webhook signature configuration missing' }, { status: 400 });
+  }
   const body = await req.text();
 
   let event;
