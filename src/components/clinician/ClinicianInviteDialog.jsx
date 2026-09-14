@@ -18,7 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { isSubscriptionActive, calculateMonthlyPrice, formatPrice } from '@/components/utils/subscriptionUtils';
+import { isSubscriptionActive, calculateMonthlyPrice, formatPrice, SELF_SERVICE_MAX_PRACTITIONERS } from '@/components/utils/subscriptionUtils';
 import { isPractitioner } from '@/lib/roles';
 import { Mail, Send, Loader2, AlertCircle, CheckCircle2, CreditCard } from 'lucide-react';
 
@@ -114,6 +114,10 @@ export default function ClinicianInviteDialog({ clinicId, open, onOpenChange }) 
     const currentClinicianCount = clinicians.length;
     const newClinicianCount = currentClinicianCount + 1;
     const currentPrice = calculateMonthlyPrice(currentClinicianCount);
+    if (newClinicianCount > SELF_SERVICE_MAX_PRACTITIONERS) {
+      setError('Self-service plans support up to 10 practitioners. Contact the Performance Track+ team for a tailored plan.');
+      return;
+    }
     const newPrice = calculateMonthlyPrice(newClinicianCount);
 
     if (newPrice > currentPrice) {
