@@ -1,25 +1,76 @@
 {
   "name": "Report",
-  "type": "object",
   "properties": {
     "clinic_id": {
-      "type": "string",
-      "description": "Reference to Clinic"
+      "description": "Reference to Clinic",
+      "type": "string"
     },
-    "patient_id": {
-      "type": "string",
-      "description": "Reference to Patient"
+    "clinician_email": {
+      "description": "Clinician associated with a generated report",
+      "type": "string"
     },
-    "file_url": {
-      "type": "string",
-      "description": "URL to uploaded PDF report"
+    "created_by": {
+      "description": "Email of clinician who uploaded",
+      "type": "string"
+    },
+    "date": {
+      "description": "Date of report",
+      "format": "date",
+      "type": "string"
     },
     "file_uri": {
-      "type": "string",
-      "description": "Private file URI for secure access"
+      "description": "Private file URI for secure access",
+      "type": "string"
+    },
+    "file_url": {
+      "description": "URL to uploaded PDF report",
+      "type": "string"
+    },
+    "frequency": {
+      "description": "Generated report frequency",
+      "enum": [
+        "on_demand",
+        "weekly",
+        "bi-weekly",
+        "monthly"
+      ],
+      "type": "string"
+    },
+    "generated_date": {
+      "description": "Date the analytics report was generated",
+      "format": "date",
+      "type": "string"
+    },
+    "notes": {
+      "description": "Clinician notes about the report",
+      "type": "string"
+    },
+    "patient_id": {
+      "description": "Reference to Patient",
+      "type": "string"
+    },
+    "period_end": {
+      "format": "date",
+      "type": "string"
+    },
+    "period_start": {
+      "format": "date",
+      "type": "string"
+    },
+    "report_data": {
+      "description": "Structured generated report metrics",
+      "type": "object"
+    },
+    "report_type": {
+      "description": "Generated analytics report type",
+      "enum": [
+        "patient_progress",
+        "clinician_performance"
+      ],
+      "type": "string"
     },
     "type": {
-      "type": "string",
+      "description": "Report type",
       "enum": [
         "medical_history",
         "imaging",
@@ -29,32 +80,16 @@
         "consultation",
         "other"
       ],
-      "description": "Report type"
-    },
-    "date": {
-      "type": "string",
-      "format": "date",
-      "description": "Date of report"
-    },
-    "notes": {
-      "type": "string",
-      "description": "Clinician notes about the report"
+      "type": "string"
     },
     "visible_to_patient": {
-      "type": "boolean",
       "default": false,
-      "description": "Whether patient can view this report"
-    },
-    "created_by": {
-      "type": "string",
-      "description": "Email of clinician who uploaded"
+      "description": "Whether patient can view this report",
+      "type": "boolean"
     }
   },
   "required": [
-    "clinic_id",
-    "patient_id",
-    "file_url",
-    "type",
-    "date"
-  ]
+    "clinic_id"
+  ],
+  "type": "object"
 }
