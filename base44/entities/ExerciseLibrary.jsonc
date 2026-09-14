@@ -1,31 +1,7 @@
 {
   "name": "ExerciseLibrary",
-  "type": "object",
   "properties": {
-    "name": {
-      "type": "string",
-      "description": "Exercise name"
-    },
-    "description": {
-      "type": "string",
-      "description": "Detailed instructions"
-    },
-    "category": {
-      "type": "string",
-      "enum": [
-        "strength",
-        "flexibility",
-        "balance",
-        "cardiovascular",
-        "mobility",
-        "stability",
-        "coordination",
-        "plyometric",
-        "functional"
-      ]
-    },
     "body_part": {
-      "type": "string",
       "enum": [
         "upper_body",
         "lower_body",
@@ -37,49 +13,77 @@
         "ankle",
         "back",
         "neck"
-      ]
+      ],
+      "type": "string"
+    },
+    "category": {
+      "enum": [
+        "strength",
+        "flexibility",
+        "balance",
+        "cardiovascular",
+        "mobility",
+        "stability",
+        "coordination",
+        "plyometric",
+        "functional"
+      ],
+      "type": "string"
+    },
+    "clinic_id": {
+      "description": "Owning clinic; exercises are private to the clinic",
+      "type": "string"
+    },
+    "default_frequency": {
+      "description": "Deprecated - frequency should be specified in plan/phase, not globally",
+      "type": "string"
+    },
+    "default_reps": {
+      "default": "10",
+      "type": "string"
+    },
+    "default_sets": {
+      "default": 3,
+      "type": "number"
+    },
+    "description": {
+      "description": "Detailed instructions",
+      "type": "string"
     },
     "difficulty_level": {
-      "type": "string",
+      "default": "beginner",
       "enum": [
         "beginner",
         "intermediate",
         "advanced"
       ],
-      "default": "beginner"
-    },
-    "default_sets": {
-      "type": "number",
-      "default": 3
-    },
-    "default_reps": {
-      "type": "string",
-      "default": "10"
-    },
-    "default_frequency": {
-      "type": "string",
-      "description": "Deprecated - frequency should be specified in plan/phase, not globally"
-    },
-    "video_url": {
       "type": "string"
+    },
+    "equipment_needed": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "name": {
+      "description": "Exercise name",
+      "type": "string"
+    },
+    "tags": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
     },
     "thumbnail_url": {
       "type": "string"
     },
-    "equipment_needed": {
-      "type": "array",
-      "items": {
-        "type": "string"
-      }
-    },
-    "tags": {
-      "type": "array",
-      "items": {
-        "type": "string"
-      }
+    "video_url": {
+      "type": "string"
     }
   },
   "required": [
     "name"
-  ]
+  ],
+  "type": "object"
 }
