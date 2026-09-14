@@ -184,7 +184,7 @@ export default function PlanTab({
                           const measure = outcomeMeasures.find(m => m.id === trigger.outcome_measure_id);
                           if (measure) {
                             const portalUrl = `${window.location.origin}${createPageUrl('PatientPortal')}`;
-                            await base44.entities.PatientOutcomeMeasure.create({ patient_id: patientId, outcome_measure_id: trigger.outcome_measure_id, sent_date: new Date().toISOString().split('T')[0], status: 'pending', frequency: 'one-time', notes: `Automatically sent upon completing ${phaseToUpdate.name}` });
+                            await base44.entities.PatientOutcomeMeasure.create({ clinic_id: patient?.clinic_id, patient_id: patientId, outcome_measure_id: trigger.outcome_measure_id, sent_date: new Date().toISOString().split('T')[0], status: 'pending', frequency: 'one-time', notes: `Automatically sent upon completing ${phaseToUpdate.name}` });
                             await base44.integrations.Core.SendEmail({ to: patient.email, subject: `Phase Complete! New Questionnaire Available`, body: `Hi ${patient.full_name},\n\nCongratulations on completing ${phaseToUpdate.name}!\n\nPlease complete: ${measure.name}\n\nPortal: ${portalUrl}` });
                             await base44.entities.PhaseOutcomeTrigger.update(trigger.id, { triggered: true, triggered_date: new Date().toISOString().split('T')[0] });
                           }
@@ -197,7 +197,7 @@ export default function PlanTab({
                             const measure = outcomeMeasures.find(m => m.id === trigger.outcome_measure_id);
                             if (measure) {
                               const portalUrl = `${window.location.origin}${createPageUrl('PatientPortal')}`;
-                              await base44.entities.PatientOutcomeMeasure.create({ patient_id: patientId, outcome_measure_id: trigger.outcome_measure_id, sent_date: new Date().toISOString().split('T')[0], status: 'pending', frequency: 'one-time', notes: `Automatically sent at start of ${nextPhase.name}` });
+                              await base44.entities.PatientOutcomeMeasure.create({ clinic_id: patient?.clinic_id, patient_id: patientId, outcome_measure_id: trigger.outcome_measure_id, sent_date: new Date().toISOString().split('T')[0], status: 'pending', frequency: 'one-time', notes: `Automatically sent at start of ${nextPhase.name}` });
                               await base44.integrations.Core.SendEmail({ to: patient.email, subject: `New Phase Started! Questionnaire Available`, body: `Hi ${patient.full_name},\n\nStarting ${nextPhase.name}!\n\nPlease complete: ${measure.name}\n\nPortal: ${portalUrl}` });
                               await base44.entities.PhaseOutcomeTrigger.update(trigger.id, { triggered: true, triggered_date: new Date().toISOString().split('T')[0] });
                             }
