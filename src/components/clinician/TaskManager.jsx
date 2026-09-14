@@ -79,6 +79,7 @@ export default function TaskManager({ patientId, showPatientInfo = false }) {
       const user = await base44.auth.me();
       return base44.entities.ClinicianTask.create({
         ...data,
+        clinic_id: user.clinic_id,
         patient_id: patientId,
         assigned_by: user.email
       });
