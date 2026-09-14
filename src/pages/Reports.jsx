@@ -77,7 +77,10 @@ export default function Reports() {
   });
 
   const createReportMutation = useMutation({
-    mutationFn: (data) => base44.entities.Report.create(data),
+    mutationFn: async (data) => {
+      const user = currentUser || await base44.auth.me();
+      return base44.entities.Report.create({ ...data, clinic_id: user.clinic_id });
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['reports'] });
       setShowConfigDialog(false);
