@@ -12,6 +12,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { isSubscriptionActive, calculateMonthlyPrice, formatPrice } from '@/components/utils/subscriptionUtils';
+import { isPractitioner } from '@/lib/roles';
 import { Mail, Send, Loader2, AlertCircle, CheckCircle2, CreditCard, Copy, QrCode, X } from 'lucide-react';
 
 // Generate cryptographically secure random token
@@ -51,7 +52,7 @@ export default function ClinicianInviteManager({ clinicId, open, onOpenChange })
     queryFn: async () => {
       if (!clinicId) return [];
       const users = await base44.entities.User.list();
-      return users.filter(u => u.clinic_id === clinicId && u.role === 'admin');
+      return users.filter(u => u.clinic_id === clinicId && isPractitioner(u));
     },
     enabled: !!clinicId
   });
