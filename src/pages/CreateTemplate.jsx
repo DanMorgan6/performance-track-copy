@@ -417,6 +417,7 @@ Create a comprehensive rehabilitation template with 3-5 phases. Each phase shoul
       });
     });
     try {
+      const user = await base44.auth.me();
       // Collect all exercises to sync to library (handles both legacy exercises[] and new blocks[] format)
       const allExercises = [];
       for (const phase of currentPhases) {
@@ -447,6 +448,7 @@ Create a comprehensive rehabilitation template with 3-5 phases. Each phase shoul
       if (uniqueNewExercises.length > 0) {
         await base44.entities.ExerciseLibrary.bulkCreate(
           uniqueNewExercises.map(ex => ({
+            clinic_id: user.clinic_id,
             name: ex.name,
             description: ex.description || '',
             category: 'functional',
@@ -464,6 +466,7 @@ Create a comprehensive rehabilitation template with 3-5 phases. Each phase shoul
       // Deep-clone phases to ensure nested weeks/blocks are fully serialised
       const serialisedPhases = JSON.parse(JSON.stringify(currentPhases));
       const payload = {
+        clinic_id: user.clinic_id,
         name: templateData.name,
         description: templateData.description,
         condition_type: templateData.condition_type,
