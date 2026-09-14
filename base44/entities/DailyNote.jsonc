@@ -1,17 +1,28 @@
 {
   "name": "DailyNote",
-  "type": "object",
   "properties": {
-    "patient_id": {
-      "type": "string",
-      "description": "Reference to Patient"
+    "adherence_self_rating": {
+      "description": "Self-rated adherence 1-10",
+      "type": "number"
+    },
+    "clinic_id": {
+      "description": "Reference to Clinic for tenant isolation",
+      "type": "string"
     },
     "date": {
-      "type": "string",
-      "format": "date"
+      "format": "date",
+      "type": "string"
+    },
+    "energy_level": {
+      "description": "Energy level 1-10",
+      "type": "number"
+    },
+    "major_win": {
+      "description": "Patient's major win for the week",
+      "type": "string"
     },
     "mood": {
-      "type": "string",
+      "description": "Overall mood/feeling",
       "enum": [
         "great",
         "good",
@@ -19,37 +30,30 @@
         "struggling",
         "difficult"
       ],
-      "description": "Overall mood/feeling"
+      "type": "string"
     },
-    "energy_level": {
-      "type": "number",
-      "description": "Energy level 1-10"
+    "notes": {
+      "description": "Subjective feedback and observations",
+      "type": "string"
+    },
+    "patient_id": {
+      "description": "Reference to Patient",
+      "type": "string"
     },
     "sleep_quality": {
-      "type": "string",
+      "description": "Sleep quality",
       "enum": [
         "excellent",
         "good",
         "fair",
         "poor"
       ],
-      "description": "Sleep quality"
-    },
-    "notes": {
-      "type": "string",
-      "description": "Subjective feedback and observations"
-    },
-    "major_win": {
-      "type": "string",
-      "description": "Patient's major win for the week"
-    },
-    "adherence_self_rating": {
-      "type": "number",
-      "description": "Self-rated adherence 1-10"
+      "type": "string"
     }
   },
   "required": [
     "patient_id",
     "date"
-  ]
+  ],
+  "type": "object"
 }
