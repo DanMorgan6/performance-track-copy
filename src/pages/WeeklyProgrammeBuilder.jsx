@@ -6,6 +6,7 @@ import { Link } from 'react-router-dom';
 import { ArrowLeft, Save, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { isPractitioner } from '@/lib/roles';
 import PhasePanel from '@/components/programme/PhasePanel';
 import DayCard from '@/components/programme/DayCard';
 import DayEditor from '@/components/programme/DayEditor';
@@ -44,7 +45,7 @@ export default function WeeklyProgrammeBuilder() {
   // Security check
   useEffect(() => {
     base44.auth.me().then(user => {
-      if (user.role !== 'admin') {
+      if (!isPractitioner(user)) {
         window.location.href = createPageUrl('PatientPortal');
       }
     });
