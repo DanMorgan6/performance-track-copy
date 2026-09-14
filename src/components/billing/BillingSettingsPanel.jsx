@@ -4,7 +4,7 @@ import { base44 } from '@/api/base44Client';
 import { Button } from "@/components/ui/button";
 import { CreditCard, Users, Calendar, TrendingUp, AlertCircle, Crown } from 'lucide-react';
 import { format } from 'date-fns';
-import { calculateMonthlyPrice, formatPrice, getTrialDaysRemaining } from '@/components/utils/subscriptionUtils';
+import { calculateMonthlyPrice, formatPrice, getTrialDaysRemaining, isTrialStatus } from '@/components/utils/subscriptionUtils';
 import { isPractitioner } from '@/lib/roles';
 
 export default function BillingSettingsPanel({ clinic }) {
@@ -16,13 +16,13 @@ export default function BillingSettingsPanel({ clinic }) {
     queryKey: ['clinic-clinicians', clinic?.id],
     queryFn: async () => {
       if (!clinic?.id) return [];
-      const users = await base44.entities.User.list();
+      const users = await base44.entities.User.filter({ clinic_id: clinic.id });
       return users.filter(u => isPractitioner(u) && u.clinic_id === clinic.id);
     },
     enabled: !!clinic?.id
   });
 
-  const isTrialing = clinic?.subscription_status === 'trialing';
+  const isTrialing = isTrialStatus(clinic?.subscription_status);
   const trialDaysRemaining = getTrialDaysRemaining(clinic);
   const monthlyPrice = calculateMonthlyPrice(clinicians.length);
   const formattedPrice = formatPrice(monthlyPrice);
@@ -82,14 +82,14 @@ export default function BillingSettingsPanel({ clinic }) {
             <p className="text-slate-600">
               <span className={`font-medium capitalize ${
                 clinic?.subscription_status === 'active' ? 'text-emerald-600' :
-                clinic?.subscription_status === 'trialing' ? 'text-blue-600' :
+                isTrialStatus(clinic?.subscription_status) ? 'text-blue-600' :
                 'text-rose-600'
               }`}>
-                {clinic?.subscription_status === 'trialing' ? 'Free Trial' : clinic?.subscription_status?.replace('_', ' ')}
+                {isTrialStatus(clinic?.subscription_status) ? 'Free Trial' : clinic?.subscription_status?.replace('_', ' ')}
               </span>
             </p>
           </div>
-          {clinic?.current_period_end && clinic?.subscription_status !== 'trialing' && (
+          {clinic?.current_period_end && !isTrialStatus(clinic?.subscription_status) && (
             <div className="text-right">
               <p className="text-xs text-slate-500">Next billing date</p>
               <p className="text-sm font-medium text-slate-900">
@@ -124,7 +124,7 @@ export default function BillingSettingsPanel({ clinic }) {
         {/* Pricing Formula */}
         <div className="mt-4 pt-4 border-t border-slate-200">
           <p className="text-xs text-slate-500">
-            <strong>Pricing:</strong> £25 for first clinician + £15 per additional clinician
+            <strong>Pricing:</strong> £30/month for 0–5 practitioners · £45/month for 6–10
           </p>
         </div>
       </div>
