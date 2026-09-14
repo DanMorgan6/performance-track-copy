@@ -18,6 +18,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import PatientProgressReport from "@/components/reports/PatientProgressReport";
 import ClinicianPerformanceReport from "@/components/reports/ClinicianPerformanceReport";
 import { cn } from "@/lib/utils";
+import { isPractitioner } from '@/lib/roles';
 import {
   Dialog,
   DialogContent,
@@ -49,7 +50,7 @@ export default function Reports() {
   React.useEffect(() => {
     const checkAccess = async () => {
       const currentUser = await base44.auth.me();
-      if (currentUser.role !== 'admin') {
+      if (!isPractitioner(currentUser)) {
         window.location.href = '/';
       }
     };
