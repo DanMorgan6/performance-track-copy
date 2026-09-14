@@ -198,7 +198,14 @@
         {
           "$and": [
             {
-              "data.patient_id": "{{user.data.patient_id}}"
+              "$and": [
+                {
+                  "data.patient_id": "{{user.data.patient_id}}"
+                },
+                {
+                  "data.clinic_id": "{{user.data.clinic_id}}"
+                }
+              ]
             },
             {
               "data.visible_to_patient": true
