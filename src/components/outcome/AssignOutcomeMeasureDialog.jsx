@@ -35,6 +35,7 @@ export default function AssignOutcomeMeasureDialog({ open, onOpenChange, measure
     mutationFn: async ({ patient }) => {
       // Create the PatientOutcomeMeasure record
       await base44.entities.PatientOutcomeMeasure.create({
+        clinic_id: patient.clinic_id,
         patient_id: patient.id,
         outcome_measure_id: measure.id,
         sent_date: new Date().toISOString().split('T')[0],
