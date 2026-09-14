@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { CreditCard, Users, Calendar, TrendingUp, AlertCircle, Crown } from 'lucide-react';
 import { format } from 'date-fns';
 import { calculateMonthlyPrice, formatPrice, getTrialDaysRemaining } from '@/components/utils/subscriptionUtils';
+import { isPractitioner } from '@/lib/roles';
 
 export default function BillingSettingsPanel({ clinic }) {
   const queryClient = useQueryClient();
@@ -16,7 +17,7 @@ export default function BillingSettingsPanel({ clinic }) {
     queryFn: async () => {
       if (!clinic?.id) return [];
       const users = await base44.entities.User.list();
-      return users.filter(u => u.role === 'admin' && u.clinic_id === clinic.id);
+      return users.filter(u => isPractitioner(u) && u.clinic_id === clinic.id);
     },
     enabled: !!clinic?.id
   });
