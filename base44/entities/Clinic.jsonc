@@ -18,6 +18,10 @@
       "description": "Secondary brand color (hex)",
       "type": "string"
     },
+    "clinic_id": {
+      "description": "Tenant identifier; equal to the Clinic record id",
+      "type": "string"
+    },
     "clinician_seat_count": {
       "default": 0,
       "description": "Number of active clinicians (seats)",
