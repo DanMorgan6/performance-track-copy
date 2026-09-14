@@ -58,5 +58,132 @@
     "date",
     "exercise_name"
   ],
+  "rls": {
+    "create": {
+      "$or": [
+        {
+          "$and": [
+            {
+              "$or": [
+                {
+                  "user_condition": {
+                    "role": "admin"
+                  }
+                },
+                {
+                  "user_condition": {
+                    "role": "clinic_admin"
+                  }
+                },
+                {
+                  "user_condition": {
+                    "role": "clinician"
+                  }
+                }
+              ]
+            },
+            {
+              "data.clinic_id": "{{user.data.clinic_id}}"
+            }
+          ]
+        },
+        {
+          "data.patient_id": "{{user.data.patient_id}}"
+        }
+      ]
+    },
+    "delete": {
+      "$and": [
+        {
+          "$or": [
+            {
+              "user_condition": {
+                "role": "admin"
+              }
+            },
+            {
+              "user_condition": {
+                "role": "clinic_admin"
+              }
+            },
+            {
+              "user_condition": {
+                "role": "clinician"
+              }
+            }
+          ]
+        },
+        {
+          "data.clinic_id": "{{user.data.clinic_id}}"
+        }
+      ]
+    },
+    "read": {
+      "$or": [
+        {
+          "$and": [
+            {
+              "$or": [
+                {
+                  "user_condition": {
+                    "role": "admin"
+                  }
+                },
+                {
+                  "user_condition": {
+                    "role": "clinic_admin"
+                  }
+                },
+                {
+                  "user_condition": {
+                    "role": "clinician"
+                  }
+                }
+              ]
+            },
+            {
+              "data.clinic_id": "{{user.data.clinic_id}}"
+            }
+          ]
+        },
+        {
+          "data.patient_id": "{{user.data.patient_id}}"
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "$and": [
+            {
+              "$or": [
+                {
+                  "user_condition": {
+                    "role": "admin"
+                  }
+                },
+                {
+                  "user_condition": {
+                    "role": "clinic_admin"
+                  }
+                },
+                {
+                  "user_condition": {
+                    "role": "clinician"
+                  }
+                }
+              ]
+            },
+            {
+              "data.clinic_id": "{{user.data.clinic_id}}"
+            }
+          ]
+        },
+        {
+          "data.patient_id": "{{user.data.patient_id}}"
+        }
+      ]
+    }
+  },
   "type": "object"
 }
