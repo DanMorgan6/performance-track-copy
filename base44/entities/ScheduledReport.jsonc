@@ -1,50 +1,53 @@
 {
   "name": "ScheduledReport",
-  "type": "object",
   "properties": {
-    "patient_id": {
-      "type": "string",
-      "description": "Reference to Patient"
+    "active": {
+      "default": true,
+      "type": "boolean"
+    },
+    "clinic_id": {
+      "description": "Reference to Clinic for tenant isolation",
+      "type": "string"
     },
     "clinician_email": {
-      "type": "string",
-      "description": "Email of clinician who scheduled the report"
-    },
-    "report_name": {
-      "type": "string",
-      "description": "Name of the report"
+      "description": "Email of clinician who scheduled the report",
+      "type": "string"
     },
     "frequency": {
-      "type": "string",
+      "default": "weekly",
       "enum": [
         "weekly",
         "bi-weekly",
         "monthly"
       ],
-      "default": "weekly"
-    },
-    "next_generation_date": {
-      "type": "string",
-      "format": "date"
-    },
-    "last_generated_date": {
-      "type": "string",
-      "format": "date"
+      "type": "string"
     },
     "include_sections": {
-      "type": "array",
+      "description": "Sections to include: progress, assessments, outcomes, pain, exercises, interventions",
       "items": {
         "type": "string"
       },
-      "description": "Sections to include: progress, assessments, outcomes, pain, exercises, interventions"
+      "type": "array"
+    },
+    "last_generated_date": {
+      "format": "date",
+      "type": "string"
+    },
+    "next_generation_date": {
+      "format": "date",
+      "type": "string"
+    },
+    "patient_id": {
+      "description": "Reference to Patient",
+      "type": "string"
+    },
+    "report_name": {
+      "description": "Name of the report",
+      "type": "string"
     },
     "send_to_email": {
-      "type": "string",
-      "description": "Email to send report to"
-    },
-    "active": {
-      "type": "boolean",
-      "default": true
+      "description": "Email to send report to",
+      "type": "string"
     }
   },
   "required": [
@@ -52,5 +55,6 @@
     "clinician_email",
     "report_name",
     "frequency"
-  ]
+  ],
+  "type": "object"
 }
