@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
-import { LayoutDashboard, Calendar, TrendingUp, Settings } from 'lucide-react';
+import { LayoutDashboard, Calendar, TrendingUp, ShieldCheck } from 'lucide-react';
 import { createPageUrl } from '@/utils';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 
 const TAB_STORAGE_KEY = 'patient_bottom_tab_last_routes';
@@ -10,7 +10,7 @@ const tabs = [
   { label: 'Home',      icon: LayoutDashboard, page: 'PatientPortal',  portalTab: 'dashboard' },
   { label: 'Calendar',  icon: Calendar,         page: 'PatientPortal',  portalTab: 'month'     },
   { label: 'Insights',  icon: TrendingUp,       page: 'PatientInsights' },
-  { label: 'Settings',  icon: Settings,         page: 'PrivacyPolicy'  },
+  { label: 'Privacy',   icon: ShieldCheck,      page: 'PrivacyPolicy'  },
 ];
 
 function getSavedRoutes() {
@@ -43,7 +43,7 @@ export default function PatientBottomTabs({ currentPageName, onTabChange, active
 
   return (
     <nav
-      className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-slate-200 flex items-stretch"
+      className="fixed bottom-3 left-3 right-3 z-50 flex items-stretch overflow-hidden rounded-2xl border border-white/10 bg-[#242427]/95 shadow-2xl shadow-black/40 backdrop-blur-xl md:hidden"
       style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
     >
       {tabs.map((tab) => {
@@ -82,10 +82,11 @@ export default function PatientBottomTabs({ currentPageName, onTabChange, active
             to={createPageUrl(tab.page)}
             onClick={handleClick}
             className={cn(
-              'flex-1 flex flex-col items-center justify-center py-2 gap-0.5 select-none transition-colors min-h-[56px]',
-              isActive ? 'text-purple-600' : 'text-slate-400'
+              'relative flex min-h-[58px] flex-1 select-none flex-col items-center justify-center gap-0.5 py-2 transition-colors',
+              isActive ? 'text-[#d8ff5f]' : 'text-zinc-500'
             )}
           >
+            {isActive && <span className="absolute inset-x-5 top-0 h-0.5 rounded-full bg-[#d8ff5f]" />}
             <tab.icon className={cn('w-5 h-5', isActive && 'scale-110 transition-transform')} />
             <span className="text-[10px] font-medium">{tab.label}</span>
           </Link>
