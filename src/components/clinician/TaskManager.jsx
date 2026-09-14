@@ -17,6 +17,7 @@ import {
   User
 } from 'lucide-react';
 import { cn } from "@/lib/utils";
+import { isPractitioner } from '@/lib/roles';
 import {
   Dialog,
   DialogContent,
@@ -68,7 +69,8 @@ export default function TaskManager({ patientId, showPatientInfo = false }) {
     queryFn: async () => {
       const user = await base44.auth.me();
       if (!user.clinic_id) return [];
-      return base44.entities.User.filter({ clinic_id: user.clinic_id, role: 'admin' });
+      const users = await base44.entities.User.filter({ clinic_id: user.clinic_id });
+      return users.filter(isPractitioner);
     }
   });
 
