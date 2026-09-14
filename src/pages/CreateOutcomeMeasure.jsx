@@ -169,6 +169,7 @@ export default function CreateOutcomeMeasure() {
     setSaving(true);
 
     try {
+      const user = await base44.auth.me();
       // Calculate total max score from all questions
       const calculatedMax = measureData.questions.reduce((sum, q) => {
         const maxOptionScore = Math.max(...q.options.map(o => o.score || 0));
@@ -177,6 +178,7 @@ export default function CreateOutcomeMeasure() {
 
       const dataToSave = {
         ...measureData,
+        clinic_id: user.clinic_id,
         total_score_max: calculatedMax
       };
 
