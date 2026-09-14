@@ -1,133 +1,116 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Check, Sparkles, ArrowRight, ShieldCheck } from 'lucide-react';
 import { createPageUrl } from '@/utils';
-import { Button } from "@/components/ui/button";
-import { Check, Sparkles } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
-const tiers = [
+const plans = [
   {
-    name: 'Pay as you grow',
-    monthlyPrice: 'From £25',
-    description: 'Scale your clinic at your own pace',
-    basePrice: 25,
-    perSeatPrice: 15,
-    baseSeats: 1,
-    features: [
-      'Unlimited patients per clinician',
-      'Full exercise library',
-      'Real-time progress tracking',
-      'Outcome measures',
-      'Email support',
-      'Custom branding',
-      'Team collaboration',
-      'Advanced analytics'
-    ],
-    popular: true
-  }
+    name: 'Clinic',
+    price: '£30',
+    seats: '0–5 practitioners',
+    description: 'Everything a focused clinic needs to prescribe and track rehabilitation.',
+    featured: true,
+  },
+  {
+    name: 'Clinic Plus',
+    price: '£45',
+    seats: '6–10 practitioners',
+    description: 'The same complete platform for a growing multidisciplinary team.',
+    featured: false,
+  },
+];
+
+const features = [
+  'Detailed weekly rehabilitation plans',
+  'Phased returns with clear exit criteria',
+  'AI-assisted programming',
+  'Quick programmes with a few exercises',
+  'Upload your own exercises and videos',
+  'Practitioner and patient experiences',
+  'Clinic-isolated patient data',
+  'Progress, adherence and outcome tracking',
 ];
 
 export default function Pricing() {
   const navigate = useNavigate();
 
-  const handleSelectPlan = () => {
-    navigate(createPageUrl('Checkout'));
-  };
-
   return (
-    <div className="min-h-screen bg-slate-50">
-      {/* Header */}
-      <div className="text-center pt-20 pb-12 px-4">
-        <div className="inline-flex items-center gap-2 px-4 py-2 bg-purple-100 text-purple-700 rounded-full text-sm font-medium mb-6">
-          <Sparkles className="w-4 h-4" />
-          14-Day Free Trial
-        </div>
-        <h1 className="text-4xl md:text-5xl font-bold text-slate-900 mb-4">
-          Simple, Transparent Pricing
-        </h1>
-        <p className="text-xl text-slate-600 max-w-2xl mx-auto">
-          Pay only for what you use. £25/month for your first clinician, then £15/month for each additional clinician.
-        </p>
-      </div>
-
-      {/* Pricing Card */}
-      <div className="max-w-3xl mx-auto px-4 pb-20">
-        <div className="relative bg-white rounded-3xl shadow-lg border-2 border-purple-500 scale-100 p-8">
-          <div className="absolute -top-4 left-1/2 -translate-x-1/2">
-            <span className="bg-purple-600 text-white px-4 py-1 rounded-full text-sm font-medium">
-              Our Plan
-            </span>
+    <div className="min-h-screen bg-[#171719] px-4 py-16 text-zinc-100 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-6xl">
+        <div className="mx-auto max-w-3xl text-center">
+          <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-[#d8ff5f]/25 bg-[#d8ff5f]/10 px-4 py-2 text-sm font-bold text-[#d8ff5f]">
+            <Sparkles className="h-4 w-4" />
+            14-day free trial
           </div>
+          <h1 className="text-4xl font-black tracking-[-0.04em] text-white sm:text-6xl">
+            Straightforward pricing for better rehab.
+          </h1>
+          <p className="mx-auto mt-5 max-w-2xl text-lg leading-8 text-zinc-400">
+            One complete clinical platform. Your monthly price changes only when your practitioner team grows beyond five.
+          </p>
+        </div>
 
-          <div className="text-center mb-8">
-            <h3 className="text-3xl font-bold text-slate-900 mb-2">{tiers[0].name}</h3>
-            <p className="text-slate-600 text-base mb-6">{tiers[0].description}</p>
-            
-            {/* Pricing Example */}
-            <div className="bg-purple-50 rounded-2xl p-6 mb-6">
-              <p className="text-sm text-slate-600 mb-4">Example monthly pricing:</p>
-              <div className="space-y-2">
-                <div className="flex justify-between items-center">
-                  <span className="text-slate-700">1 clinician:</span>
-                  <span className="text-2xl font-bold text-purple-600">£25</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-slate-700">2 clinicians:</span>
-                  <span className="text-2xl font-bold text-purple-600">£40</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-slate-700">3 clinicians:</span>
-                  <span className="text-2xl font-bold text-purple-600">£55</span>
-                </div>
+        <div className="mt-12 grid gap-5 md:grid-cols-2">
+          {plans.map((plan) => (
+            <section
+              key={plan.name}
+              className={`relative overflow-hidden rounded-[32px] border p-7 sm:p-9 ${
+                plan.featured
+                  ? 'border-[#d8ff5f]/35 bg-[#242427] shadow-[0_24px_80px_rgba(0,0,0,0.35)]'
+                  : 'border-white/10 bg-[#1d1d20]'
+              }`}
+            >
+              {plan.featured && (
+                <span className="absolute right-6 top-6 rounded-full bg-[#d8ff5f] px-3 py-1 text-xs font-black uppercase tracking-[0.12em] text-zinc-950">
+                  Most popular
+                </span>
+              )}
+              <p className="text-sm font-bold uppercase tracking-[0.16em] text-zinc-500">{plan.name}</p>
+              <div className="mt-5 flex items-end gap-2">
+                <span className="text-6xl font-black tracking-[-0.06em] text-white">{plan.price}</span>
+                <span className="pb-2 text-zinc-500">/ month</span>
               </div>
-              <p className="text-xs text-slate-500 mt-4">
-                Formula: £25 + (clinicians - 1) × £15
-              </p>
-            </div>
-          </div>
-
-          <ul className="space-y-4 mb-8">
-            {tiers[0].features.map((feature) => (
-              <li key={feature} className="flex items-start gap-3">
-                <Check className="w-5 h-5 text-emerald-500 flex-shrink-0 mt-0.5" />
-                <span className="text-slate-700">{feature}</span>
-              </li>
-            ))}
-          </ul>
-
-          <Button
-            onClick={handleSelectPlan}
-            className="w-full rounded-xl py-6 text-lg font-medium bg-purple-600 hover:bg-purple-700 text-white"
-          >
-            Start 14-Day Free Trial
-          </Button>
+              <p className="mt-2 font-bold text-[#d8ff5f]">{plan.seats}</p>
+              <p className="mt-4 max-w-md leading-7 text-zinc-400">{plan.description}</p>
+              <Button
+                onClick={() => navigate(createPageUrl('Checkout'))}
+                className="mt-8 min-h-12 w-full rounded-2xl bg-[#d8ff5f] font-black text-zinc-950 hover:bg-[#e3ff86]"
+              >
+                Start free trial
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </section>
+          ))}
         </div>
 
-        {/* FAQ */}
-        <div className="mt-20 max-w-3xl mx-auto">
-          <h3 className="text-2xl font-bold text-slate-900 text-center mb-8">
-            Frequently Asked Questions
-          </h3>
-          <div className="space-y-6">
+        <section className="mt-6 rounded-[32px] border border-white/10 bg-black/20 p-7 sm:p-9">
+          <div className="grid gap-8 lg:grid-cols-[0.8fr_1.2fr]">
             <div>
-              <h4 className="font-semibold text-slate-900 mb-2">How does the free trial work?</h4>
-              <p className="text-slate-600">
-                All new clinics get a 14-day free trial. We'll ask for payment details upfront, but you won't be charged until your trial ends. Cancel anytime during the trial to avoid charges.
+              <div className="flex items-center gap-3">
+                <ShieldCheck className="h-6 w-6 text-[#d8ff5f]" />
+                <h2 className="text-2xl font-black text-white">Included in every clinic</h2>
+              </div>
+              <p className="mt-3 leading-7 text-zinc-400">
+                No feature gating between tiers. Each clinic has its own protected workspace and cannot access another clinic’s records.
               </p>
             </div>
-            <div>
-              <h4 className="font-semibold text-slate-900 mb-2">Can I change plans later?</h4>
-              <p className="text-slate-600">
-                Yes! You can upgrade or downgrade your plan at any time from your clinic settings. Changes take effect immediately.
-              </p>
-            </div>
-            <div>
-              <h4 className="font-semibold text-slate-900 mb-2">What happens if I exceed my clinician limit?</h4>
-              <p className="text-slate-600">
-                You'll be prompted to upgrade to the next tier when you try to add more clinicians than your current plan allows.
-              </p>
-            </div>
+            <ul className="grid gap-3 sm:grid-cols-2">
+              {features.map((feature) => (
+                <li key={feature} className="flex items-start gap-3 text-sm text-zinc-300">
+                  <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#d8ff5f]/15">
+                    <Check className="h-3.5 w-3.5 text-[#d8ff5f]" />
+                  </span>
+                  {feature}
+                </li>
+              ))}
+            </ul>
           </div>
-        </div>
+        </section>
+
+        <p className="mt-8 text-center text-sm text-zinc-500">
+          More than 10 practitioners? Contact the Performance Track+ team for a tailored clinic plan.
+        </p>
       </div>
     </div>
   );
