@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/dialog";
 import { Link } from 'react-router-dom';
 import { cn } from "@/lib/utils";
+import { isPractitioner } from '@/lib/roles';
 import MobileSelect from "@/components/ui/MobileSelect";
 import ProgrammeScheduleEditor from "@/components/programme/ProgrammeScheduleEditor.jsx";
 
@@ -47,7 +48,7 @@ export default function CreateTemplate() {
   React.useEffect(() => {
     const checkAccess = async () => {
       const currentUser = await base44.auth.me();
-      if (currentUser.role !== 'admin') {
+      if (!isPractitioner(currentUser)) {
         window.location.href = createPageUrl('PatientPortal');
       }
     };
