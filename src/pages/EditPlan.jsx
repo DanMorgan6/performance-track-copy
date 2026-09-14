@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { cn } from "@/lib/utils";
+import { isPractitioner } from '@/lib/roles';
 import MobileSelect from "@/components/ui/MobileSelect";
 
 export default function EditPlan() {
@@ -42,7 +43,7 @@ export default function EditPlan() {
   React.useEffect(() => {
     const checkAccess = async () => {
       const currentUser = await base44.auth.me();
-      if (currentUser.role !== 'admin') {
+      if (!isPractitioner(currentUser)) {
         window.location.href = createPageUrl('PatientPortal');
       }
     };
