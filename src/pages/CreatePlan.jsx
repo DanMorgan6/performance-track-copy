@@ -31,6 +31,7 @@ import { Badge } from "@/components/ui/badge";
 // Badge used in template picker dialog
 import { Link } from 'react-router-dom';
 import { cn } from "@/lib/utils";
+import { isPractitioner } from '@/lib/roles';
 import { generatePlanPDF, uploadAndEmailPDF } from "@/components/reports/PlanPDFGenerator";
 import ProgramTypeSelector from "@/components/plan/ProgramTypeSelector";
 import BasicProgramBuilder from "@/components/plan/BasicProgramBuilder";
@@ -64,7 +65,7 @@ export default function CreatePlan() {
     const checkAccess = async () => {
       const user = await base44.auth.me();
       setCurrentUser(user);
-      if (user.role !== 'admin') {
+      if (!isPractitioner(user)) {
         window.location.href = createPageUrl('PatientPortal');
       }
     };
