@@ -71,7 +71,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    const subscriptionData = {
+    const subscriptionData: Stripe.Checkout.SessionCreateParams.SubscriptionData = {
       metadata: { clinic_id: clinic.id, seat_count: String(seatCount) },
     };
 
