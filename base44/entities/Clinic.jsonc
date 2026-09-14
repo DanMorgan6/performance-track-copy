@@ -1,42 +1,75 @@
 {
   "name": "Clinic",
-  "type": "object",
   "properties": {
-    "name": {
-      "type": "string",
-      "description": "Clinic name"
+    "address": {
+      "type": "string"
+    },
+    "booking_url": {
+      "description": "Default clinic-wide booking/appointment link",
+      "type": "string"
+    },
+    "brand_color_primary": {
+      "default": "#9333ea",
+      "description": "Primary brand color (hex)",
+      "type": "string"
+    },
+    "brand_color_secondary": {
+      "default": "#06b6d4",
+      "description": "Secondary brand color (hex)",
+      "type": "string"
+    },
+    "clinician_seat_count": {
+      "default": 0,
+      "description": "Number of active clinicians (seats)",
+      "type": "number"
     },
     "contact_email": {
-      "type": "string",
-      "description": "Main contact email"
+      "description": "Main contact email",
+      "type": "string"
+    },
+    "current_period_end": {
+      "description": "Current billing period end date",
+      "format": "date-time",
+      "type": "string"
+    },
+    "current_period_start": {
+      "description": "Current billing period start",
+      "format": "date-time",
+      "type": "string"
+    },
+    "logo_url": {
+      "description": "Clinic logo image URL",
+      "type": "string"
+    },
+    "monthly_price_pence": {
+      "default": 0,
+      "description": "Monthly subscription price in pence: 3000 for 0-5 practitioners, 4500 for 6-10 practitioners",
+      "type": "number"
+    },
+    "name": {
+      "description": "Clinic name",
+      "type": "string"
+    },
+    "owner_email": {
+      "description": "Clinic owner/admin email",
+      "type": "string"
     },
     "phone": {
       "type": "string"
     },
-    "address": {
+    "stripe_customer_id": {
+      "description": "Stripe customer ID",
       "type": "string"
     },
-    "logo_url": {
-      "type": "string",
-      "description": "Clinic logo image URL"
-    },
-    "brand_color_primary": {
-      "type": "string",
-      "default": "#9333ea",
-      "description": "Primary brand color (hex)"
-    },
-    "brand_color_secondary": {
-      "type": "string",
-      "default": "#06b6d4",
-      "description": "Secondary brand color (hex)"
-    },
-    "booking_url": {
-      "type": "string",
-      "description": "Default clinic-wide booking/appointment link"
+    "stripe_subscription_id": {
+      "description": "Stripe subscription ID",
+      "type": "string"
     },
     "subscription_status": {
-      "type": "string",
+      "default": "trialing",
+      "description": "Subscription status from Stripe",
       "enum": [
+        "trial",
         "trialing",
         "active",
         "past_due",
@@ -44,55 +77,23 @@
         "canceled",
         "incomplete"
       ],
-      "default": "trialing",
-      "description": "Subscription status from Stripe"
-    },
-    "trial_start_date": {
-      "type": "string",
-      "format": "date-time",
-      "description": "Trial start date (14 days from this)"
+      "type": "string"
     },
     "trial_end_date": {
-      "type": "string",
+      "description": "Trial end date (14 days after start)",
       "format": "date-time",
-      "description": "Trial end date (14 days after start)"
+      "type": "string"
     },
-    "current_period_start": {
-      "type": "string",
+    "trial_start_date": {
+      "description": "Trial start date (14 days from this)",
       "format": "date-time",
-      "description": "Current billing period start"
-    },
-    "current_period_end": {
-      "type": "string",
-      "format": "date-time",
-      "description": "Current billing period end date"
-    },
-    "stripe_customer_id": {
-      "type": "string",
-      "description": "Stripe customer ID"
-    },
-    "stripe_subscription_id": {
-      "type": "string",
-      "description": "Stripe subscription ID"
-    },
-    "clinician_seat_count": {
-      "type": "number",
-      "default": 0,
-      "description": "Number of active clinicians (seats)"
-    },
-    "monthly_price_pence": {
-      "type": "number",
-      "default": 0,
-      "description": "Calculated monthly price in pence (25 + (max(0, seats-1)*15))*100"
-    },
-    "owner_email": {
-      "type": "string",
-      "description": "Clinic owner/admin email"
+      "type": "string"
     }
   },
   "required": [
     "name",
     "contact_email",
     "owner_email"
-  ]
+  ],
+  "type": "object"
 }
