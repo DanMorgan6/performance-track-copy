@@ -66,6 +66,7 @@ import ReportList from "@/components/report/ReportList";
 import AIExtractionReview from "@/components/report/AIExtractionReview";
 import { injuryDiagnosisLibrary } from "@/components/injury/injuryDiagnosisLibrary";
 import { cn } from "@/lib/utils";
+import { isPractitioner } from '@/lib/roles';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -137,7 +138,7 @@ export default function PatientDetail() {
   React.useEffect(() => {
     const checkAccess = async () => {
       const currentUser = await base44.auth.me();
-      if (currentUser.role !== 'admin') {
+      if (!isPractitioner(currentUser)) {
         window.location.href = createPageUrl('PatientPortal');
       }
     };
