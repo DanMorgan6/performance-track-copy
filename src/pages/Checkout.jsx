@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { base44 } from '@/api/base44Client';
+import { isPractitioner } from '@/lib/roles';
 import { Button } from "@/components/ui/button";
 import { Check, ArrowLeft, Lock, Loader2, Users } from 'lucide-react';
 
@@ -19,7 +20,7 @@ export default function Checkout() {
         const clinics = await base44.entities.Clinic.filter({ owner_email: user.email });
         if (clinics.length) {
           const users = await base44.entities.User.list();
-          const count = users.filter(u => u.role === 'admin' && u.clinic_id === clinics[0].id).length;
+          const count = users.filter(u => isPractitioner(u) && u.clinic_id === clinics[0].id).length;
           setSeatCount(Math.max(1, count));
         }
       } catch (e) {}
