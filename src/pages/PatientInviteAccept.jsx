@@ -80,30 +80,11 @@ export default function PatientInviteAccept() {
     }
 
     try {
-      // Create or update patient record
-      const patient = await base44.entities.Patient.create({
-        full_name: patientData.full_name,
-        date_of_birth: patientData.date_of_birth || null,
-        phone: patientData.phone || null,
-        email: currentUser.email,
-        clinic_id: invite.clinic_id,
-        injury_type: invite.injury_type || null,
-        status: 'active'
+      const response = await base44.functions.invoke('acceptPatientInvite', {
+        invite_id: invite.id,
+        patient_data: patientData
       });
-
-      // Update user profile
-      await base44.auth.updateMe({
-        clinic_id: invite.clinic_id,
-        patient_id: patient.id,
-        role: 'patient',
-        onboarding_completed: true
-      });
-
-      // Mark invite as accepted
-      await base44.entities.PatientInvite.update(invite.id, {
-        status: 'accepted',
-        accepted_date: new Date().toISOString().split('T')[0]
-      });
+      if (response.data?.error) throw new Error(response.data.error);
 
       setStep('success');
 
