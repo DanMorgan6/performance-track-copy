@@ -1,41 +1,49 @@
 {
   "name": "PhaseOutcomeTrigger",
-  "type": "object",
   "properties": {
-    "plan_id": {
-      "type": "string",
-      "description": "Reference to RehabPlan"
-    },
-    "phase_number": {
-      "type": "number",
-      "description": "Phase number to trigger on"
+    "clinic_id": {
+      "description": "Reference to Clinic for tenant isolation",
+      "type": "string"
     },
     "outcome_measure_id": {
-      "type": "string",
-      "description": "Reference to OutcomeMeasure to send"
+      "description": "Reference to OutcomeMeasure to send",
+      "type": "string"
+    },
+    "patient_id": {
+      "description": "Reference to Patient for access control",
+      "type": "string"
+    },
+    "phase_number": {
+      "description": "Phase number to trigger on",
+      "type": "number"
+    },
+    "plan_id": {
+      "description": "Reference to RehabPlan",
+      "type": "string"
     },
     "trigger_type": {
-      "type": "string",
+      "default": "phase_complete",
+      "description": "When to send the outcome measure",
       "enum": [
         "phase_start",
         "phase_complete"
       ],
-      "default": "phase_complete",
-      "description": "When to send the outcome measure"
+      "type": "string"
     },
     "triggered": {
-      "type": "boolean",
       "default": false,
-      "description": "Whether this trigger has been executed"
+      "description": "Whether this trigger has been executed",
+      "type": "boolean"
     },
     "triggered_date": {
-      "type": "string",
-      "format": "date"
+      "format": "date",
+      "type": "string"
     }
   },
   "required": [
     "plan_id",
     "phase_number",
     "outcome_measure_id"
-  ]
+  ],
+  "type": "object"
 }
