@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { base44 } from '@/api/base44Client';
-import { isPractitioner } from '@/lib/roles';
+import { isClinicAdmin, isPractitioner } from '@/lib/roles';
+import { calculateMonthlyPrice, formatPrice, SELF_SERVICE_MAX_PRACTITIONERS } from '@/components/utils/subscriptionUtils';
 import { Button } from "@/components/ui/button";
 import { Check, ArrowLeft, Lock, Loader2, Users } from 'lucide-react';
 
@@ -17,6 +18,10 @@ export default function Checkout() {
     const loadClinic = async () => {
       try {
         const user = await base44.auth.me();
+        if (!isClinicAdmin(user)) {
+          navigate(createPageUrl('CoachDashboard'));
+          return;
+        }
         const clinics = await base44.entities.Clinic.filter({ owner_email: user.email });
         if (clinics.length) {
           const users = await base44.entities.User.list();
@@ -29,7 +34,7 @@ export default function Checkout() {
     loadClinic();
   }, []);
 
-  const monthlyPrice = 25 + Math.max(0, seatCount - 1) * 15;
+  const monthlyPrice = calculateMonthlyPrice(seatCount);
 
   const handleStartTrial = async () => {
     // Block in iframe (preview mode)
@@ -51,6 +56,10 @@ export default function Checkout() {
       }
 
       const clinic = clinics[0];
+      if (seatCount > SELF_SERVICE_MAX_PRACTITIONERS) {
+        setError('Clinics with more than 10 practitioners need a tailored plan.');
+        return;
+      }
 
       const response = await base44.functions.invoke('stripeCreateSubscription', {
         clinic_id: clinic.id
@@ -84,7 +93,7 @@ export default function Checkout() {
         <div className="bg-white rounded-3xl shadow-xl border border-slate-100 p-8">
           <div className="text-center mb-8">
             <h1 className="text-3xl font-bold text-slate-900 mb-2">Start Your Free Trial</h1>
-            <p className="text-slate-600">Pay as you grow · per-seat pricing</p>
+            <p className="text-slate-600">Simple clinic pricing based on team size</p>
           </div>
 
           {/* Plan Summary */}
@@ -99,7 +108,7 @@ export default function Checkout() {
               </div>
               <div className="flex justify-between">
                 <span className="text-slate-600">Pricing</span>
-                <span className="font-medium text-slate-900">£25 + £15/additional seat</span>
+                <span className="font-medium text-slate-900">£30 up to 5 · £45 for 6–10</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-slate-600">Trial Period</span>
@@ -107,7 +116,7 @@ export default function Checkout() {
               </div>
               <div className="flex justify-between pt-2 border-t border-purple-200">
                 <span className="text-slate-600">After Trial</span>
-                <span className="font-bold text-slate-900">£{clinicLoaded ? monthlyPrice : '...'}/month</span>
+                <span className="font-bold text-slate-900">{clinicLoaded ? `${formatPrice(monthlyPrice)}/month` : '...'}</span>
               </div>
             </div>
           </div>
@@ -125,7 +134,7 @@ export default function Checkout() {
 
           <Button
             onClick={handleStartTrial}
-            disabled={loading}
+            disabled={loading || seatCount > SELF_SERVICE_MAX_PRACTITIONERS}
             className="w-full bg-purple-600 hover:bg-purple-700 text-white rounded-xl py-6 text-lg"
           >
             {loading ? (
