@@ -126,12 +126,13 @@ export default function AcceptInvite() {
         used_at: new Date().toISOString()
       });
 
-      // Update user with clinic_id if not set
-      if (!currentUser.clinic_id) {
-        await base44.auth.updateMe({
-          clinic_id: invite.clinic_id
-        });
-      }
+      // Link the authenticated patient to this tenant and patient record.
+      await base44.auth.updateMe({
+        clinic_id: invite.clinic_id,
+        patient_id: patient.id,
+        role: 'patient',
+        onboarding_completed: true
+      });
 
       setStep('success');
 
