@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { createPageUrl } from '@/utils';
+import { isClinicAdmin, isPractitioner } from '@/lib/roles';
 import { Button } from "@/components/ui/button";
 import { Stethoscope, Users } from 'lucide-react';
 
@@ -14,12 +15,12 @@ export default function UserTypeSelection() {
       try {
         const user = await base44.auth.me();
         // User already has role - redirect to appropriate page
-        if (user.role === 'admin') {
+        if (isClinicAdmin(user)) {
           navigate(createPageUrl('ClinicOnboarding'));
+        } else if (isPractitioner(user)) {
+          navigate(createPageUrl('CoachDashboard'));
         } else if (user.role === 'patient') {
           navigate(createPageUrl('PatientPortal'));
-        } else if (user.role === 'clinician') {
-          navigate(createPageUrl('CoachDashboard'));
         }
       } catch {
         // Not logged in, show selection
@@ -37,8 +38,8 @@ export default function UserTypeSelection() {
       const clinicianInviteCode = params.get('clinician_invite_code');
       
       if (roleType === 'clinic') {
-        // Set as clinic admin (role 'admin')
-        await base44.auth.updateMe({ role: 'admin' });
+        // Set the canonical clinic administrator role.
+        await base44.auth.updateMe({ role: 'clinic_admin' });
         navigate(createPageUrl('ClinicOnboarding'));
       } else if (roleType === 'patient') {
         if (!patientInviteCode) {
