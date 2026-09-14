@@ -1418,6 +1418,7 @@ Your Rehabilitation Team`;
                                             const portalUrl = `${window.location.origin}${createPageUrl('PatientPortal')}`;
 
                                             await base44.entities.PatientOutcomeMeasure.create({
+                                              clinic_id: patient?.clinic_id,
                                               patient_id: patientId,
                                               outcome_measure_id: trigger.outcome_measure_id,
                                               sent_date: new Date().toISOString().split('T')[0],
