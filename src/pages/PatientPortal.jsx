@@ -46,6 +46,7 @@ import PatientMessaging from "@/components/messaging/PatientMessaging";
 import PatientBottomTabs from "@/components/mobile/PatientBottomTabs";
 import PullToRefresh from "@/components/ui/PullToRefresh";
 import { cn } from "@/lib/utils";
+import { isPractitioner } from '@/lib/roles';
 import { getActivePhase } from "@/components/plan/PhaseProgressionEngine";
 import {
   Dialog,
@@ -97,7 +98,7 @@ export default function PatientPortal() {
         setUser(currentUser);
 
         // Clinic staff should not access patient portal
-        if (currentUser.role === 'admin') {
+        if (isPractitioner(currentUser)) {
           window.location.href = createPageUrl('CoachDashboard');
           return;
         }
