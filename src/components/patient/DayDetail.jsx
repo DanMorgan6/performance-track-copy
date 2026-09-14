@@ -51,6 +51,7 @@ export default function DayDetail({ day, dayIndex, currentPhase, onBack, patient
   const createExerciseLogMutation = useMutation({
     mutationFn: (data) => base44.entities.ExerciseLog.create({
       ...data,
+      clinic_id: patient.clinic_id,
       patient_id: patient.id,
       phase_id: currentPhase?.id,
       date: new Date().toISOString().split('T')[0]
