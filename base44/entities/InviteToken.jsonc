@@ -1,70 +1,70 @@
 {
   "name": "InviteToken",
-  "type": "object",
   "properties": {
     "clinic_id": {
-      "type": "string",
-      "description": "Reference to Clinic"
+      "description": "Reference to Clinic",
+      "type": "string"
     },
-    "token": {
-      "type": "string",
-      "description": "Signed/opaque token (unique, URL-safe)"
+    "created_by": {
+      "description": "Email of user who created the invite",
+      "type": "string"
+    },
+    "email": {
+      "description": "Email of invited user",
+      "type": "string"
+    },
+    "expires_at": {
+      "description": "Token expiration timestamp",
+      "format": "date-time",
+      "type": "string"
     },
     "invite_type": {
-      "type": "string",
+      "description": "Type of invite",
       "enum": [
         "clinician",
         "patient"
       ],
-      "description": "Type of invite"
+      "type": "string"
     },
-    "email": {
-      "type": "string",
-      "description": "Email of invited user"
+    "patient_id": {
+      "description": "Reference to Patient (for patient invites only)",
+      "type": "string"
+    },
+    "revoked_at": {
+      "description": "When token was revoked/superseded",
+      "format": "date-time",
+      "type": "string"
     },
     "role_target": {
-      "type": "string",
+      "default": "clinician",
+      "description": "Target role to assign on acceptance",
       "enum": [
         "clinician",
+        "clinic_admin",
         "admin",
         "patient"
       ],
-      "default": "clinician",
-      "description": "Target role to assign on acceptance"
-    },
-    "patient_id": {
-      "type": "string",
-      "description": "Reference to Patient (for patient invites only)"
-    },
-    "expires_at": {
-      "type": "string",
-      "format": "date-time",
-      "description": "Token expiration timestamp"
-    },
-    "used_at": {
-      "type": "string",
-      "format": "date-time",
-      "description": "When token was redeemed"
-    },
-    "revoked_at": {
-      "type": "string",
-      "format": "date-time",
-      "description": "When token was revoked/superseded"
+      "type": "string"
     },
     "status": {
-      "type": "string",
+      "default": "active",
+      "description": "Current status of token",
       "enum": [
         "active",
         "used",
         "expired",
         "revoked"
       ],
-      "default": "active",
-      "description": "Current status of token"
+      "type": "string"
     },
-    "created_by": {
-      "type": "string",
-      "description": "Email of user who created the invite"
+    "token": {
+      "description": "Signed/opaque token (unique, URL-safe)",
+      "type": "string"
+    },
+    "used_at": {
+      "description": "When token was redeemed",
+      "format": "date-time",
+      "type": "string"
     }
   },
   "required": [
@@ -73,5 +73,6 @@
     "invite_type",
     "email",
     "expires_at"
-  ]
+  ],
+  "type": "object"
 }
