@@ -1,49 +1,50 @@
 {
   "name": "ClinicInvite",
-  "type": "object",
   "properties": {
+    "accepted_date": {
+      "format": "date",
+      "type": "string"
+    },
     "clinic_id": {
-      "type": "string",
-      "description": "Reference to Clinic"
+      "description": "Reference to Clinic",
+      "type": "string"
     },
     "email": {
-      "type": "string",
-      "description": "Email of invited clinician"
+      "description": "Email of invited clinician",
+      "type": "string"
+    },
+    "expires_at": {
+      "format": "date-time",
+      "type": "string"
     },
     "invite_code": {
-      "type": "string",
-      "description": "Unique token for accepting invite"
+      "description": "Unique token for accepting invite",
+      "type": "string"
     },
     "role": {
-      "type": "string",
-      "enum": [
-        "admin",
-        "clinician"
-      ],
       "default": "clinician",
-      "description": "Role to assign upon acceptance"
+      "description": "Role to assign upon acceptance",
+      "enum": [
+        "clinic_admin",
+        "clinician",
+        "admin"
+      ],
+      "type": "string"
     },
     "status": {
-      "type": "string",
+      "default": "pending",
       "enum": [
         "pending",
         "accepted",
         "expired"
       ],
-      "default": "pending"
-    },
-    "accepted_date": {
-      "type": "string",
-      "format": "date"
-    },
-    "expires_at": {
-      "type": "string",
-      "format": "date-time"
+      "type": "string"
     }
   },
   "required": [
     "clinic_id",
     "email",
     "invite_code"
-  ]
+  ],
+  "type": "object"
 }
