@@ -11,6 +11,7 @@ import {
   CheckCircle
 } from 'lucide-react';
 import { format } from 'date-fns';
+import { isPractitioner } from '@/lib/roles';
 
 const plans = {
   solo: { name: 'Solo', price: 39, maxClinicians: 1, seats: '1 clinician' },
@@ -26,7 +27,7 @@ export default function SubscriptionManager({ clinic }) {
     queryKey: ['clinic-clinicians', clinic.id],
     queryFn: async () => {
       const users = await base44.entities.User.list();
-      return users.filter(u => u.role === 'admin' && u.clinic_id === clinic.id);
+      return users.filter(u => isPractitioner(u) && u.clinic_id === clinic.id);
     }
   });
 
