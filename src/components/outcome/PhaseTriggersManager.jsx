@@ -32,10 +32,16 @@ export default function PhaseTriggersManager({ planId, phases }) {
   });
 
   const createTriggerMutation = useMutation({
-    mutationFn: (data) => base44.entities.PhaseOutcomeTrigger.create({
-      ...data,
-      plan_id: planId
-    }),
+    mutationFn: async (data) => {
+      const [plan] = await base44.entities.RehabPlan.filter({ id: planId });
+      if (!plan) throw new Error('Rehabilitation plan not found');
+      return base44.entities.PhaseOutcomeTrigger.create({
+        ...data,
+        clinic_id: plan.clinic_id,
+        patient_id: plan.patient_id,
+        plan_id: planId
+      });
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['phase-triggers'] });
       setShowDialog(false);
