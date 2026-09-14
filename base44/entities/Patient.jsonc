@@ -1,56 +1,65 @@
 {
   "name": "Patient",
-  "type": "object",
   "properties": {
+    "assigned_coach": {
+      "description": "Email of assigned coach",
+      "type": "string"
+    },
     "clinic_id": {
-      "type": "string",
-      "description": "Reference to Clinic"
+      "description": "Reference to Clinic",
+      "type": "string"
     },
-    "user_id": {
-      "type": "string",
-      "description": "Reference to User (linked when patient accepts invite)"
-    },
-    "full_name": {
-      "type": "string",
-      "description": "Patient's full name"
+    "date_of_birth": {
+      "format": "date",
+      "type": "string"
     },
     "email": {
-      "type": "string",
-      "description": "Patient's email address"
+      "description": "Patient's email address",
+      "type": "string"
+    },
+    "full_name": {
+      "description": "Patient's full name",
+      "type": "string"
     },
     "gender": {
-      "type": "string",
+      "description": "Patient's gender for body diagram display",
       "enum": [
         "male",
         "female",
         "other"
       ],
-      "description": "Patient's gender for body diagram display"
+      "type": "string"
     },
-    "date_of_birth": {
-      "type": "string",
-      "format": "date"
-    },
-    "phone": {
+    "injury_date": {
+      "format": "date",
       "type": "string"
     },
     "injury_type": {
-      "type": "string",
-      "description": "Primary injury or condition"
+      "description": "Primary injury or condition",
+      "type": "string"
     },
-    "injury_date": {
-      "type": "string",
-      "format": "date"
-    },
-    "assigned_coach": {
-      "type": "string",
-      "description": "Email of assigned coach"
+    "messaging_enabled": {
+      "default": false,
+      "description": "Whether the clinician has enabled in-app messaging for this patient",
+      "type": "boolean"
     },
     "notes": {
       "type": "string"
     },
+    "phone": {
+      "type": "string"
+    },
+    "portal_access_sent": {
+      "default": false,
+      "type": "boolean"
+    },
+    "portal_access_sent_date": {
+      "format": "date",
+      "type": "string"
+    },
     "status": {
-      "type": "string",
+      "default": "invited",
+      "description": "Patient status",
       "enum": [
         "invited",
         "active",
@@ -58,26 +67,144 @@
         "paused",
         "discharged"
       ],
-      "default": "invited",
-      "description": "Patient status"
+      "type": "string"
     },
-    "portal_access_sent": {
-      "type": "boolean",
-      "default": false
-    },
-    "portal_access_sent_date": {
-      "type": "string",
-      "format": "date"
-    },
-    "messaging_enabled": {
-      "type": "boolean",
-      "default": false,
-      "description": "Whether the clinician has enabled in-app messaging for this patient"
+    "user_id": {
+      "description": "Reference to User (linked when patient accepts invite)",
+      "type": "string"
     }
   },
   "required": [
     "clinic_id",
     "full_name",
     "email"
-  ]
+  ],
+  "rls": {
+    "create": {
+      "$or": [
+        {
+          "$and": [
+            {
+              "$or": [
+                {
+                  "user_condition": {
+                    "role": "admin"
+                  }
+                },
+                {
+                  "user_condition": {
+                    "role": "clinic_admin"
+                  }
+                },
+                {
+                  "user_condition": {
+                    "role": "clinician"
+                  }
+                }
+              ]
+            },
+            {
+              "data.clinic_id": "{{user.data.clinic_id}}"
+            }
+          ]
+        },
+        {
+          "data.email": "{{user.email}}"
+        }
+      ]
+    },
+    "delete": {
+      "$and": [
+        {
+          "$or": [
+            {
+              "user_condition": {
+                "role": "admin"
+              }
+            },
+            {
+              "user_condition": {
+                "role": "clinic_admin"
+              }
+            },
+            {
+              "user_condition": {
+                "role": "clinician"
+              }
+            }
+          ]
+        },
+        {
+          "data.clinic_id": "{{user.data.clinic_id}}"
+        }
+      ]
+    },
+    "read": {
+      "$or": [
+        {
+          "$and": [
+            {
+              "$or": [
+                {
+                  "user_condition": {
+                    "role": "admin"
+                  }
+                },
+                {
+                  "user_condition": {
+                    "role": "clinic_admin"
+                  }
+                },
+                {
+                  "user_condition": {
+                    "role": "clinician"
+                  }
+                }
+              ]
+            },
+            {
+              "data.clinic_id": "{{user.data.clinic_id}}"
+            }
+          ]
+        },
+        {
+          "data.email": "{{user.email}}"
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "$and": [
+            {
+              "$or": [
+                {
+                  "user_condition": {
+                    "role": "admin"
+                  }
+                },
+                {
+                  "user_condition": {
+                    "role": "clinic_admin"
+                  }
+                },
+                {
+                  "user_condition": {
+                    "role": "clinician"
+                  }
+                }
+              ]
+            },
+            {
+              "data.clinic_id": "{{user.data.clinic_id}}"
+            }
+          ]
+        },
+        {
+          "data.email": "{{user.email}}"
+        }
+      ]
+    }
+  },
+  "type": "object"
 }
