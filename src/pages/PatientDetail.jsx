@@ -207,7 +207,7 @@ export default function PatientDetail() {
   });
 
   const createAssessmentMutation = useMutation({
-    mutationFn: (data) => base44.entities.ObjectiveAssessment.create({ ...data, patient_id: patientId }),
+    mutationFn: (data) => base44.entities.ObjectiveAssessment.create({ ...data, clinic_id: patient?.clinic_id, patient_id: patientId }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['patient-assessments'] });
       setShowAssessmentForm(false);
@@ -255,7 +255,7 @@ export default function PatientDetail() {
       const { patient_email, ...measureData } = data;
       
       // Create the outcome measure record
-      await base44.entities.PatientOutcomeMeasure.create(measureData);
+      await base44.entities.PatientOutcomeMeasure.create({ ...measureData, clinic_id: patient?.clinic_id, patient_id: patientId });
       
       // Send email notification to patient
       const measure = outcomeMeasures.find(m => m.id === measureData.outcome_measure_id);
@@ -278,7 +278,7 @@ export default function PatientDetail() {
   });
 
   const createInterventionMutation = useMutation({
-    mutationFn: (data) => base44.entities.Intervention.create({ ...data, patient_id: patientId }),
+    mutationFn: (data) => base44.entities.Intervention.create({ ...data, clinic_id: patient?.clinic_id, patient_id: patientId }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['patient-interventions'] });
       setShowInterventionForm(false);
@@ -387,6 +387,7 @@ ${currentUser.full_name}
         name: templateData.name,
         description: templateData.description,
         condition_type: templateData.condition_type,
+        clinic_id: patient?.clinic_id,
         total_phases: planPhases.length,
         estimated_duration_weeks: planPhases.reduce((sum, p) => sum + (p.duration_weeks || 0), 0),
         phases: planPhases,
@@ -1376,6 +1377,7 @@ Your Rehabilitation Team`;
                                           const portalUrl = `${window.location.origin}${createPageUrl('PatientPortal')}`;
 
                                           await base44.entities.PatientOutcomeMeasure.create({
+                                            clinic_id: patient?.clinic_id,
                                             patient_id: patientId,
                                             outcome_measure_id: trigger.outcome_measure_id,
                                             sent_date: new Date().toISOString().split('T')[0],
