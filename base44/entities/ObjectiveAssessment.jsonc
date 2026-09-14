@@ -1,17 +1,12 @@
 {
   "name": "ObjectiveAssessment",
-  "type": "object",
   "properties": {
-    "patient_id": {
-      "type": "string",
-      "description": "Reference to Patient"
-    },
     "assessment_date": {
-      "type": "string",
-      "format": "date"
+      "format": "date",
+      "type": "string"
     },
     "assessment_type": {
-      "type": "string",
+      "description": "Type of assessment",
       "enum": [
         "strength",
         "range_of_motion",
@@ -21,42 +16,50 @@
         "flexibility",
         "other"
       ],
-      "description": "Type of assessment"
+      "type": "string"
     },
-    "test_name": {
-      "type": "string",
-      "description": "Name of the test or measurement"
+    "baseline": {
+      "description": "Baseline or comparison value",
+      "type": "string"
     },
     "body_part": {
-      "type": "string",
-      "description": "Body part being assessed"
+      "description": "Body part being assessed",
+      "type": "string"
+    },
+    "clinic_id": {
+      "description": "Reference to Clinic for tenant isolation",
+      "type": "string"
+    },
+    "clinician_name": {
+      "type": "string"
+    },
+    "notes": {
+      "type": "string"
+    },
+    "patient_id": {
+      "description": "Reference to Patient",
+      "type": "string"
     },
     "side": {
-      "type": "string",
+      "default": "n/a",
       "enum": [
         "left",
         "right",
         "bilateral",
         "n/a"
       ],
-      "default": "n/a"
-    },
-    "value": {
-      "type": "string",
-      "description": "Measurement value"
-    },
-    "unit": {
-      "type": "string",
-      "description": "Unit of measurement (kg, degrees, seconds, etc)"
-    },
-    "baseline": {
-      "type": "string",
-      "description": "Baseline or comparison value"
-    },
-    "notes": {
       "type": "string"
     },
-    "clinician_name": {
+    "test_name": {
+      "description": "Name of the test or measurement",
+      "type": "string"
+    },
+    "unit": {
+      "description": "Unit of measurement (kg, degrees, seconds, etc)",
+      "type": "string"
+    },
+    "value": {
+      "description": "Measurement value",
       "type": "string"
     }
   },
@@ -64,5 +67,6 @@
     "patient_id",
     "assessment_date",
     "test_name"
-  ]
+  ],
+  "type": "object"
 }
