@@ -1,68 +1,72 @@
 {
   "name": "PatientOutcomeMeasure",
-  "type": "object",
   "properties": {
-    "patient_id": {
-      "type": "string",
-      "description": "Reference to Patient"
-    },
-    "outcome_measure_id": {
-      "type": "string",
-      "description": "Reference to OutcomeMeasure"
-    },
-    "sent_date": {
-      "type": "string",
-      "format": "date"
+    "clinic_id": {
+      "description": "Reference to Clinic for tenant isolation",
+      "type": "string"
     },
     "completed_date": {
-      "type": "string",
-      "format": "date"
-    },
-    "status": {
-      "type": "string",
-      "enum": [
-        "pending",
-        "completed"
-      ],
-      "default": "pending"
+      "format": "date",
+      "type": "string"
     },
     "frequency": {
-      "type": "string",
+      "default": "one-time",
+      "description": "How often this outcome measure should be sent",
       "enum": [
         "one-time",
         "weekly",
         "bi-weekly",
         "monthly"
       ],
-      "default": "one-time",
-      "description": "How often this outcome measure should be sent"
+      "type": "string"
+    },
+    "notes": {
+      "type": "string"
+    },
+    "outcome_measure_id": {
+      "description": "Reference to OutcomeMeasure",
+      "type": "string"
+    },
+    "patient_id": {
+      "description": "Reference to Patient",
+      "type": "string"
     },
     "responses": {
-      "type": "array",
       "items": {
-        "type": "object",
         "properties": {
-          "question_index": {
-            "type": "number"
-          },
           "answer": {
             "type": "string"
+          },
+          "question_index": {
+            "type": "number"
           },
           "score": {
             "type": "number"
           }
-        }
-      }
+        },
+        "type": "object"
+      },
+      "type": "array"
+    },
+    "sent_date": {
+      "format": "date",
+      "type": "string"
+    },
+    "status": {
+      "default": "pending",
+      "enum": [
+        "pending",
+        "completed"
+      ],
+      "type": "string"
     },
     "total_score": {
       "type": "number"
-    },
-    "notes": {
-      "type": "string"
     }
   },
   "required": [
     "patient_id",
     "outcome_measure_id"
-  ]
+  ],
+  "type": "object"
 }
