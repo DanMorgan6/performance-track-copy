@@ -25,6 +25,7 @@ import { Input } from "@/components/ui/input";
 import StatCard from '@/components/dashboard/StatCard';
 import PatientGlanceCard from '@/components/dashboard/PatientGlanceCard';
 import AIInsightsGenerator from '@/components/dashboard/AIInsightsGenerator';
+import PatientAlerts from '@/components/analytics/PatientAlerts';
 import ClinicianInviteDialog from '@/components/clinician/ClinicianInviteDialog';
 import { cn } from "@/lib/utils";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -197,6 +198,21 @@ export default function CoachDashboard() {
       500
     ),
     enabled: !!currentUser?.email && patientIds.length > 0
+  });
+
+  const activePlanIds = plans
+    .filter((plan) => plan.status === 'active')
+    .map((plan) => plan.id);
+
+  const { data: phases = [] } = useQuery({
+    queryKey: ['dashboard-phases', activePlanIds],
+    queryFn: async () => {
+      const phaseGroups = await Promise.all(
+        activePlanIds.map((planId) => base44.entities.RehabPhase.filter({ plan_id: planId }))
+      );
+      return phaseGroups.flat();
+    },
+    enabled: activePlanIds.length > 0
   });
 
   const { data: allPatientInvites = [] } = useQuery({
@@ -416,6 +432,23 @@ export default function CoachDashboard() {
                     onInsightsGenerated={setAiInsights}
                   />
                 </div>
+              </div>
+
+              <div className="rounded-[24px] border border-white/[0.08] bg-[#242427] p-5 shadow-xl shadow-black/10">
+                <div className="mb-4">
+                  <h3 className="text-lg font-bold text-white">Clinical priorities</h3>
+                  <p className="mt-1 text-sm text-zinc-500">
+                    Criteria reviews, pain changes, adherence, PROMs and inactivity that may need attention.
+                  </p>
+                </div>
+                <PatientAlerts
+                  patients={patients}
+                  exerciseLogs={exerciseLogs}
+                  painLogs={recentPainLogs}
+                  patientOutcomeMeasures={patientOutcomeMeasures}
+                  plans={plans}
+                  phases={phases}
+                />
               </div>
 
               {/* Patient Glance Cards Grid */}
