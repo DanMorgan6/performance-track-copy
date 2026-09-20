@@ -200,7 +200,7 @@ export default function CreateOutcomeMeasure() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50/30 p-4 pb-28 md:pb-16 lg:p-10">
+    <div className="min-h-screen bg-slate-50 p-4 pb-28 md:pb-16 lg:p-10">
       <div className="max-w-5xl mx-auto">
         <Link 
           to={createPageUrl('CoachDashboard')}
