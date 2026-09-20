@@ -18,6 +18,7 @@ export default function PatientInviteManager({ patient, clinic, currentUser }) {
   const [showDialog, setShowDialog] = useState(false);
   const [showQR, setShowQR] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [emailError, setEmailError] = useState('');
 
   // Load existing active invite
   useEffect(() => {
@@ -54,7 +55,17 @@ export default function PatientInviteManager({ patient, clinic, currentUser }) {
           subject: `Your Patient Portal Invite – ${clinic?.name || 'Your Clinic'}`,
           body: `Hi ${patient.full_name},\n\n${clinic?.name || 'Your clinic'} has set up a patient portal for your rehabilitation programme.\n\nClick the link below to create your account and get started:\n\n${url}\n\nThis link expires in 30 days. If you have any questions, please contact your clinician.\n\nBest wishes,\n${clinic?.name || 'Your Clinic'} Team`
         });
+        setEmailError('');
+        await base44.entities.Patient.update(patient.id, {
+          portal_access_sent: true,
+          portal_access_sent_date: new Date().toISOString().split('T')[0]
+        });
       } catch (e) {
+        setEmailError('The email could not be delivered. Copy the secure link and share it directly.');
+        await base44.entities.Patient.update(patient.id, {
+          portal_access_sent: false,
+          portal_access_sent_date: null
+        });
         console.error('Failed to auto-send invite email', e);
       }
     }
@@ -90,15 +101,24 @@ export default function PatientInviteManager({ patient, clinic, currentUser }) {
     if (!inviteUrl || !patient.email) return;
     setSendingEmail(true);
     try {
+      setEmailError('');
       await base44.integrations.Core.SendEmail({
         to: patient.email,
         subject: `Your Patient Portal Invite – ${clinic?.name || 'Your Clinic'}`,
         body: `Hi ${patient.full_name},\n\n${clinic?.name || 'Your clinic'} has set up a patient portal for your rehabilitation programme.\n\nClick the link below to create your account and get started:\n\n${inviteUrl}\n\nThis link expires in 30 days. If you have any questions, please contact your clinician.\n\nBest wishes,\n${clinic?.name || 'Your Clinic'} Team`
       });
+      await base44.entities.Patient.update(patient.id, {
+        portal_access_sent: true,
+        portal_access_sent_date: new Date().toISOString().split('T')[0]
+      });
       setEmailSent(true);
       setTimeout(() => setEmailSent(false), 4000);
     } catch (e) {
-      alert('Failed to send email. Please copy the link manually.');
+      setEmailError('The email could not be delivered. Copy the secure link and share it directly.');
+      await base44.entities.Patient.update(patient.id, {
+        portal_access_sent: false,
+        portal_access_sent_date: null
+      });
     }
     setSendingEmail(false);
   };
@@ -134,6 +154,12 @@ export default function PatientInviteManager({ patient, clinic, currentUser }) {
             Active
           </span>
         </div>
+
+        {emailError && (
+          <p className="mb-3 rounded-lg border border-amber-300 bg-amber-50 p-2 text-xs text-amber-800">
+            {emailError}
+          </p>
+        )}
 
         <div className="flex flex-wrap gap-2">
           <Button
