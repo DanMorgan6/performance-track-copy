@@ -42,6 +42,10 @@
     "phase_id": {
       "type": "string"
     },
+    "plan_id": {
+      "description": "Reference to RehabPlan (used by both phased and Quick Plans)",
+      "type": "string"
+    },
     "reps_completed": {
       "type": "string"
     },
@@ -54,6 +58,7 @@
     }
   },
   "required": [
+    "clinic_id",
     "patient_id",
     "date",
     "exercise_name"
