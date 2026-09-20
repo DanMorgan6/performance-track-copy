@@ -14,6 +14,7 @@ import {
 import { isSubscriptionActive, calculateMonthlyPrice, formatPrice, SELF_SERVICE_MAX_PRACTITIONERS } from '@/components/utils/subscriptionUtils';
 import { isPractitioner } from '@/lib/roles';
 import { Mail, Send, Loader2, AlertCircle, CheckCircle2, CreditCard, Copy, QrCode } from 'lucide-react';
+import { getUnifiedInviteUrl, normaliseInviteEmail } from '@/components/invite/inviteFlow';
 
 // Generate cryptographically secure random token
 function generateSecureToken() {
@@ -34,6 +35,7 @@ export default function ClinicianInviteManager({ clinicId, open, onOpenChange })
   const [newInvite, setNewInvite] = useState(null);
   const [copiedToken, setCopiedToken] = useState(null);
   const [selectedInvite, setSelectedInvite] = useState(null);
+  const [emailDeliveryStatus, setEmailDeliveryStatus] = useState('not_attempted');
 
   // Fetch clinic
   const { data: clinic } = useQuery({
@@ -79,22 +81,37 @@ export default function ClinicianInviteManager({ clinicId, open, onOpenChange })
       }
 
       const user = await base44.auth.me();
+      const normalisedEmail = normaliseInviteEmail(email);
       const token = generateSecureToken();
       const expiresAt = new Date();
-      expiresAt.setDate(expiresAt.getDate() + 7); // 7 days
+      expiresAt.setDate(expiresAt.getDate() + 7);
+
+      const existingInvites = await base44.entities.InviteToken.filter({
+        clinic_id: clinicId,
+        invite_type: 'clinician',
+        status: 'active'
+      });
+      for (const existing of existingInvites) {
+        if (normaliseInviteEmail(existing.email) === normalisedEmail) {
+          await base44.entities.InviteToken.update(existing.id, {
+            status: 'revoked',
+            revoked_at: new Date().toISOString()
+          });
+        }
+      }
 
       const invite = await base44.entities.InviteToken.create({
         clinic_id: clinicId,
         token,
         invite_type: 'clinician',
-        email,
+        email: normalisedEmail,
         role_target: role,
         expires_at: expiresAt.toISOString(),
         status: 'active',
         created_by: user.email
       });
 
-      const link = `${window.location.origin}${new URL(window.location.href).pathname}#/AcceptClinicianInvite?t=${token}`;
+      const link = getUnifiedInviteUrl(token);
       setInviteLink(link);
       setNewInvite(invite);
 
@@ -103,7 +120,7 @@ export default function ClinicianInviteManager({ clinicId, open, onOpenChange })
         const clinicName = clinic?.name || 'your clinic';
         const inviterName = user.full_name || user.email;
         await base44.integrations.Core.SendEmail({
-          to: email,
+          to: normalisedEmail,
           subject: `You're invited to join ${clinicName} on Performance Track+`,
           html: `
             <div style="font-family: Inter, Arial, sans-serif; max-width: 560px; margin: 0 auto; color: #1f2937;">
@@ -122,8 +139,9 @@ export default function ClinicianInviteManager({ clinicId, open, onOpenChange })
             </div>
           `,
         });
+        setEmailDeliveryStatus('sent');
       } catch (err) {
-        // Email send failure shouldn't block the invite; the link is still shown in the dialog
+        setEmailDeliveryStatus('failed');
         console.warn('Invite email failed to send:', err);
       }
 
@@ -201,6 +219,7 @@ export default function ClinicianInviteManager({ clinicId, open, onOpenChange })
       setShowSeatConfirm(false);
       setNewInvite(null);
       setInviteLink('');
+      setEmailDeliveryStatus('not_attempted');
     }
     onOpenChange(newOpen);
   };
@@ -371,8 +390,15 @@ export default function ClinicianInviteManager({ clinicId, open, onOpenChange })
 
             <div className="text-center">
               <p className="text-sm text-slate-600 mb-2">
-                Share this with <strong>{email}</strong>:
+                Share this with <strong>{normaliseInviteEmail(email)}</strong>:
               </p>
+              {emailDeliveryStatus === 'sent' ? (
+                <p className="text-xs font-medium text-emerald-600">Invitation email sent successfully.</p>
+              ) : (
+                <p className="text-xs font-medium text-amber-700">
+                  The email could not be delivered. Copy and share the secure link below.
+                </p>
+              )}
             </div>
 
             {/* Copy Link Section */}
