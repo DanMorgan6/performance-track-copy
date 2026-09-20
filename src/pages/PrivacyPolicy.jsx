@@ -1,192 +1,307 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
-import { ArrowLeft, Shield, Eye, Database, UserCheck, Trash2, Mail, Lock, Globe, ChevronDown, ChevronUp } from 'lucide-react';
+import {
+  ArrowLeft,
+  BrainCircuit,
+  Building2,
+  CheckCircle2,
+  Database,
+  FileText,
+  LockKeyhole,
+  Mail,
+  ShieldCheck,
+  UserRoundCheck,
+} from 'lucide-react';
 
-const Section = ({ icon: Icon, title, children, color = "purple" }) => {
-  const [open, setOpen] = useState(true);
-  const colors = {
-    purple: "bg-purple-50 text-purple-700 border-purple-100",
-    blue: "bg-blue-50 text-blue-700 border-blue-100",
-    green: "bg-emerald-50 text-emerald-700 border-emerald-100",
-    rose: "bg-rose-50 text-rose-700 border-rose-100",
-    amber: "bg-amber-50 text-amber-700 border-amber-100",
-    slate: "bg-slate-50 text-slate-700 border-slate-100",
-  };
+const sections = [
+  {
+    icon: Building2,
+    title: 'Who is responsible for your data?',
+    content: (
+      <>
+        <p>
+          The clinic providing your care is normally the <strong>data controller</strong> for your
+          patient and rehabilitation records. It decides why and how that information is used and
+          should give you its own privacy notice.
+        </p>
+        <p>
+          Performance Track+ normally acts as the clinic&apos;s <strong>data processor</strong> for
+          those records, handling them on the clinic&apos;s documented instructions to provide the
+          platform. Performance Track+ is a controller for limited information it uses for its own
+          purposes, such as clinic account administration, service security and billing records.
+        </p>
+        <p>
+          Patients should contact their clinic first about clinical records. Clinic account holders
+          can contact <a href="mailto:privacy@beachesperformance.com">privacy@beachesperformance.com</a>.
+        </p>
+      </>
+    ),
+  },
+  {
+    icon: Database,
+    title: 'Information processed',
+    content: (
+      <>
+        <p><strong>Clinic and practitioner information</strong> may include names, work email addresses,
+          professional details, clinic details, user roles, subscription information and security or
+          activity records.</p>
+        <p><strong>Patient information</strong> may include contact details, injury and health
+          information, rehabilitation plans, exercises, pain and symptom logs, outcome measures,
+          messages, progress reports and uploaded documents.</p>
+        <p><strong>Optional connected-health information</strong> may include activity, running,
+          heart-rate, HRV, sleep and recovery summaries when a patient or clinic explicitly enables
+          an approved provider connection. Provider access and refresh tokens must not be stored in
+          patient records. Connections can be revoked, and wearable data is used only to inform
+          practitioner review; it does not automatically progress a rehabilitation phase.</p>
+        <p>
+          Health information is special category data under UK data protection law and requires
+          additional protection.
+        </p>
+      </>
+    ),
+  },
+  {
+    icon: FileText,
+    title: 'Why information is used',
+    content: (
+      <>
+        <ul>
+          <li>To create, deliver and monitor rehabilitation programmes.</li>
+          <li>To support communication between a patient and their authorised care team.</li>
+          <li>To generate progress information and practitioner-reviewed reports.</li>
+          <li>To administer clinic accounts, subscriptions, support and service security.</li>
+          <li>To meet applicable legal, regulatory and accounting obligations.</li>
+        </ul>
+        <p>
+          Each clinic is responsible for identifying and documenting an appropriate UK GDPR Article
+          6 lawful basis and, for health information, an Article 9 condition. The correct basis
+          depends on the clinic and its circumstances; consent is not assumed to be the basis in
+          every case.
+        </p>
+      </>
+    ),
+  },
+  {
+    icon: BrainCircuit,
+    title: 'AI-assisted features',
+    content: (
+      <>
+        <p>
+          AI features can help practitioners draft programmes and content. They are decision-support
+          tools, not a replacement for clinical judgement. A practitioner must review, amend where
+          needed and approve any AI-assisted output before relying on it for patient care.
+        </p>
+        <p>
+          Clinics should avoid entering information that is not necessary for the task and should
+          review the applicable data-processing terms and subprocessor information before enabling
+          AI-assisted workflows.
+        </p>
+      </>
+    ),
+  },
+  {
+    icon: UserRoundCheck,
+    title: 'Access and sharing',
+    content: (
+      <>
+        <p>
+          Access is role based. Practitioners can access records only within their own clinic, and a
+          patient account is linked only to that patient&apos;s record. One clinic cannot use the
+          application to access another clinic&apos;s data.
+        </p>
+        <p>
+          Information may be processed by service providers needed to operate Performance Track+,
+          including Base44 for application infrastructure and Stripe for subscription billing.
+          Stripe receives payment information directly; Performance Track+ does not store full card
+          details. Other configured services, such as email, file-storage or AI providers, must be
+          recorded in the clinic agreement or current subprocessor schedule.
+        </p>
+        <p>Personal information is not sold.</p>
+      </>
+    ),
+  },
+  {
+    icon: LockKeyhole,
+    title: 'Security and incidents',
+    content: (
+      <>
+        <ul>
+          <li>Tenant-level access rules separate clinic records.</li>
+          <li>Role-based permissions limit practitioner and patient access.</li>
+          <li>Patient invitations are validated before an account is linked to a record.</li>
+          <li>Information is encrypted in transit using HTTPS/TLS.</li>
+          <li>Restricted operations run through authenticated server-side functions.</li>
+        </ul>
+        <p>
+          If a personal data incident affects clinic-controlled data, the platform operator will
+          support the clinic and notify it without undue delay where required. The clinic remains
+          responsible for deciding whether it must notify the ICO or affected people.
+        </p>
+      </>
+    ),
+  },
+  {
+    icon: ShieldCheck,
+    title: 'Your data protection rights',
+    content: (
+      <>
+        <p>
+          Depending on the circumstances, you may have rights to access, correct or erase your
+          information; restrict or object to processing; receive portable data; and withdraw consent
+          where consent is the lawful basis. Some rights are subject to legal exceptions and
+          professional record-keeping obligations.
+        </p>
+        <p>
+          For patient or clinical information, contact the clinic providing your care. For
+          Performance Track+ account, security or billing information, email{' '}
+          <a href="mailto:privacy@beachesperformance.com">privacy@beachesperformance.com</a>.
+          Requests will be handled within the timescales required by applicable law.
+        </p>
+      </>
+    ),
+  },
+  {
+    icon: Database,
+    title: 'Retention and deletion',
+    content: (
+      <>
+        <p>
+          The clinic sets retention periods for clinical records according to its professional,
+          contractual and legal obligations. Performance Track+ retains clinic-controlled data for
+          the duration agreed with the clinic, then returns or deletes it in accordance with the
+          service agreement, subject to secure backup cycles and legal requirements.
+        </p>
+        <p>
+          Account, security and billing records are kept only as long as reasonably necessary for
+          service administration, fraud prevention, disputes and applicable legal or accounting
+          obligations.
+        </p>
+      </>
+    ),
+  },
+];
+
+function PolicySection({ icon: Icon, title, children }) {
   return (
-    <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden mb-4">
-      <button
-        onClick={() => setOpen(!open)}
-        className="w-full flex items-center gap-4 p-6 text-left hover:bg-slate-50 transition-colors"
-      >
-        <div className={`w-10 h-10 rounded-xl flex items-center justify-center border ${colors[color]}`}>
-          <Icon className="w-5 h-5" />
+    <section className="rounded-3xl border border-white/10 bg-white/[0.045] p-5 shadow-[0_20px_60px_-35px_rgba(0,0,0,0.9)] backdrop-blur sm:p-7">
+      <div className="flex items-start gap-4">
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-lime-300/25 bg-lime-300/10 text-lime-300">
+          <Icon className="h-5 w-5" aria-hidden="true" />
         </div>
-        <h2 className="flex-1 text-lg font-semibold text-slate-800">{title}</h2>
-        {open ? <ChevronUp className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}
-      </button>
-      {open && (
-        <div className="px-6 pb-6 text-slate-600 text-sm leading-relaxed space-y-3">
-          {children}
+        <div className="min-w-0 flex-1">
+          <h2 className="text-lg font-semibold tracking-tight text-white">{title}</h2>
+          <div className="policy-copy mt-4 space-y-4 text-sm leading-7 text-slate-300">
+            {children}
+          </div>
         </div>
-      )}
-    </div>
+      </div>
+    </section>
   );
-};
+}
 
 export default function PrivacyPolicy() {
   return (
-    <div className="min-h-screen bg-slate-50">
-      {/* Header */}
-      <div className="bg-white border-b border-slate-100 sticky top-0 z-10">
-        <div className="max-w-3xl mx-auto px-6 py-4 flex items-center gap-4">
-          <Link to={createPageUrl('Home')} className="p-2 rounded-xl hover:bg-slate-100 text-slate-500 hover:text-slate-700 transition-colors">
-            <ArrowLeft className="w-5 h-5" />
+    <div className="min-h-screen bg-[#070b10] text-white">
+      <style>{`
+        .policy-copy strong { color: rgb(248 250 252); font-weight: 600; }
+        .policy-copy a { color: rgb(190 242 100); text-decoration: underline; text-underline-offset: 3px; }
+        .policy-copy ul { list-style: none; display: grid; gap: .55rem; padding: 0; }
+        .policy-copy li { position: relative; padding-left: 1.55rem; }
+        .policy-copy li::before { content: "✓"; position: absolute; left: 0; color: rgb(190 242 100); font-weight: 700; }
+      `}</style>
+
+      <header className="sticky top-0 z-20 border-b border-white/10 bg-[#070b10]/90 backdrop-blur-xl">
+        <div className="mx-auto flex max-w-5xl items-center gap-4 px-5 py-4 sm:px-8">
+          <Link
+            to={createPageUrl('Home')}
+            aria-label="Back to home"
+            className="grid h-10 w-10 place-items-center rounded-full border border-white/10 text-slate-300 transition hover:border-lime-300/40 hover:bg-lime-300/10 hover:text-lime-300"
+          >
+            <ArrowLeft className="h-5 w-5" />
           </Link>
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-purple-600 flex items-center justify-center">
-              <Shield className="w-5 h-5 text-white" />
-            </div>
-            <div>
-              <h1 className="text-base font-bold text-slate-800">Privacy Policy & GDPR Information</h1>
-              <p className="text-xs text-slate-400">Last updated: February 2026</p>
-            </div>
+          <div>
+            <p className="text-sm font-semibold tracking-wide text-white">Performance Track+</p>
+            <p className="text-xs text-slate-500">Privacy and data protection</p>
           </div>
         </div>
-      </div>
+      </header>
 
-      <div className="max-w-3xl mx-auto px-6 py-8">
-        {/* Intro */}
-        <div className="bg-purple-600 rounded-2xl p-6 mb-6 text-white">
-          <h2 className="text-xl font-bold mb-2">Your privacy matters to us</h2>
-          <p className="text-purple-100 text-sm leading-relaxed">
-            This policy explains how Beaches Performance + collects, uses, and protects your personal data in accordance 
-            with the UK General Data Protection Regulation (UK GDPR) and the Data Protection Act 2018.
-          </p>
-        </div>
+      <main className="relative overflow-hidden">
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-[32rem] bg-[radial-gradient(circle_at_75%_0%,rgba(190,242,100,0.14),transparent_48%)]" />
+        <div className="relative mx-auto max-w-5xl px-5 py-12 sm:px-8 sm:py-16">
+          <div className="max-w-3xl">
+            <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-lime-300/25 bg-lime-300/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-lime-300">
+              <ShieldCheck className="h-4 w-4" />
+              Privacy by design
+            </div>
+            <h1 className="text-4xl font-bold tracking-[-0.045em] text-white sm:text-6xl">
+              Clear control of sensitive rehabilitation data.
+            </h1>
+            <p className="mt-6 max-w-2xl text-base leading-8 text-slate-300 sm:text-lg">
+              This page explains how information is handled when a clinic uses Performance Track+.
+              It complements the clinic&apos;s own privacy notice and is not a substitute for it.
+            </p>
+            <div className="mt-7 flex flex-wrap gap-3 text-xs text-slate-400">
+              <span className="rounded-full border border-white/10 bg-white/5 px-3 py-2">Last updated 20 September 2026</span>
+              <span className="rounded-full border border-white/10 bg-white/5 px-3 py-2">UK GDPR focused</span>
+              <span className="rounded-full border border-white/10 bg-white/5 px-3 py-2">Clinic-separated access</span>
+            </div>
+          </div>
 
-        <Section icon={UserCheck} title="Who We Are (Data Controller)" color="purple">
-          <p>
-            <strong>Beaches Performance +</strong> is the data controller responsible for your personal information. 
-            We are committed to protecting your data and complying with all applicable data protection laws.
-          </p>
-          <p>
-            If you have any questions about how we handle your data, please contact us at: 
-            <strong> privacy@beachesperformance.com</strong>
-          </p>
-          <p className="text-xs text-slate-400 bg-slate-50 rounded-xl p-3 border border-slate-100">
-            If your clinic uses this platform independently, they act as a separate data controller for the data they collect about you as their patient. Please contact your clinic directly for their specific data processing practices.
-          </p>
-        </Section>
-
-        <Section icon={Database} title="What Data We Collect" color="blue">
-          <p><strong>For Clinicians & Clinic Administrators:</strong></p>
-          <ul className="list-disc ml-5 space-y-1">
-            <li>Name, email address, and professional details</li>
-            <li>Clinic name, address, and contact information</li>
-            <li>Billing and payment information (processed securely via Stripe)</li>
-            <li>Usage data and activity logs within the platform</li>
-          </ul>
-          <p className="mt-2"><strong>For Patients:</strong></p>
-          <ul className="list-disc ml-5 space-y-1">
-            <li>Name, email address, date of birth, and contact details</li>
-            <li>Health information including injury type, rehabilitation plans, and exercise logs</li>
-            <li>Pain logs, assessment results, and outcome measures</li>
-            <li>Daily notes, mood, energy levels, and self-reported symptoms</li>
-            <li>Medical reports and documents uploaded by your clinician</li>
-          </ul>
-        </Section>
-
-        <Section icon={Eye} title="How We Use Your Data" color="green">
-          <p><strong>Lawful bases for processing (UK GDPR Article 6 & 9):</strong></p>
-          <ul className="list-disc ml-5 space-y-1">
-            <li><strong>Contract performance</strong> — to provide and operate the platform services</li>
-            <li><strong>Legitimate interests</strong> — to improve the platform and ensure security</li>
-            <li><strong>Legal obligation</strong> — to comply with applicable laws and regulations</li>
-            <li><strong>Explicit consent</strong> — for health data processing (special category data under Article 9)</li>
-          </ul>
-          <p className="mt-2">We use your data to:</p>
-          <ul className="list-disc ml-5 space-y-1">
-            <li>Deliver personalised rehabilitation plans and track progress</li>
-            <li>Enable communication between clinicians and patients</li>
-            <li>Generate reports and insights to support clinical decision-making</li>
-            <li>Process payments and manage subscriptions</li>
-            <li>Maintain the security and integrity of the platform</li>
-          </ul>
-        </Section>
-
-        <Section icon={Globe} title="Data Sharing & Third Parties" color="amber">
-          <p>We do not sell your personal data. We may share data with:</p>
-          <ul className="list-disc ml-5 space-y-1">
-            <li><strong>Stripe</strong> — for secure payment processing (their privacy policy applies)</li>
-            <li><strong>Base44</strong> — our hosting and infrastructure provider (data processed within the EU/UK)</li>
-            <li><strong>Your clinic</strong> — clinicians can view data about their patients only</li>
-          </ul>
-          <p className="text-xs text-slate-400 bg-slate-50 rounded-xl p-3 border border-slate-100 mt-2">
-            All third-party processors are bound by data processing agreements ensuring your data is handled in compliance with UK GDPR.
-          </p>
-        </Section>
-
-        <Section icon={Lock} title="Data Security" color="rose">
-          <ul className="list-disc ml-5 space-y-1">
-            <li>All data is encrypted in transit using TLS/SSL</li>
-            <li>Data is stored on secure, access-controlled servers</li>
-            <li>Access to patient data is restricted to the relevant clinic's staff only</li>
-            <li>Regular security reviews and monitoring are conducted</li>
-            <li>We use role-based access controls to limit data exposure</li>
-          </ul>
-          <p>In the event of a data breach that is likely to result in a risk to your rights and freedoms, we will notify the relevant supervisory authority (ICO) within 72 hours and affected individuals without undue delay.</p>
-        </Section>
-
-        <Section icon={Shield} title="Your Rights Under UK GDPR" color="purple">
-          <p>You have the following rights regarding your personal data:</p>
-          <div className="space-y-2">
-            {[
-              { right: "Right of Access", desc: "Request a copy of all personal data we hold about you." },
-              { right: "Right to Rectification", desc: "Request correction of inaccurate or incomplete data." },
-              { right: "Right to Erasure", desc: "Request deletion of your data ('right to be forgotten'), subject to legal retention requirements." },
-              { right: "Right to Restriction", desc: "Request that we restrict processing of your data in certain circumstances." },
-              { right: "Right to Data Portability", desc: "Receive your data in a structured, commonly used format." },
-              { right: "Right to Object", desc: "Object to processing based on legitimate interests or for direct marketing." },
-              { right: "Right to Withdraw Consent", desc: "Withdraw consent at any time where processing is based on consent." },
-            ].map(({ right, desc }) => (
-              <div key={right} className="flex gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100">
-                <div className="w-2 h-2 rounded-full bg-purple-400 mt-1.5 flex-shrink-0" />
-                <div>
-                  <p className="font-medium text-slate-700 text-xs">{right}</p>
-                  <p className="text-slate-500 text-xs mt-0.5">{desc}</p>
-                </div>
-              </div>
+          <div className="mt-12 grid gap-5">
+            {sections.map(({ icon, title, content }) => (
+              <PolicySection key={title} icon={icon} title={title}>
+                {content}
+              </PolicySection>
             ))}
           </div>
-          <p className="mt-2">To exercise any of these rights, contact us at <strong>privacy@beachesperformance.com</strong>. We will respond within <strong>30 days</strong>.</p>
-        </Section>
 
-        <Section icon={Trash2} title="Data Retention" color="slate">
-          <ul className="list-disc ml-5 space-y-1">
-            <li><strong>Patient health records</strong> — retained for a minimum of 8 years after the last appointment (in line with NHS/clinical guidelines), or until deletion is requested</li>
-            <li><strong>Account data</strong> — retained for the duration of the account and up to 2 years after closure</li>
-            <li><strong>Billing records</strong> — retained for 7 years for legal and accounting purposes</li>
-            <li><strong>Usage/log data</strong> — retained for up to 12 months</li>
-          </ul>
-          <p>After the applicable retention period, data is securely deleted or anonymised.</p>
-        </Section>
+          <section className="mt-5 rounded-3xl border border-lime-300/20 bg-lime-300/[0.07] p-6 sm:p-8">
+            <div className="flex items-start gap-4">
+              <CheckCircle2 className="mt-1 h-6 w-6 shrink-0 text-lime-300" />
+              <div>
+                <h2 className="text-lg font-semibold text-white">Clinic go-live checklist</h2>
+                <p className="mt-2 text-sm leading-7 text-slate-300">
+                  Before using Performance Track+ with patients, each clinic should maintain its own
+                  privacy notice and retention schedule, document its Article 6 and Article 9 bases,
+                  complete any required data protection impact assessment, and review its data
+                  processing agreement and subprocessor list.
+                </p>
+              </div>
+            </div>
+          </section>
 
-        <Section icon={Mail} title="Complaints & Contact" color="rose">
-          <p>If you have concerns about how we handle your data, please contact us first:</p>
-          <p className="font-medium">privacy@beachesperformance.com</p>
-          <p className="mt-2">If you remain unsatisfied, you have the right to lodge a complaint with the <strong>Information Commissioner's Office (ICO)</strong>:</p>
-          <div className="bg-slate-50 rounded-xl p-3 border border-slate-100 text-xs">
-            <p className="font-medium text-slate-700">Information Commissioner's Office</p>
-            <p className="text-slate-500">Website: <a href="https://ico.org.uk" target="_blank" rel="noopener noreferrer" className="text-purple-600 underline">ico.org.uk</a></p>
-            <p className="text-slate-500">Helpline: 0303 123 1113</p>
-          </div>
-        </Section>
+          <section className="mt-5 rounded-3xl border border-white/10 bg-white/[0.035] p-6 sm:p-8">
+            <div className="flex items-start gap-4">
+              <Mail className="mt-1 h-6 w-6 shrink-0 text-lime-300" />
+              <div>
+                <h2 className="text-lg font-semibold text-white">Questions or complaints</h2>
+                <p className="mt-2 text-sm leading-7 text-slate-300">
+                  Contact your clinic about patient records, or email{' '}
+                  <a className="text-lime-300 underline underline-offset-4" href="mailto:privacy@beachesperformance.com">
+                    privacy@beachesperformance.com
+                  </a>{' '}
+                  about the platform. You may also complain to the{' '}
+                  <a
+                    className="text-lime-300 underline underline-offset-4"
+                    href="https://ico.org.uk/make-a-complaint/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Information Commissioner&apos;s Office
+                  </a>.
+                </p>
+              </div>
+            </div>
+          </section>
 
-        <div className="text-center text-xs text-slate-400 mt-8 pb-4">
-          This policy was last reviewed in February 2026. We may update it periodically — any material changes will be communicated to users.
+          <p className="mx-auto mt-8 max-w-3xl text-center text-xs leading-6 text-slate-500">
+            This information describes the current platform design. Clinics should obtain
+            independent legal advice for their specific regulatory and professional obligations.
+          </p>
         </div>
-      </div>
+      </main>
     </div>
   );
 }

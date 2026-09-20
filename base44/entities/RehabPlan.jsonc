@@ -1,77 +1,12 @@
 {
   "name": "RehabPlan",
-  "type": "object",
   "properties": {
-    "clinic_id": {
-      "type": "string",
-      "description": "Reference to Clinic - required for multi-clinic isolation"
-    },
-    "patient_id": {
-      "type": "string",
-      "description": "Reference to Patient"
-    },
-    "title": {
-      "type": "string",
-      "description": "Plan title"
-    },
-    "description": {
-      "type": "string"
-    },
-    "program_type": {
-      "type": "string",
-      "enum": [
-        "basic",
-        "phased"
-      ],
-      "default": "phased",
-      "description": "Basic = simple recurring bundle; Phased = multi-phase progression"
-    },
-    "start_date": {
-      "type": "string",
-      "format": "date"
-    },
-    "target_end_date": {
-      "type": "string",
-      "format": "date"
-    },
-    "current_phase": {
-      "type": "number",
-      "default": 1
-    },
-    "total_phases": {
-      "type": "number"
-    },
-    "status": {
-      "type": "string",
-      "enum": [
-        "draft",
-        "active",
-        "completed",
-        "paused",
-        "archived"
-      ],
-      "default": "active"
-    },
-    "created_by_clinician": {
-      "type": "string"
-    },
     "basic_config": {
-      "type": "object",
       "description": "Configuration for Basic programs only",
       "properties": {
-        "frequency_per_week": {
-          "type": "number",
-          "description": "2, 3, 4, or 7 (daily)"
-        },
-        "weekend_rest_days": {
-          "type": "boolean",
-          "default": true,
-          "description": "If true, Sat & Sun are rest days"
-        },
         "days_of_week_pattern": {
-          "type": "array",
+          "description": "Days when exercises are scheduled",
           "items": {
-            "type": "string",
             "enum": [
               "Monday",
               "Tuesday",
@@ -80,55 +15,289 @@
               "Friday",
               "Saturday",
               "Sunday"
-            ]
+            ],
+            "type": "string"
           },
-          "description": "Days when exercises are scheduled"
+          "type": "array"
         },
         "exercise_bundle": {
-          "type": "array",
           "description": "List of exercises with per-exercise prescription",
           "items": {
-            "type": "object",
             "properties": {
-              "name": {
-                "type": "string"
-              },
               "description": {
-                "type": "string"
-              },
-              "sets": {
-                "type": "number"
-              },
-              "reps": {
-                "type": "string"
-              },
-              "weight": {
                 "type": "string"
               },
               "hold": {
                 "type": "string"
               },
-              "tempo": {
+              "load_notes": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "reps": {
                 "type": "string"
               },
               "rest": {
                 "type": "string"
               },
-              "load_notes": {
+              "sets": {
+                "type": "number"
+              },
+              "tempo": {
                 "type": "string"
               },
               "video_url": {
                 "type": "string"
+              },
+              "weight": {
+                "type": "string"
               }
-            }
-          }
+            },
+            "type": "object"
+          },
+          "type": "array"
+        },
+        "frequency_per_week": {
+          "description": "2, 3, 4, or 7 (daily)",
+          "type": "number"
+        },
+        "weekend_rest_days": {
+          "default": true,
+          "description": "If true, Sat & Sun are rest days",
+          "type": "boolean"
         }
-      }
+      },
+      "type": "object"
+    },
+    "clinic_id": {
+      "description": "Reference to Clinic - required for multi-clinic isolation",
+      "type": "string"
+    },
+    "created_by_clinician": {
+      "type": "string"
+    },
+    "creation_mode": {
+      "description": "Workflow used to create the plan",
+      "enum": [
+        "basic",
+        "phased",
+        "ai_assisted"
+      ],
+      "type": "string"
+    },
+    "publication_state": {
+      "default": "draft",
+      "description": "Patient-facing plan lifecycle state",
+      "enum": [
+        "draft",
+        "published",
+        "updated",
+        "archived"
+      ],
+      "type": "string"
+    },
+    "version": {
+      "default": 1,
+      "minimum": 1,
+      "type": "integer"
+    },
+    "change_summary": {
+      "description": "Clinical reason for the latest material plan change",
+      "type": "string"
+    },
+    "published_at": {
+      "format": "date-time",
+      "type": "string"
+    },
+    "last_updated_at": {
+      "format": "date-time",
+      "type": "string"
+    },
+    "patient_viewed_at": {
+      "format": "date-time",
+      "type": "string"
+    },
+    "archived_at": {
+      "format": "date-time",
+      "type": "string"
+    },
+    "clinical_review_required": {
+      "default": false,
+      "type": "boolean"
+    },
+    "current_phase": {
+      "default": 1,
+      "type": "number"
+    },
+    "description": {
+      "type": "string"
+    },
+    "patient_id": {
+      "description": "Reference to Patient",
+      "type": "string"
+    },
+    "program_type": {
+      "default": "phased",
+      "description": "Basic = simple recurring bundle; Phased = multi-phase progression",
+      "enum": [
+        "basic",
+        "phased"
+      ],
+      "type": "string"
+    },
+    "start_date": {
+      "format": "date",
+      "type": "string"
+    },
+    "status": {
+      "default": "active",
+      "enum": [
+        "draft",
+        "active",
+        "completed",
+        "paused",
+        "archived"
+      ],
+      "type": "string"
+    },
+    "target_end_date": {
+      "format": "date",
+      "type": "string"
+    },
+    "title": {
+      "description": "Plan title",
+      "type": "string"
+    },
+    "total_phases": {
+      "type": "number"
     }
   },
   "required": [
     "clinic_id",
     "patient_id",
     "title"
-  ]
+  ],
+  "rls": {
+    "create": {
+      "$and": [
+        {
+          "$or": [
+            {
+              "user_condition": {
+                "role": "admin"
+              }
+            },
+            {
+              "user_condition": {
+                "role": "clinic_admin"
+              }
+            },
+            {
+              "user_condition": {
+                "role": "clinician"
+              }
+            }
+          ]
+        },
+        {
+          "data.clinic_id": "{{user.data.clinic_id}}"
+        }
+      ]
+    },
+    "delete": {
+      "$and": [
+        {
+          "$or": [
+            {
+              "user_condition": {
+                "role": "admin"
+              }
+            },
+            {
+              "user_condition": {
+                "role": "clinic_admin"
+              }
+            },
+            {
+              "user_condition": {
+                "role": "clinician"
+              }
+            }
+          ]
+        },
+        {
+          "data.clinic_id": "{{user.data.clinic_id}}"
+        }
+      ]
+    },
+    "read": {
+      "$or": [
+        {
+          "$and": [
+            {
+              "$or": [
+                {
+                  "user_condition": {
+                    "role": "admin"
+                  }
+                },
+                {
+                  "user_condition": {
+                    "role": "clinic_admin"
+                  }
+                },
+                {
+                  "user_condition": {
+                    "role": "clinician"
+                  }
+                }
+              ]
+            },
+            {
+              "data.clinic_id": "{{user.data.clinic_id}}"
+            }
+          ]
+        },
+        {
+          "$and": [
+            {
+              "data.patient_id": "{{user.data.patient_id}}"
+            },
+            {
+              "data.clinic_id": "{{user.data.clinic_id}}"
+            }
+          ]
+        }
+      ]
+    },
+    "update": {
+      "$and": [
+        {
+          "$or": [
+            {
+              "user_condition": {
+                "role": "admin"
+              }
+            },
+            {
+              "user_condition": {
+                "role": "clinic_admin"
+              }
+            },
+            {
+              "user_condition": {
+                "role": "clinician"
+              }
+            }
+          ]
+        },
+        {
+          "data.clinic_id": "{{user.data.clinic_id}}"
+        }
+      ]
+    }
+  },
+  "type": "object"
 }

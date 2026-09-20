@@ -1,153 +1,82 @@
 {
   "name": "RehabPhase",
-  "type": "object",
   "properties": {
-    "plan_id": {
-      "type": "string",
-      "description": "Reference to RehabPlan"
-    },
-    "phase_number": {
-      "type": "number"
-    },
-    "name": {
-      "type": "string",
-      "description": "Phase name e.g. 'Acute Recovery'"
+    "clinic_id": {
+      "description": "Reference to Clinic for tenant isolation",
+      "type": "string"
     },
     "description": {
+      "type": "string"
+    },
+    "phase_objective": {
+      "description": "Primary clinical objective for the phase",
+      "type": "string"
+    },
+    "precautions": {
+      "description": "Phase-specific precautions and symptom limits",
+      "type": "string"
+    },
+    "clinical_decision": {
+      "default": "pending",
+      "enum": [
+        "pending",
+        "continue",
+        "progress",
+        "regress",
+        "override"
+      ],
+      "type": "string"
+    },
+    "clinical_decision_reason": {
+      "description": "Required rationale for progression, regression or override",
+      "type": "string"
+    },
+    "last_criteria_reviewed_at": {
+      "format": "date-time",
+      "type": "string"
+    },
+    "reviewed_by": {
       "type": "string"
     },
     "duration_weeks": {
       "type": "number"
     },
-    "weeks": {
-      "type": "array",
-      "description": "Weekly schedule - single source of truth for plan delivery",
-      "items": {
-        "type": "object",
-        "properties": {
-          "week_number": {
-            "type": "number"
-          },
-          "daily_schedule": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "day": {
-                  "type": "string",
-                  "enum": [
-                    "Monday",
-                    "Tuesday",
-                    "Wednesday",
-                    "Thursday",
-                    "Friday",
-                    "Saturday",
-                    "Sunday"
-                  ]
-                },
-                "type": {
-                  "type": "string",
-                  "enum": [
-                    "training",
-                    "rest",
-                    "conditioning"
-                  ]
-                },
-                "exercises": {
-                  "type": "array",
-                  "items": {
-                    "type": "object",
-                    "properties": {
-                      "name": {
-                        "type": "string"
-                      },
-                      "description": {
-                        "type": "string"
-                      },
-                      "sets": {
-                        "type": "number"
-                      },
-                      "reps": {
-                        "type": "string"
-                      },
-                      "weight": {
-                        "type": "string"
-                      },
-                      "hold": {
-                        "type": "string"
-                      },
-                      "tempo": {
-                        "type": "string"
-                      },
-                      "duration": {
-                        "type": "string"
-                      },
-                      "rest": {
-                        "type": "string"
-                      },
-                      "rpe": {
-                        "type": "string",
-                        "description": "Rate of perceived exertion"
-                      },
-                      "notes": {
-                        "type": "string",
-                        "description": "Clinician notes/coaching cues"
-                      },
-                      "video_url": {
-                        "type": "string"
-                      },
-                      "superset_group": {
-                        "type": "string"
-                      },
-                      "superset_position": {
-                        "type": "number"
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "exit_criteria": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "properties": {
-          "criterion": {
-            "type": "string"
-          },
-          "target_value": {
-            "type": "string"
-          },
-          "is_met": {
-            "type": "boolean"
-          }
-        }
-      }
-    },
     "exercises": {
-      "type": "array",
       "description": "Legacy field - use weeks.daily_schedule for plan delivery",
       "items": {
-        "type": "object",
         "properties": {
+          "description": {
+            "type": "string"
+          },
+          "duration": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "frequency": {
+            "type": "string"
+          },
+          "hold": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "name": {
             "type": "string"
           },
-          "description": {
+          "reps": {
             "type": "string"
           },
           "sets": {
             "type": "number"
           },
-          "reps": {
-            "type": "string"
-          },
-          "frequency": {
-            "type": "string"
+          "tempo": {
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "video_url": {
             "type": "string"
@@ -157,41 +86,318 @@
               "number",
               "null"
             ]
-          },
-          "hold": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "tempo": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "duration": {
-            "type": [
-              "string",
-              "null"
-            ]
           }
-        }
-      }
+        },
+        "type": "object"
+      },
+      "type": "array"
+    },
+    "exit_criteria": {
+      "items": {
+        "properties": {
+          "criterion": {
+            "type": "string"
+          },
+          "criterion_type": {
+            "enum": [
+              "strength",
+              "symmetry",
+              "range_of_motion",
+              "pain",
+              "prom",
+              "functional_test",
+              "exposure",
+              "exercise_capacity",
+              "competency",
+              "confidence",
+              "other"
+            ],
+            "type": "string"
+          },
+          "measure_name": {
+            "type": "string"
+          },
+          "operator": {
+            "enum": [
+              "greater_than_or_equal",
+              "less_than_or_equal",
+              "equal",
+              "clinician_confirmed"
+            ],
+            "type": "string"
+          },
+          "target_value": {
+            "type": "string"
+          },
+          "current_value": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "unit": {
+            "type": "string"
+          },
+          "is_met": {
+            "default": false,
+            "type": "boolean"
+          },
+          "last_assessed_at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "assessed_by": {
+            "type": "string"
+          },
+          "evidence_note": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "type": "array"
+    },
+    "name": {
+      "description": "Phase name e.g. 'Acute Recovery'",
+      "type": "string"
+    },
+    "patient_id": {
+      "description": "Reference to Patient for access control",
+      "type": "string"
+    },
+    "phase_number": {
+      "type": "number"
+    },
+    "plan_id": {
+      "description": "Reference to RehabPlan",
+      "type": "string"
     },
     "status": {
-      "type": "string",
+      "default": "pending",
       "enum": [
         "pending",
         "active",
         "completed"
       ],
-      "default": "pending"
+      "type": "string"
+    },
+    "weeks": {
+      "description": "Weekly schedule - single source of truth for plan delivery",
+      "items": {
+        "properties": {
+          "daily_schedule": {
+            "items": {
+              "properties": {
+                "day": {
+                  "enum": [
+                    "Monday",
+                    "Tuesday",
+                    "Wednesday",
+                    "Thursday",
+                    "Friday",
+                    "Saturday",
+                    "Sunday"
+                  ],
+                  "type": "string"
+                },
+                "exercises": {
+                  "items": {
+                    "properties": {
+                      "description": {
+                        "type": "string"
+                      },
+                      "duration": {
+                        "type": "string"
+                      },
+                      "hold": {
+                        "type": "string"
+                      },
+                      "name": {
+                        "type": "string"
+                      },
+                      "notes": {
+                        "description": "Clinician notes/coaching cues",
+                        "type": "string"
+                      },
+                      "reps": {
+                        "type": "string"
+                      },
+                      "rest": {
+                        "type": "string"
+                      },
+                      "rpe": {
+                        "description": "Rate of perceived exertion",
+                        "type": "string"
+                      },
+                      "sets": {
+                        "type": "number"
+                      },
+                      "superset_group": {
+                        "type": "string"
+                      },
+                      "superset_position": {
+                        "type": "number"
+                      },
+                      "tempo": {
+                        "type": "string"
+                      },
+                      "video_url": {
+                        "type": "string"
+                      },
+                      "weight": {
+                        "type": "string"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                "type": {
+                  "enum": [
+                    "training",
+                    "rest",
+                    "conditioning"
+                  ],
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "week_number": {
+            "type": "number"
+          }
+        },
+        "type": "object"
+      },
+      "type": "array"
     }
   },
   "required": [
     "plan_id",
     "phase_number",
     "name"
-  ]
+  ],
+  "rls": {
+    "create": {
+      "$and": [
+        {
+          "$or": [
+            {
+              "user_condition": {
+                "role": "admin"
+              }
+            },
+            {
+              "user_condition": {
+                "role": "clinic_admin"
+              }
+            },
+            {
+              "user_condition": {
+                "role": "clinician"
+              }
+            }
+          ]
+        },
+        {
+          "data.clinic_id": "{{user.data.clinic_id}}"
+        }
+      ]
+    },
+    "delete": {
+      "$and": [
+        {
+          "$or": [
+            {
+              "user_condition": {
+                "role": "admin"
+              }
+            },
+            {
+              "user_condition": {
+                "role": "clinic_admin"
+              }
+            },
+            {
+              "user_condition": {
+                "role": "clinician"
+              }
+            }
+          ]
+        },
+        {
+          "data.clinic_id": "{{user.data.clinic_id}}"
+        }
+      ]
+    },
+    "read": {
+      "$or": [
+        {
+          "$and": [
+            {
+              "$or": [
+                {
+                  "user_condition": {
+                    "role": "admin"
+                  }
+                },
+                {
+                  "user_condition": {
+                    "role": "clinic_admin"
+                  }
+                },
+                {
+                  "user_condition": {
+                    "role": "clinician"
+                  }
+                }
+              ]
+            },
+            {
+              "data.clinic_id": "{{user.data.clinic_id}}"
+            }
+          ]
+        },
+        {
+          "$and": [
+            {
+              "data.patient_id": "{{user.data.patient_id}}"
+            },
+            {
+              "data.clinic_id": "{{user.data.clinic_id}}"
+            }
+          ]
+        }
+      ]
+    },
+    "update": {
+      "$and": [
+        {
+          "$or": [
+            {
+              "user_condition": {
+                "role": "admin"
+              }
+            },
+            {
+              "user_condition": {
+                "role": "clinic_admin"
+              }
+            },
+            {
+              "user_condition": {
+                "role": "clinician"
+              }
+            }
+          ]
+        },
+        {
+          "data.clinic_id": "{{user.data.clinic_id}}"
+        }
+      ]
+    }
+  },
+  "type": "object"
 }

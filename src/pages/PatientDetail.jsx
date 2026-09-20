@@ -6,16 +6,12 @@ import { createPageUrl } from '@/utils';
 import { format } from 'date-fns';
 import { 
   ArrowLeft, 
-  Plus, 
-  User,
+  Plus,
   Mail,
-  Phone,
-  Calendar,
   Activity,
   ClipboardList,
   Edit,
   Trash2,
-  TrendingUp,
   MoreVertical,
   UserX,
   StopCircle,
@@ -25,25 +21,15 @@ import {
   ChevronRight
 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent } from "@/components/ui/tabs";
 import PhaseTimeline from "@/components/ui/PhaseTimeline";
 import ExitCriteriaCard from "@/components/ui/ExitCriteriaCard";
-import AssessmentForm from "@/components/assessment/AssessmentForm";
-import AssessmentDataExtractor from "@/components/assessment/AssessmentDataExtractor";
 import SendOutcomeMeasureDialog from "@/components/outcome/SendOutcomeMeasureDialog";
 import InterventionForm from "@/components/intervention/InterventionForm";
-import ProgressDashboard from "@/components/analytics/ProgressDashboard";
-import AdherenceChart from "@/components/analytics/AdherenceChart";
 import PatientProgressTimeline from "@/components/clinician/PatientProgressTimeline";
 import AutoProgressReport from "@/components/reports/AutoProgressReport";
 import PhaseTriggersManager from "@/components/outcome/PhaseTriggersManager";
-import TaskManager from "@/components/clinician/TaskManager";
-import AutoTaskSuggestions from "@/components/clinician/AutoTaskSuggestions";
-import AssessmentTrendChart from "@/components/analytics/AssessmentTrendChart";
 import OutcomeMeasureTrendChart from "@/components/analytics/OutcomeMeasureTrendChart";
-import CohortComparison from "@/components/analytics/CohortComparison";
-import SessionLoadChart from "@/components/analytics/SessionLoadChart";
-import LoadPerformanceInsights from "@/components/analytics/LoadPerformanceInsights";
 import PDFReportGenerator from "@/components/reports/PDFReportGenerator";
 import ScheduledReportManager from "@/components/reports/ScheduledReportManager";
 import MonthlyCalendarView from "@/components/calendar/MonthlyCalendarView";
@@ -58,6 +44,10 @@ import RehabPlanPDFButton from "@/components/reports/RehabPlanPDFButton";
 import SaveTemplateDialog from "@/components/reports/SaveTemplateDialog";
 import EditPatientDialog from "@/components/patient/EditPatientDialog";
 import AssessmentsTab from "@/components/patientdetail/AssessmentsTab";
+import PatientWorkspaceNav from "@/components/patientdetail/PatientWorkspaceNav";
+import CriteriaLedPhaseRibbon from "@/components/patientdetail/CriteriaLedPhaseRibbon";
+import LoadRecoveryPanel from "@/components/patientdetail/LoadRecoveryPanel";
+import ClinicalPhaseDecision from "@/components/patientdetail/ClinicalPhaseDecision";
 import ClinicianMessaging from "@/components/messaging/ClinicianMessaging";
 import PainTab from "@/components/patientdetail/PainTab";
 import PatientAnalyticsTab from "@/components/analytics/PatientAnalyticsTab";
@@ -66,6 +56,7 @@ import ReportList from "@/components/report/ReportList";
 import AIExtractionReview from "@/components/report/AIExtractionReview";
 import { injuryDiagnosisLibrary } from "@/components/injury/injuryDiagnosisLibrary";
 import { cn } from "@/lib/utils";
+import { isPractitioner } from '@/lib/roles';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -89,26 +80,15 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  Area,
-  AreaChart
-} from 'recharts';
+
+
 
 export default function PatientDetail() {
   const queryClient = useQueryClient();
   const urlParams = new URLSearchParams(window.location.search);
   const patientId = urlParams.get('id');
   const [selectedPhase, setSelectedPhase] = useState(null);
+  const [activePatientTab, setActivePatientTab] = useState('overview');
   const [showAssessmentForm, setShowAssessmentForm] = useState(false);
   const [editingAssessment, setEditingAssessment] = useState(null);
   const [showSendOutcomeDialog, setShowSendOutcomeDialog] = useState(false);
@@ -137,7 +117,7 @@ export default function PatientDetail() {
   React.useEffect(() => {
     const checkAccess = async () => {
       const currentUser = await base44.auth.me();
-      if (currentUser.role !== 'admin') {
+      if (!isPractitioner(currentUser)) {
         window.location.href = createPageUrl('PatientPortal');
       }
     };
@@ -206,7 +186,7 @@ export default function PatientDetail() {
   });
 
   const createAssessmentMutation = useMutation({
-    mutationFn: (data) => base44.entities.ObjectiveAssessment.create({ ...data, patient_id: patientId }),
+    mutationFn: (data) => base44.entities.ObjectiveAssessment.create({ ...data, clinic_id: patient?.clinic_id, patient_id: patientId }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['patient-assessments'] });
       setShowAssessmentForm(false);
@@ -254,7 +234,7 @@ export default function PatientDetail() {
       const { patient_email, ...measureData } = data;
       
       // Create the outcome measure record
-      await base44.entities.PatientOutcomeMeasure.create(measureData);
+      await base44.entities.PatientOutcomeMeasure.create({ ...measureData, clinic_id: patient?.clinic_id, patient_id: patientId });
       
       // Send email notification to patient
       const measure = outcomeMeasures.find(m => m.id === measureData.outcome_measure_id);
@@ -277,7 +257,7 @@ export default function PatientDetail() {
   });
 
   const createInterventionMutation = useMutation({
-    mutationFn: (data) => base44.entities.Intervention.create({ ...data, patient_id: patientId }),
+    mutationFn: (data) => base44.entities.Intervention.create({ ...data, clinic_id: patient?.clinic_id, patient_id: patientId }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['patient-interventions'] });
       setShowInterventionForm(false);
@@ -386,6 +366,7 @@ ${currentUser.full_name}
         name: templateData.name,
         description: templateData.description,
         condition_type: templateData.condition_type,
+        clinic_id: patient?.clinic_id,
         total_phases: planPhases.length,
         estimated_duration_weeks: planPhases.reduce((sum, p) => sum + (p.duration_weeks || 0), 0),
         phases: planPhases,
@@ -808,19 +789,24 @@ Your Rehabilitation Team`;
           </div>
         )}
 
+        {activePlan && (
+          <CriteriaLedPhaseRibbon
+            phases={activePlanPhases}
+            currentPhase={currentPhase}
+            onPhaseClick={(phase) => {
+              setSelectedPhase(phase);
+              setActivePatientTab('plan');
+            }}
+          />
+        )}
+
         {/* Two-Column Layout with Tabs */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-8">
           {/* Main Column (Left) - 2/3 width */}
           <div className="lg:col-span-2 space-y-6">
             {/* Tabs for Content */}
-            <Tabs defaultValue="overview" className="w-full">
-              <div className="overflow-x-auto -mx-3 px-3 lg:mx-0 lg:px-0">
-              <TabsList className="bg-transparent border-b border-slate-200 rounded-none p-0 flex h-auto justify-start min-w-max">
-                {[['overview','Overview'],['calendar','Calendar'],['plan','Plan'],['analytics','Analytics'],['deepdive','Deep Dive'],['assessments','Tests'],['interventions','Interventions'],['outcomes','PROMs'],['pain','Pain'],['exercises','Exercises'],['timeline','Timeline'],['report','Report'],['reports','Docs'],['messages','💬 Messages'],['ai','🤖 AI']].map(([v,l]) => (
-                  <TabsTrigger key={v} value={v} className="rounded-none border-b-2 border-transparent px-3 py-3 text-xs sm:text-sm font-medium text-slate-600 data-[state=active]:border-purple-600 data-[state=active]:text-slate-900 data-[state=active]:bg-transparent hover:text-slate-900 whitespace-nowrap">{l}</TabsTrigger>
-                ))}
-              </TabsList>
-              </div>
+            <Tabs value={activePatientTab} onValueChange={setActivePatientTab} className="w-full">
+              <PatientWorkspaceNav activeTab={activePatientTab} onChange={setActivePatientTab} />
 
               <TabsContent value="overview" className="mt-6">
                 <PatientOverview
@@ -1002,6 +988,10 @@ Your Rehabilitation Team`;
                   assessments={assessments}
                   activePlan={activePlan}
                 />
+              </TabsContent>
+
+              <TabsContent value="load-recovery" className="mt-6 mx-3 lg:mx-0">
+                <LoadRecoveryPanel patient={patient} />
               </TabsContent>
 
               <TabsContent value="report" className="mt-6 space-y-4 lg:space-y-6 mx-3 lg:mx-0">
@@ -1352,100 +1342,41 @@ Your Rehabilitation Team`;
 
                                 queryClient.invalidateQueries({ queryKey: ['patient-phases'] });
 
-                                // Check if all criteria are met and it's the current phase
-                                if (phaseToUpdate.status === 'active') {
-                                  const allMet = updatedCriteria.every(c => c.is_met);
-                                  if (allMet && activePlan) {
-                                    const nextPhaseNumber = phaseToUpdate.phase_number + 1;
-                                    if (nextPhaseNumber <= activePlan.total_phases) {
-                                      // Mark current phase as completed
-                                      await base44.entities.RehabPhase.update(phaseToUpdate.id, { status: 'completed' });
+                                const allMet = updatedCriteria.length > 0 &&
+                                  updatedCriteria.every((criterion) => criterion.is_met);
 
-                                      // Check for phase completion triggers
-                                      const completionTriggers = phaseTriggers.filter(
-                                        t => t.phase_number === phaseToUpdate.phase_number && 
-                                             t.trigger_type === 'phase_complete' && 
-                                             !t.triggered
-                                      );
+                                await base44.entities.RehabPhase.update(phaseToUpdate.id, {
+                                  clinical_decision: 'pending',
+                                  last_criteria_reviewed_at: new Date().toISOString()
+                                });
 
-                                      // Send outcome measures for completed phase
-                                      for (const trigger of completionTriggers) {
-                                        const measure = outcomeMeasures.find(m => m.id === trigger.outcome_measure_id);
-                                        if (measure) {
-                                          const portalUrl = `${window.location.origin}${createPageUrl('PatientPortal')}`;
-
-                                          await base44.entities.PatientOutcomeMeasure.create({
-                                            patient_id: patientId,
-                                            outcome_measure_id: trigger.outcome_measure_id,
-                                            sent_date: new Date().toISOString().split('T')[0],
-                                            status: 'pending',
-                                            frequency: 'one-time',
-                                            notes: `Automatically sent upon completing ${phaseToUpdate.name}`
-                                          });
-
-                                          await base44.integrations.Core.SendEmail({
-                                            to: patient.email,
-                                            subject: `Phase Complete! New Questionnaire Available`,
-                                            body: `Hi ${patient.full_name},\n\nCongratulations on completing ${phaseToUpdate.name}!\n\nAs part of tracking your progress, please complete this questionnaire: ${measure.name}\n\nVisit your portal: ${portalUrl}\n\nBest regards,\nYour Rehabilitation Team`
-                                          });
-
-                                          await base44.entities.PhaseOutcomeTrigger.update(trigger.id, {
-                                            triggered: true,
-                                            triggered_date: new Date().toISOString().split('T')[0]
-                                          });
-                                        }
-                                      }
-
-                                      // Activate next phase
-                                      const nextPhase = activePlanPhases.find(p => p.phase_number === nextPhaseNumber);
-                                      if (nextPhase) {
-                                        await base44.entities.RehabPhase.update(nextPhase.id, { status: 'active' });
-
-                                        // Check for phase start triggers
-                                        const startTriggers = phaseTriggers.filter(
-                                          t => t.phase_number === nextPhaseNumber && 
-                                               t.trigger_type === 'phase_start' && 
-                                               !t.triggered
-                                        );
-
-                                        // Send outcome measures for new phase
-                                        for (const trigger of startTriggers) {
-                                          const measure = outcomeMeasures.find(m => m.id === trigger.outcome_measure_id);
-                                          if (measure) {
-                                            const portalUrl = `${window.location.origin}${createPageUrl('PatientPortal')}`;
-
-                                            await base44.entities.PatientOutcomeMeasure.create({
-                                              patient_id: patientId,
-                                              outcome_measure_id: trigger.outcome_measure_id,
-                                              sent_date: new Date().toISOString().split('T')[0],
-                                              status: 'pending',
-                                              frequency: 'one-time',
-                                              notes: `Automatically sent at start of ${nextPhase.name}`
-                                            });
-
-                                            await base44.integrations.Core.SendEmail({
-                                              to: patient.email,
-                                              subject: `New Phase Started! Questionnaire Available`,
-                                              body: `Hi ${patient.full_name},\n\nYou're now starting ${nextPhase.name}!\n\nPlease complete this baseline questionnaire: ${measure.name}\n\nVisit your portal: ${portalUrl}\n\nBest regards,\nYour Rehabilitation Team`
-                                            });
-
-                                            await base44.entities.PhaseOutcomeTrigger.update(trigger.id, {
-                                              triggered: true,
-                                              triggered_date: new Date().toISOString().split('T')[0]
-                                            });
-                                          }
-                                        }
-                                      }
-
-                                      // Update plan's current phase
-                                      await base44.entities.RehabPlan.update(activePlan.id, { current_phase: nextPhaseNumber });
-
-                                      queryClient.invalidateQueries({ queryKey: ['patient-plans'] });
-                                      queryClient.invalidateQueries({ queryKey: ['patient-outcomes'] });
-                                      queryClient.invalidateQueries({ queryKey: ['phase-triggers'] });
-                                    }
-                                  }
+                                if (activePlan) {
+                                  await base44.entities.RehabPlan.update(activePlan.id, {
+                                    clinical_review_required: allMet,
+                                    last_updated_at: new Date().toISOString(),
+                                    publication_state: 'updated'
+                                  });
+                                  queryClient.invalidateQueries({ queryKey: ['patient-plans'] });
                                 }
+
+                              }}
+                            />
+
+                            <ClinicalPhaseDecision
+                              phase={selectedPhase || currentPhase}
+                              plan={activePlan}
+                              phases={activePlanPhases}
+                              patient={patient}
+                              phaseTriggers={phaseTriggers}
+                              outcomeMeasures={outcomeMeasures}
+                              onCompleted={async () => {
+                                setSelectedPhase(null);
+                                await Promise.all([
+                                  queryClient.invalidateQueries({ queryKey: ['patient-phases'] }),
+                                  queryClient.invalidateQueries({ queryKey: ['patient-plans'] }),
+                                  queryClient.invalidateQueries({ queryKey: ['patient-outcomes'] }),
+                                  queryClient.invalidateQueries({ queryKey: ['phase-triggers'] })
+                                ]);
                               }}
                             />
                             </div>

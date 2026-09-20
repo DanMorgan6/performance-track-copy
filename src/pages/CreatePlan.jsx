@@ -9,17 +9,13 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { 
   ArrowLeft, 
-  Save, 
-  Plus, 
-  Trash2, 
-  Target,
+  Save,
   FileText,
   Clock,
   Layers,
   Sparkles,
   Download,
-  Mail,
-  Badge as BadgeIcon
+  Mail
 } from 'lucide-react';
 import {
   Dialog,
@@ -30,7 +26,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 // Badge used in template picker dialog
 import { Link } from 'react-router-dom';
-import { cn } from "@/lib/utils";
+import { isPractitioner } from '@/lib/roles';
 import { generatePlanPDF, uploadAndEmailPDF } from "@/components/reports/PlanPDFGenerator";
 import ProgramTypeSelector from "@/components/plan/ProgramTypeSelector";
 import BasicProgramBuilder from "@/components/plan/BasicProgramBuilder";
@@ -64,7 +60,7 @@ export default function CreatePlan() {
     const checkAccess = async () => {
       const user = await base44.auth.me();
       setCurrentUser(user);
-      if (user.role !== 'admin') {
+      if (!isPractitioner(user)) {
         window.location.href = createPageUrl('PatientPortal');
       }
     };
@@ -72,6 +68,7 @@ export default function CreatePlan() {
   }, []);
   
   const [programType, setProgramType] = useState(null);
+  const [creationMode, setCreationMode] = useState(null);
   const [planData, setPlanData] = useState({
     title: '',
     description: '',
@@ -504,10 +501,7 @@ Make the plan progressive, evidence-based, and tailored to the patient's profile
     e.preventDefault();
     
     // Prevent duplicate submissions
-    if (submissionInProgressRef.current) {
-      console.log('DEBUG Submission already in progress, ignoring');
-      return;
-    }
+    if (submissionInProgressRef.current) return;
     
     submissionInProgressRef.current = true;
     setSaving(true);
@@ -555,6 +549,7 @@ Make the plan progressive, evidence-based, and tailored to the patient's profile
       if (uniqueNewExercises.length > 0) {
         await base44.entities.ExerciseLibrary.bulkCreate(
           uniqueNewExercises.map(exercise => ({
+            clinic_id: currentUser?.clinic_id,
             name: exercise.name,
             description: exercise.description || '',
             category: 'functional',
@@ -570,7 +565,6 @@ Make the plan progressive, evidence-based, and tailored to the patient's profile
 
       // Validate patient_id is set
       const finalPatientId = patientId || patient?.id;
-      console.log('DEBUG CreatePlan:', { patientId, patient_id: patient?.id, finalPatientId });
       
       if (!finalPatientId) {
         alert('Error: No patient selected. Please go back and try again.');
@@ -586,7 +580,11 @@ Make the plan progressive, evidence-based, and tailored to the patient's profile
       });
       
       for (const existingPlan of existingPlans) {
-        await base44.entities.RehabPlan.update(existingPlan.id, { status: 'archived' });
+        await base44.entities.RehabPlan.update(existingPlan.id, {
+          status: 'archived',
+          publication_state: 'archived',
+          archived_at: new Date().toISOString()
+        });
       }
 
       // Create the plan with explicit patient_id and clinic_id - MUST be 'active'
@@ -602,30 +600,26 @@ Make the plan progressive, evidence-based, and tailored to the patient's profile
         current_phase: currentPlanData.program_type === 'basic' ? null : 1,
         total_phases: currentPlanData.program_type === 'basic' ? null : currentPhases.length,
         basic_config: currentPlanData.program_type === 'basic' ? currentPlanData.basic_config : null,
-        created_by_clinician: currentUser?.email
+        created_by_clinician: currentUser?.email,
+        creation_mode: creationMode || currentPlanData.program_type,
+        publication_state: 'published',
+        version: 1,
+        published_at: new Date().toISOString(),
+        last_updated_at: new Date().toISOString()
       };
-      console.log('DEBUG CreatePlan payload status:', planPayload.status);
-      
-      console.log('DEBUG Plan payload:', planPayload);
       const plan = await base44.entities.RehabPlan.create(planPayload);
-      console.log('DEBUG Created plan:', plan);
 
       // Create all phases with bulkCreate (only for phased programs)
       if (currentPlanData.program_type === 'phased') {
-        console.log('DEBUG Creating phases with bulkCreate:', currentPhases.length);
         const phasesToCreate = currentPhases.map(phase => ({
           ...phase,
+          clinic_id: plan.clinic_id,
+          patient_id: finalPatientId,
           plan_id: plan.id,
           status: phase.phase_number === 1 ? 'active' : 'pending'
         }));
-        console.log('DEBUG Phase payload:', phasesToCreate[0]);
-        const createdPhases = await base44.entities.RehabPhase.bulkCreate(phasesToCreate);
-        console.log('DEBUG Created phases:', createdPhases.length, createdPhases[0]);
+        await base44.entities.RehabPhase.bulkCreate(phasesToCreate);
       }
-
-      // Wait for database sync before navigating
-      console.log('DEBUG Waiting 1 second for database sync...');
-      await new Promise(resolve => setTimeout(resolve, 1000));
 
       // Send email notification to patient (only if they're registered in the app)
       if (patient?.email) {
@@ -692,8 +686,13 @@ Beaches Performance +`
              {!programType && (
                <ProgramTypeSelector 
                  onSelect={(type) => {
-                   setProgramType(type);
-                   setPlanData({...planData, program_type: type});
+                   const selectedProgramType = type === 'ai_assisted' ? 'phased' : type;
+                   setCreationMode(type);
+                   setProgramType(selectedProgramType);
+                   setPlanData((current) => ({ ...current, program_type: selectedProgramType }));
+                   if (type === 'ai_assisted') {
+                     setShowAiGenerator(true);
+                   }
                  }}
                />
              )}
