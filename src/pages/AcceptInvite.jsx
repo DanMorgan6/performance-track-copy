@@ -33,38 +33,32 @@ export default function AcceptInvite() {
       }
 
       try {
-        // Validate token by fetching the corresponding InviteToken
-        const tokens = await base44.entities.InviteToken.filter({
-          token: token,
-          status: 'active'
-        });
+        // Authentication comes first so invite RLS can verify the intended email.
+        let user;
+        try {
+          user = await base44.auth.me();
+        } catch {
+          setStep('signin');
+          return;
+        }
 
-        if (tokens.length === 0) {
+        const tokens = await base44.entities.InviteToken.filter({
+          token,
+          status: 'active',
+          invite_type: 'patient',
+          email: user.email
+        });
+        const inviteToken = tokens[0];
+
+        if (!inviteToken || new Date(inviteToken.expires_at) <= new Date()) {
           setError('Invalid or expired invite link. Please request a new one from your clinician.');
           setStep('error');
           return;
         }
 
-        const inviteToken = tokens[0];
-
-        // Check expiry
-        if (new Date(inviteToken.expires_at) < new Date()) {
-          setError('This invite has expired. Please request a new one from your clinician.');
-          setStep('error');
-          return;
-        }
-
         setInvite(inviteToken);
-
-        // Check if user is already logged in
-        try {
-          const user = await base44.auth.me();
-          setCurrentUser(user);
-          setStep('details');
-        } catch {
-          // Not logged in, redirect to login
-          setStep('signin');
-        }
+        setCurrentUser(user);
+        setStep('details');
       } catch (err) {
         console.error('Error validating token:', err);
         setError('Failed to validate invite. Please try again.');
@@ -98,41 +92,16 @@ export default function AcceptInvite() {
     }
 
     try {
-      // Get the existing patient record (created when clinician set up the invite)
-      const existingPatient = await base44.entities.Patient.filter({
-        id: invite.patient_id
+      // The backend verifies the signed-in email, links the tenant and consumes
+      // the token atomically using service-role access.
+      const response = await base44.functions.invoke('acceptPatientInvite', {
+        token,
+        patient_data: patientData
       });
 
-      if (existingPatient.length === 0) {
-        setError('Patient record not found. Please contact your clinician.');
-        return;
+      if (response?.data?.error) {
+        throw new Error(response.data.error);
       }
-
-      const patient = existingPatient[0];
-
-      // Update patient record with user_id and fill in any missing details
-      await base44.entities.Patient.update(patient.id, {
-        user_id: currentUser.id,
-        full_name: patientData.full_name || patient.full_name,
-        date_of_birth: patientData.date_of_birth || patient.date_of_birth,
-        phone: patientData.phone || patient.phone,
-        gender: patientData.gender || patient.gender,
-        status: 'active'
-      });
-
-      // Mark invite token as used
-      await base44.entities.InviteToken.update(invite.id, {
-        status: 'used',
-        used_at: new Date().toISOString()
-      });
-
-      // Link the authenticated patient to this tenant and patient record.
-      await base44.auth.updateMe({
-        clinic_id: invite.clinic_id,
-        patient_id: patient.id,
-        role: 'patient',
-        onboarding_completed: true
-      });
 
       setStep('success');
 
