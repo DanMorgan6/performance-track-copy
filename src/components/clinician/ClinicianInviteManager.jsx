@@ -97,6 +97,36 @@ export default function ClinicianInviteManager({ clinicId, open, onOpenChange })
       const link = `${window.location.origin}${new URL(window.location.href).pathname}#/AcceptClinicianInvite?t=${token}`;
       setInviteLink(link);
       setNewInvite(invite);
+
+      // Email the invite link directly to the clinician
+      try {
+        const clinicName = clinic?.name || 'your clinic';
+        const inviterName = user.full_name || user.email;
+        await base44.integrations.Core.SendEmail({
+          to: email,
+          subject: `You're invited to join ${clinicName} on Performance Track+`,
+          html: `
+            <div style="font-family: Inter, Arial, sans-serif; max-width: 560px; margin: 0 auto; color: #1f2937;">
+              <h2 style="color: #111827;">You've been invited to Performance Track+</h2>
+              <p style="font-size: 15px; line-height: 1.6;">
+                ${inviterName} has invited you to join <strong>${clinicName}</strong> as a ${role === 'clinic_admin' ? 'Clinic Admin' : 'Clinician'} on Performance Track+.
+              </p>
+              <p style="font-size: 15px; line-height: 1.6;">
+                Click the button below to accept the invitation and set up your account. This invite expires in 7 days.
+              </p>
+              <p style="margin: 24px 0;">
+                <a href="${link}" style="display: inline-block; background: #d8ff5f; color: #0a0a0a; font-weight: 700; text-decoration: none; padding: 12px 24px; border-radius: 12px;">Accept invitation</a>
+              </p>
+              <p style="font-size: 13px; color: #6b7280; word-break: break-all;">If the button doesn't work, copy this link:<br/>${link}</p>
+              <p style="font-size: 13px; color: #6b7280;">If you weren't expecting this invitation, you can safely ignore this email.</p>
+            </div>
+          `,
+        });
+      } catch (err) {
+        // Email send failure shouldn't block the invite; the link is still shown in the dialog
+        console.warn('Invite email failed to send:', err);
+      }
+
       return { invite, link };
     },
     onSuccess: () => {
