@@ -169,7 +169,14 @@
           ]
         },
         {
-          "data.email": "{{user.email}}"
+          "$and": [
+            {
+              "id": "{{user.data.patient_id}}"
+            },
+            {
+              "data.clinic_id": "{{user.data.clinic_id}}"
+            }
+          ]
         }
       ]
     },
@@ -202,7 +209,14 @@
           ]
         },
         {
-          "data.email": "{{user.email}}"
+          "$and": [
+            {
+              "id": "{{user.data.patient_id}}"
+            },
+            {
+              "data.clinic_id": "{{user.data.clinic_id}}"
+            }
+          ]
         }
       ]
     }
