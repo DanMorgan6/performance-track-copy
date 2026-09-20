@@ -8,6 +8,36 @@
     "description": {
       "type": "string"
     },
+    "phase_objective": {
+      "description": "Primary clinical objective for the phase",
+      "type": "string"
+    },
+    "precautions": {
+      "description": "Phase-specific precautions and symptom limits",
+      "type": "string"
+    },
+    "clinical_decision": {
+      "default": "pending",
+      "enum": [
+        "pending",
+        "continue",
+        "progress",
+        "regress",
+        "override"
+      ],
+      "type": "string"
+    },
+    "clinical_decision_reason": {
+      "description": "Required rationale for progression, regression or override",
+      "type": "string"
+    },
+    "last_criteria_reviewed_at": {
+      "format": "date-time",
+      "type": "string"
+    },
+    "reviewed_by": {
+      "type": "string"
+    },
     "duration_weeks": {
       "type": "number"
     },
@@ -68,10 +98,58 @@
           "criterion": {
             "type": "string"
           },
-          "is_met": {
-            "type": "boolean"
+          "criterion_type": {
+            "enum": [
+              "strength",
+              "symmetry",
+              "range_of_motion",
+              "pain",
+              "prom",
+              "functional_test",
+              "exposure",
+              "exercise_capacity",
+              "competency",
+              "confidence",
+              "other"
+            ],
+            "type": "string"
+          },
+          "measure_name": {
+            "type": "string"
+          },
+          "operator": {
+            "enum": [
+              "greater_than_or_equal",
+              "less_than_or_equal",
+              "equal",
+              "clinician_confirmed"
+            ],
+            "type": "string"
           },
           "target_value": {
+            "type": "string"
+          },
+          "current_value": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "unit": {
+            "type": "string"
+          },
+          "is_met": {
+            "default": false,
+            "type": "boolean"
+          },
+          "last_assessed_at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "assessed_by": {
+            "type": "string"
+          },
+          "evidence_note": {
             "type": "string"
           }
         },
