@@ -5,6 +5,8 @@ import VisualEditAgent from '@/lib/VisualEditAgent'
 import NavigationTracker from '@/lib/NavigationTracker'
 import { pagesConfig } from './pages.config'
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import { useEffect } from 'react';
+import { createPageUrl } from '@/utils';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
@@ -18,6 +20,23 @@ const MainPage = mainPageKey ? Pages[mainPageKey] : <></>;
 const LayoutWrapper = ({ children, currentPageName }) => Layout ?
   <Layout currentPageName={currentPageName}>{children}</Layout>
   : <>{children}</>;
+
+function LegacyHashInviteRedirect() {
+  useEffect(() => {
+    const hash = window.location.hash || '';
+    if (!hash.startsWith('#/AcceptClinicianInvite') && !hash.startsWith('#/AcceptInvite')) return;
+
+    const legacyUrl = new URL(hash.slice(1), window.location.origin);
+    const token = legacyUrl.searchParams.get('t') || legacyUrl.searchParams.get('token');
+    if (!token) return;
+
+    window.location.replace(
+      `${window.location.origin}${createPageUrl('AcceptInvite')}?t=${encodeURIComponent(token)}`
+    );
+  }, []);
+
+  return null;
+}
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -74,6 +93,7 @@ function App() {
     <AuthProvider>
       <QueryClientProvider client={queryClientInstance}>
         <Router>
+          <LegacyHashInviteRedirect />
           <NavigationTracker />
           <AuthenticatedApp />
         </Router>
