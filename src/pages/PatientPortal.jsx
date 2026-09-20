@@ -95,6 +95,14 @@ export default function PatientPortal() {
         // Ensure user is patient
         setIsPatient(true);
 
+      // Reconcile older accounts that were linked before patient-role and invite
+      // consumption were enforced server-side.
+      try {
+        await base44.functions.invoke('linkPatientAccount', {});
+      } catch (repairError) {
+        console.warn('Patient account reconciliation failed', repairError);
+      }
+
       // Resolve the patient through the authenticated tenant link, never by email alone.
       let patients = currentUser.patient_id && currentUser.clinic_id
         ? await base44.entities.Patient.filter({
