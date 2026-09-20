@@ -44,6 +44,27 @@ const plans = [
   { name: 'Clinic Plus', practitioners: '6–10 practitioners', price: '£45' }
 ];
 
+const progressStats = [
+  { value: '4/5', label: 'Exit criteria' },
+  { value: '82%', label: 'Adherence' },
+  { value: '2/10', label: 'Pain today' }
+];
+
+const criteriaChecks = [
+  { label: 'Single-leg calf raise', detail: '25 controlled reps', done: true },
+  { label: 'Hop test symmetry', detail: '≥ 90% LSI', done: true },
+  { label: '24-hour symptom response', detail: 'No increase above 2/10', done: true },
+  { label: 'Running exposure', detail: '3 × 20 min symptom-stable', done: true },
+  { label: 'Practitioner review', detail: 'Sign-off required', done: false }
+];
+
+const securityCards = [
+  { icon: LockKeyhole, title: 'Tenant isolation', copy: 'One clinic cannot browse another clinic’s records.' },
+  { icon: ShieldCheck, title: 'Role-based access', copy: 'Patients and practitioners see only what they need.' },
+  { icon: BrainCircuit, title: 'AI with oversight', copy: 'Generated programmes remain drafts until reviewed.' },
+  { icon: Activity, title: 'Clinical audit trail', copy: 'Progression decisions retain criteria and rationale.' }
+];
+
 export default function Home() {
   const [loading, setLoading] = useState(true);
 
@@ -102,7 +123,7 @@ export default function Home() {
           </nav>
 
           <Button
-            onClick={() => base44.auth.redirectToLogin()}
+            onClick={() => base44.auth.redirectToLogin(window.location.href)}
             className="bg-[#c7f03d] hover:bg-[#d7ff55] text-zinc-950 rounded-xl px-5 font-semibold"
           >
             Sign in
@@ -133,7 +154,7 @@ export default function Home() {
               </p>
               <div className="mt-9 flex flex-col sm:flex-row gap-3">
                 <Button
-                  onClick={() => base44.auth.redirectToLogin()}
+                  onClick={() => base44.auth.redirectToLogin(window.location.href)}
                   className="h-13 bg-[#c7f03d] hover:bg-[#d7ff55] text-zinc-950 rounded-xl px-7 text-base font-semibold"
                 >
                   Start with Performance Track+
@@ -157,11 +178,7 @@ export default function Home() {
                 <span className="rounded-full bg-amber-400/10 text-amber-300 px-3 py-1 text-xs font-medium">Review due</span>
               </div>
               <div className="grid grid-cols-3 gap-3 my-5">
-                {[
-                  ['4/5', 'Exit criteria'],
-                  ['82%', 'Adherence'],
-                  ['2/10', 'Pain today']
-                ].map(([value, label]) => (
+                {progressStats.map(({ value, label }) => (
                   <div key={label} className="rounded-2xl bg-white/[0.04] border border-white/[0.06] p-4">
                     <p className="text-2xl font-semibold text-[#c7f03d]">{value}</p>
                     <p className="text-xs text-zinc-500 mt-1">{label}</p>
@@ -169,13 +186,7 @@ export default function Home() {
                 ))}
               </div>
               <div className="space-y-3">
-                {[
-                  ['Single-leg calf raise', '25 controlled reps', true],
-                  ['Hop test symmetry', '≥ 90% LSI', true],
-                  ['24-hour symptom response', 'No increase above 2/10', true],
-                  ['Running exposure', '3 × 20 min symptom-stable', true],
-                  ['Practitioner review', 'Sign-off required', false]
-                ].map(([label, detail, done]) => (
+                {criteriaChecks.map(({ label, detail, done }) => (
                   <div key={label} className="flex items-center gap-3 rounded-xl border border-white/[0.07] bg-black/10 p-3">
                     <CheckCircle2 className={done ? 'w-5 h-5 text-[#c7f03d]' : 'w-5 h-5 text-zinc-600'} />
                     <div className="min-w-0">
@@ -241,12 +252,7 @@ export default function Home() {
             </Link>
           </div>
           <div className="grid sm:grid-cols-2 gap-4">
-            {[
-              [LockKeyhole, 'Tenant isolation', 'One clinic cannot browse another clinic’s records.'],
-              [ShieldCheck, 'Role-based access', 'Patients and practitioners see only what they need.'],
-              [BrainCircuit, 'AI with oversight', 'Generated programmes remain drafts until reviewed.'],
-              [Activity, 'Clinical audit trail', 'Progression decisions retain criteria and rationale.']
-            ].map(([Icon, title, copy]) => (
+            {securityCards.map(({ icon: Icon, title, copy }) => (
               <div key={title} className="rounded-2xl border border-white/10 bg-[#202023] p-5">
                 <Icon className="w-6 h-6 text-[#c7f03d]" />
                 <h3 className="font-semibold mt-4">{title}</h3>
@@ -281,7 +287,7 @@ export default function Home() {
               ))}
             </div>
             <Button
-              onClick={() => base44.auth.redirectToLogin()}
+              onClick={() => base44.auth.redirectToLogin(window.location.href)}
               className="mt-8 bg-[#c7f03d] hover:bg-[#d7ff55] text-zinc-950 rounded-xl px-8 py-6 text-base font-semibold"
             >
               Create your clinic account
