@@ -1,0 +1,219 @@
+{
+  "name": "ProgressionBlock",
+  "type": "object",
+  "properties": {
+    "clinic_id": {
+      "type": "string",
+      "description": "Owning clinic; blocks are private to the clinic"
+    },
+    "name": {
+      "type": "string",
+      "description": "Reusable progression block name"
+    },
+    "description": {
+      "type": "string"
+    },
+    "body_part": {
+      "type": "string",
+      "enum": [
+        "upper_body",
+        "lower_body",
+        "core",
+        "full_body",
+        "shoulder",
+        "knee",
+        "hip",
+        "ankle",
+        "back",
+        "neck"
+      ]
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "strength",
+        "flexibility",
+        "balance",
+        "cardiovascular",
+        "mobility",
+        "stability",
+        "coordination",
+        "plyometric",
+        "functional"
+      ]
+    },
+    "levels": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "level_number": {
+            "type": "number"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "exit_criteria": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "criterion": {
+                  "type": "string"
+                },
+                "target_value": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "exercises": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "library_exercise_id": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "description": {
+                  "type": "string"
+                },
+                "sets": {
+                  "type": "string"
+                },
+                "reps": {
+                  "type": "string"
+                },
+                "tempo": {
+                  "type": "string"
+                },
+                "rest": {
+                  "type": "string"
+                },
+                "weight": {
+                  "type": "string"
+                },
+                "hold": {
+                  "type": "string"
+                },
+                "duration": {
+                  "type": "string"
+                },
+                "notes": {
+                  "type": "string"
+                },
+                "video_url": {
+                  "type": "string"
+                },
+                "thumbnail_url": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true
+    },
+    "created_by_clinician": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "clinic_id",
+    "name",
+    "levels"
+  ],
+  "rls": {
+    "read": {
+      "data.clinic_id": "{{user.data.clinic_id}}"
+    },
+    "create": {
+      "$and": [
+        {
+          "$or": [
+            {
+              "user_condition": {
+                "role": "admin"
+              }
+            },
+            {
+              "user_condition": {
+                "role": "clinic_admin"
+              }
+            },
+            {
+              "user_condition": {
+                "role": "clinician"
+              }
+            }
+          ]
+        },
+        {
+          "data.clinic_id": "{{user.data.clinic_id}}"
+        }
+      ]
+    },
+    "update": {
+      "$and": [
+        {
+          "$or": [
+            {
+              "user_condition": {
+                "role": "admin"
+              }
+            },
+            {
+              "user_condition": {
+                "role": "clinic_admin"
+              }
+            },
+            {
+              "user_condition": {
+                "role": "clinician"
+              }
+            }
+          ]
+        },
+        {
+          "data.clinic_id": "{{user.data.clinic_id}}"
+        }
+      ]
+    },
+    "delete": {
+      "$and": [
+        {
+          "$or": [
+            {
+              "user_condition": {
+                "role": "admin"
+              }
+            },
+            {
+              "user_condition": {
+                "role": "clinic_admin"
+              }
+            },
+            {
+              "user_condition": {
+                "role": "clinician"
+              }
+            }
+          ]
+        },
+        {
+          "data.clinic_id": "{{user.data.clinic_id}}"
+        }
+      ]
+    }
+  }
+}
