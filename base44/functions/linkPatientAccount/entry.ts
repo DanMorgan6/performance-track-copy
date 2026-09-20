@@ -11,7 +11,45 @@ Deno.serve(async (req) => {
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
     if (user.patient_id) {
-      return Response.json({ patient_id: user.patient_id, linked: false, already_linked: true });
+      const linkedPatients = await base44.asServiceRole.entities.Patient.filter({ id: user.patient_id });
+      const linkedPatient = linkedPatients[0];
+
+      if (
+        linkedPatient
+        && linkedPatient.user_id === user.id
+        && normaliseEmail(linkedPatient.email) === normaliseEmail(user.email)
+      ) {
+        await base44.asServiceRole.entities.User.update(user.id, {
+          role: 'patient',
+          clinic_id: linkedPatient.clinic_id,
+          patient_id: linkedPatient.id,
+          onboarding_completed: true,
+        });
+
+        const activeInvites = await base44.asServiceRole.entities.InviteToken.filter({
+          patient_id: linkedPatient.id,
+          clinic_id: linkedPatient.clinic_id,
+          invite_type: 'patient',
+          status: 'active',
+        });
+        for (const invite of activeInvites) {
+          if (normaliseEmail(invite.email) === normaliseEmail(user.email)) {
+            await base44.asServiceRole.entities.InviteToken.update(invite.id, {
+              status: 'used',
+              used_at: new Date().toISOString(),
+            });
+          }
+        }
+
+        return Response.json({
+          patient_id: linkedPatient.id,
+          linked: false,
+          already_linked: true,
+          repaired: true,
+        });
+      }
+
+      return Response.json({ error: 'The linked patient account could not be verified.' }, { status: 409 });
     }
 
     const email = normaliseEmail(user.email);
