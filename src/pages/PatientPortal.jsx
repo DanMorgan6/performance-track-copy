@@ -36,7 +36,7 @@ import PatientBottomTabs from "@/components/mobile/PatientBottomTabs";
 import PullToRefresh from "@/components/ui/PullToRefresh";
 import { cn } from "@/lib/utils";
 import { isPractitioner } from '@/lib/roles';
-import { getActivePhase } from "@/components/plan/PhaseProgressionEngine";
+import { createBasicDeliveryPhase, getActivePhase } from "@/components/plan/PhaseProgressionEngine";
 import {
   Dialog,
   DialogContent,
@@ -95,8 +95,13 @@ export default function PatientPortal() {
         // Ensure user is patient
         setIsPatient(true);
 
-      // Find patient by email
-      const patients = await base44.entities.Patient.filter({ email: currentUser.email });
+      // Resolve the patient through the authenticated tenant link, never by email alone.
+      const patients = currentUser.patient_id && currentUser.clinic_id
+        ? await base44.entities.Patient.filter({
+            id: currentUser.patient_id,
+            clinic_id: currentUser.clinic_id
+          })
+        : [];
       if (patients.length > 0) {
         const foundPatient = patients[0];
         setPatient(foundPatient);
@@ -281,7 +286,8 @@ export default function PatientPortal() {
       ...data,
       clinic_id: patient.clinic_id,
       patient_id: patient.id,
-      phase_id: currentPhase?.id,
+      plan_id: activePlan?.id,
+      phase_id: currentPhase?.is_basic ? undefined : currentPhase?.id,
       date: new Date().toISOString().split('T')[0]
     }),
     onMutate: async (data) => {
@@ -321,9 +327,11 @@ export default function PatientPortal() {
   const activePlan = plans.find(p => p.status === 'active');
   const activePlanPhases = phases.filter(p => p.plan_id === activePlan?.id);
   
-  // Use progression engine to determine actual active phase
-  const activePhaseData = getActivePhase(activePlan, activePlanPhases);
-  const currentPhase = activePhaseData;
+  // Quick Plans use a repeating weekly delivery schedule. Phased plans retain
+  // the criteria-led progression engine and practitioner sign-off rules.
+  const currentPhase = activePlan?.program_type === 'basic'
+    ? createBasicDeliveryPhase(activePlan)
+    : getActivePhase(activePlan, activePlanPhases);
   
   // Check which exercises are completed today
   const todayStr = new Date().toISOString().split('T')[0];
@@ -383,7 +391,7 @@ export default function PatientPortal() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 flex overflow-x-hidden items-stretch">
+    <div className="performance-shell min-h-screen bg-slate-50 flex overflow-x-hidden items-stretch">
       {/* Mobile sidebar overlay */}
       {sidebarOpen && (
         <div
@@ -606,7 +614,7 @@ export default function PatientPortal() {
             {/* TODAY's PLAN */}
             <TabsContent value="today">
               <div className="space-y-4">
-                {currentPhase && (
+                {currentPhase && !currentPhase.is_basic && (
                   <PhaseStatusCard 
                     phase={currentPhase} 
                     status={currentPhase.status}
