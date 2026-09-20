@@ -156,17 +156,17 @@ export default function CreatePlan() {
             { day: 'Sunday', type: 'rest', exercises: [] }
           ];
           
-          // Distribute exercises across training days (only for first week)
-          if (weekIdx === 0) {
-            const trainingDays = [0, 1, 3, 4];
-            const exercisesPerDay = Math.ceil(exercises.length / trainingDays.length);
-            
-            trainingDays.forEach((dayIdx, idx) => {
-              const start = idx * exercisesPerDay;
-              const end = start + exercisesPerDay;
-              dailySchedule[dayIdx].exercises = exercises.slice(start, end);
-            });
-          }
+          // Repeat the prescribed programme across every generated week.
+          const trainingDays = [0, 1, 3, 4];
+          const exercisesPerDay = Math.ceil(exercises.length / trainingDays.length);
+          
+          trainingDays.forEach((dayIdx, idx) => {
+            const start = idx * exercisesPerDay;
+            const end = start + exercisesPerDay;
+            dailySchedule[dayIdx].exercises = exercises
+              .slice(start, end)
+              .map((exercise) => ({ ...exercise }));
+          });
           
           return {
             week_number: weekIdx + 1,
@@ -259,7 +259,7 @@ export default function CreatePlan() {
 Patient Profile:
 - Condition/Injury: ${aiInputs.condition}
 - Injury Severity: ${aiInputs.injury_severity}
-- Age: ${aiInputs.age || patient?.date_of_birth ? new Date().getFullYear() - new Date(patient.date_of_birth).getFullYear() : 'Adult'}
+- Age: ${aiInputs.age || (patient?.date_of_birth ? new Date().getFullYear() - new Date(patient.date_of_birth).getFullYear() : 'Adult')}
 - Activity Level: ${aiInputs.activity_level}
 - Patient Name: ${patient?.full_name || 'Patient'}
 
@@ -351,17 +351,17 @@ Make the plan progressive, evidence-based, and tailored to the patient's profile
             { day: 'Sunday', type: 'rest', exercises: [] }
           ];
           
-          // Distribute exercises across training days (only for first week)
-          if (weekIdx === 0) {
-            const trainingDays = [0, 1, 3, 4];
-            const exercisesPerDay = Math.ceil(exercises.length / trainingDays.length);
-            
-            trainingDays.forEach((dayIdx, idx) => {
-              const start = idx * exercisesPerDay;
-              const end = start + exercisesPerDay;
-              dailySchedule[dayIdx].exercises = exercises.slice(start, end);
-            });
-          }
+          // Repeat the prescribed programme across every generated week.
+          const trainingDays = [0, 1, 3, 4];
+          const exercisesPerDay = Math.ceil(exercises.length / trainingDays.length);
+          
+          trainingDays.forEach((dayIdx, idx) => {
+            const start = idx * exercisesPerDay;
+            const end = start + exercisesPerDay;
+            dailySchedule[dayIdx].exercises = exercises
+              .slice(start, end)
+              .map((exercise) => ({ ...exercise }));
+          });
           
           return {
             week_number: weekIdx + 1,
