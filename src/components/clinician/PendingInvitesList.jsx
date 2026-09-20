@@ -4,6 +4,7 @@ import { base44 } from '@/api/base44Client';
 import { Button } from "@/components/ui/button";
 import { Copy, QrCode, Trash2, Clock } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
+import { getUnifiedInviteUrl } from '@/components/invite/inviteFlow';
 
 export default function PendingInvitesList({ clinicId }) {
   const queryClient = useQueryClient();
@@ -37,14 +38,14 @@ export default function PendingInvitesList({ clinicId }) {
   });
 
   const handleCopyLink = (token) => {
-    const link = `${window.location.origin}${new URL(window.location.href).pathname}#/AcceptClinicianInvite?t=${token}`;
+    const link = getUnifiedInviteUrl(token);
     navigator.clipboard.writeText(link);
     setCopiedToken(token);
     setTimeout(() => setCopiedToken(null), 2000);
   };
 
   const handleShowQR = (token) => {
-    const link = `${window.location.origin}${new URL(window.location.href).pathname}#/AcceptClinicianInvite?t=${token}`;
+    const link = getUnifiedInviteUrl(token);
     const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(link)}`;
     window.open(qrUrl, '_blank');
   };
