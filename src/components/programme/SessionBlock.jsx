@@ -133,7 +133,9 @@ export default function SessionBlock({ block, blockIndex, totalBlocks, onUpdate,
       <div className={cn("px-3 py-2 border-b flex items-center gap-2", styles.header)}>
         <GripVertical className="w-3.5 h-3.5 text-slate-400 cursor-grab flex-shrink-0" />
         <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded-full", styles.badge)}>
-          {block.type === 'straight' ? `${blockLabel}` : block.type === 'superset' ? `Superset ${blockLabel}` : `Circuit ${blockLabel}`}
+          {block.source_type === 'progression_block'
+            ? `${block.progression_block_name} · ${block.progression_level_name}`
+            : block.type === 'straight' ? `${blockLabel}` : block.type === 'superset' ? `Superset ${blockLabel}` : `Circuit ${blockLabel}`}
         </span>
 
         <div className="flex-1 flex items-center gap-2 min-w-0">
@@ -195,6 +197,12 @@ export default function SessionBlock({ block, blockIndex, totalBlocks, onUpdate,
 
       {!collapsed && (
         <div className="p-3 space-y-2">
+          {block.source_type === 'progression_block' && (block.progression_exit_criteria || []).length > 0 && (
+            <div className="rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-2">
+              <p className="text-[9px] font-bold uppercase tracking-wide text-amber-800">Level exit criteria</p>
+              <p className="mt-0.5 text-[10px] text-amber-700">{block.progression_exit_criteria.join(' · ')}</p>
+            </div>
+          )}
           {/* Block note */}
           <Input
             value={block.note || ''}
