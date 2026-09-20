@@ -1,14 +1,11 @@
 import { base44 } from '@/api/base44Client';
-import { createPageUrl } from '@/utils';
+import { getUnifiedInviteUrl, normaliseInviteEmail } from './inviteFlow';
 
-// Generate a URL-safe random token
-export function generateRandomToken(length = 32) {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
-  let token = '';
-  for (let i = 0; i < length; i++) {
-    token += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return token;
+// Generate a cryptographically secure URL-safe token.
+export function generateRandomToken(byteLength = 32) {
+  const bytes = new Uint8Array(byteLength);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('');
 }
 
 // Create clinician invite token
@@ -20,7 +17,7 @@ export async function createClinicianInviteToken(clinicId, email, roleTarget = '
     clinic_id: clinicId,
     token,
     invite_type: 'clinician',
-    email,
+    email: normaliseInviteEmail(email),
     role_target: roleTarget,
     expires_at: expiresAt.toISOString(),
     status: 'active',
@@ -37,7 +34,7 @@ export async function createPatientInviteToken(clinicId, patientId, email, creat
     clinic_id: clinicId,
     token,
     invite_type: 'patient',
-    email,
+    email: normaliseInviteEmail(email),
     patient_id: patientId,
     role_target: 'patient',
     expires_at: expiresAt.toISOString(),
@@ -69,7 +66,7 @@ export async function regeneratePatientInviteToken(clinicId, patientId, email, c
 
 // Get patient invite URL
 export function getPatientInviteUrl(token) {
-  return `${window.location.origin}${createPageUrl(`PatientInviteAccept?token=${token}`)}`;
+  return getUnifiedInviteUrl(token);
 }
 
 // Validate and redeem token
