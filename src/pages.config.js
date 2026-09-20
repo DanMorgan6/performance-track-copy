@@ -70,6 +70,7 @@ import PatientInviteAccept from './pages/PatientInviteAccept';
 import PatientPortal from './pages/PatientPortal';
 import Pricing from './pages/Pricing';
 import PrivacyPolicy from './pages/PrivacyPolicy';
+import ProgressionBlocks from './pages/ProgressionBlocks';
 import Reports from './pages/Reports';
 import Templates from './pages/Templates';
 import UserTypeSelection from './pages/UserTypeSelection';
@@ -100,6 +101,7 @@ export const PAGES = {
     "PatientPortal": PatientPortal,
     "Pricing": Pricing,
     "PrivacyPolicy": PrivacyPolicy,
+    "ProgressionBlocks": ProgressionBlocks,
     "Reports": Reports,
     "Templates": Templates,
     "UserTypeSelection": UserTypeSelection,
