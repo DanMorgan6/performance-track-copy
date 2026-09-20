@@ -9,6 +9,7 @@ import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import WeeklyProgrammeBuilder from './pages/WeeklyProgrammeBuilder';
+import Splash from './pages/Splash';
 
 const { Pages, Layout, mainPage } = pagesConfig;
 const mainPageKey = mainPage ?? Object.keys(Pages)[0];
@@ -44,11 +45,7 @@ const AuthenticatedApp = () => {
   // Render the main app
   return (
     <Routes>
-      <Route path="/" element={
-        <LayoutWrapper currentPageName={mainPageKey}>
-          <MainPage />
-        </LayoutWrapper>
-      } />
+      <Route path="/" element={<Splash />} />
       {Object.entries(Pages).map(([path, Page]) => (
         <Route
           key={path}
