@@ -11,7 +11,7 @@ import { ArrowLeft, Save, User, Mail, Phone, Calendar, FileText, Stethoscope, Us
 import { Link } from 'react-router-dom';
 import InjuryCaptureForm from '@/components/injury/InjuryCaptureForm';
 import { titleCaseName } from '@/lib/nameFormat';
-import { createPatientInviteToken } from '@/components/invite/InviteTokenUtils';
+import { createPatientInviteToken, getPatientInviteUrl } from '@/components/invite/InviteTokenUtils';
 
 export default function CreatePatient() {
   const navigate = useNavigate();
@@ -79,26 +79,28 @@ export default function CreatePatient() {
         currentUser?.email
       );
 
-      // Generate invite link
-      const inviteLink = `${window.location.origin}${createPageUrl('AcceptInvite')}?t=${inviteToken.token}`;
+      const inviteLink = getPatientInviteUrl(inviteToken.token);
+      let inviteEmailSent = false;
 
-      // Send invite email with link
       try {
         await base44.integrations.Core.SendEmail({
           to: patient.email,
           subject: `You're invited to your rehabilitation portal`,
           body: `Hi ${patient.full_name},\n\nYour clinician has invited you to join your personalized rehabilitation portal.\n\nClick here to accept your invite:\n${inviteLink}\n\nThis link will expire in 30 days.\n\nBest regards,\nYour Clinic Team`
         });
+        inviteEmailSent = true;
       } catch (emailError) {
-        // Patient not registered yet—email will be sent when they accept invite
-        console.log('Email not sent (patient not registered yet)');
+        console.error('Patient invite email failed:', emailError);
       }
 
-      // Track that access was sent
       await base44.entities.Patient.update(patient.id, {
-        portal_access_sent: true,
-        portal_access_sent_date: new Date().toISOString().split('T')[0]
+        portal_access_sent: inviteEmailSent,
+        portal_access_sent_date: inviteEmailSent ? new Date().toISOString().split('T')[0] : null
       });
+
+      if (!inviteEmailSent) {
+        window.alert('Patient created, but the invitation email could not be delivered. Open the patient record to copy or resend the secure invite link.');
+      }
 
       navigate(createPageUrl(`PatientDetail?id=${patient.id}`));
     } catch (error) {
