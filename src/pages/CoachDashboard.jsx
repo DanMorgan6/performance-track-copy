@@ -75,6 +75,7 @@ export default function CoachDashboard() {
   const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [clinicianFilter, setClinicianFilter] = useState('all');
   const [currentUser, setCurrentUser] = useState(null);
   const [aiInsights, setAiInsights] = useState({});
   const [showInviteDialog, setShowInviteDialog] = useState(false);
@@ -140,7 +141,6 @@ export default function CoachDashboard() {
     queryKey: ['patients', currentUser?.email],
     queryFn: async () => {
       const fetchedPatients = await base44.entities.Patient.filter({
-        assigned_coach: currentUser.email,
         clinic_id: currentUser.clinic_id
       }, '-created_date');
       // Sort alphabetically by surname
@@ -151,6 +151,17 @@ export default function CoachDashboard() {
       });
     },
     enabled: !!currentUser?.email && !!currentUser?.clinic_id
+  });
+
+  // Clinic practitioners - used to filter the shared patient list by clinician
+  const { data: clinicClinicians = [] } = useQuery({
+    queryKey: ['clinic-clinicians', currentUser?.clinic_id],
+    queryFn: async () => {
+      if (!currentUser?.clinic_id) return [];
+      const users = await base44.entities.User.list();
+      return users.filter((u) => u.clinic_id === currentUser.clinic_id && isPractitioner(u));
+    },
+    enabled: !!currentUser?.clinic_id
   });
 
   const patientIds = patients.map((patient) => patient.id);
@@ -322,7 +333,9 @@ export default function CoachDashboard() {
     const matchesSearch = patient.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          patient.email?.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesStatus = statusFilter === 'all' || patient.status === statusFilter;
-    return matchesSearch && matchesStatus;
+    const matchesClinician = clinicianFilter === 'all' ||
+      (clinicianFilter === 'me' ? patient.assigned_coach === currentUser?.email : patient.assigned_coach === clinicianFilter);
+    return matchesSearch && matchesStatus && matchesClinician;
   });
 
   return (
@@ -459,7 +472,9 @@ export default function CoachDashboard() {
                     const matchesSearch = pm.patient.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
                                          pm.patient.email?.toLowerCase().includes(searchQuery.toLowerCase());
                     const matchesStatus = statusFilter === 'all' || pm.patient.status === statusFilter;
-                    return matchesSearch && matchesStatus;
+                    const matchesClinician = clinicianFilter === 'all' ||
+                      (clinicianFilter === 'me' ? pm.patient.assigned_coach === currentUser?.email : pm.patient.assigned_coach === clinicianFilter);
+                    return matchesSearch && matchesStatus && matchesClinician;
                   })
                   .map((metrics) => (
                     <PatientGlanceCard
@@ -536,6 +551,17 @@ export default function CoachDashboard() {
                     { value: 'paused', label: 'Paused' },
                     { value: 'completed', label: 'Completed' },
                     { value: 'discharged', label: 'Discharged' },
+                  ]}
+                />
+                <MobileSelect
+                  value={clinicianFilter}
+                  onChange={(e) => setClinicianFilter(e.target.value)}
+                  label="Filter by Clinician"
+                  className="w-full sm:w-auto"
+                  options={[
+                    { value: 'all', label: 'All Clinicians' },
+                    { value: 'me', label: 'Assigned to Me' },
+                    ...clinicClinicians.map((c) => ({ value: c.email, label: titleCaseName(c.full_name) || c.email }))
                   ]}
                 />
               </div>
