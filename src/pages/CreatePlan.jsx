@@ -634,7 +634,7 @@ Make the plan progressive, evidence-based, and tailored to the patient's profile
           const portalUrl = `${window.location.origin}${createPageUrl('PatientPortal')}`;
           await base44.integrations.Core.SendEmail({
             to: patient.email,
-            subject: 'Your Rehabilitation Plan is Ready - Beaches Performance +',
+            subject: 'Your Rehabilitation Plan is Ready - Performance Track+',
             body: `Hi ${patient.full_name},
 
 Your personalized rehabilitation plan "${currentPlanData.title}" has been created and is now ready for you.
@@ -649,7 +649,7 @@ Your clinician has created a ${currentPhases.length}-phase program designed spec
 If you have any questions, please contact your clinician.
 
 Best regards,
-Beaches Performance +`
+Performance Track+`
           });
         } catch (error) {
           // Patient not registered yet - email won't be sent
