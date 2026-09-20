@@ -90,7 +90,7 @@ function ExerciseRow({ exercise, index, blockType, blockLabel, onUpdate, onRemov
   );
 }
 
-export default function SessionBlock({ block, blockIndex, totalBlocks, onUpdate, onRemove, onDuplicate, onMoveUp, onMoveDown, onConvert, onUngroup }) {
+export default function SessionBlock({ block, blockIndex, totalBlocks, onUpdate, onRemove, onDuplicate, onMoveUp, onMoveDown, onConvert, onUngroup, onBlockDragStart, onBlockDragEnd, onBlockDragOver, onBlockDrop, isBlockDragging }) {
   const [collapsed, setCollapsed] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const styles = BLOCK_STYLES[block.type] || BLOCK_STYLES.straight;
@@ -128,10 +128,28 @@ export default function SessionBlock({ block, blockIndex, totalBlocks, onUpdate,
   const convertTypes = block.type === 'straight' ? ['superset', 'circuit'] : block.type === 'superset' ? ['straight', 'circuit'] : ['straight', 'superset'];
 
   return (
-    <div className={cn("rounded-xl border-2 overflow-hidden", styles.wrapper)}>
+    <div
+      onDragOver={(e) => onBlockDragOver?.(e, blockIndex)}
+      onDrop={(e) => onBlockDrop?.(e)}
+      className={cn(
+        "rounded-xl border-2 overflow-hidden transition-all",
+        styles.wrapper,
+        isBlockDragging && "opacity-50 ring-2 ring-purple-400"
+      )}
+    >
       {/* Block Header */}
       <div className={cn("px-3 py-2 border-b flex items-center gap-2", styles.header)}>
-        <GripVertical className="w-3.5 h-3.5 text-slate-400 cursor-grab flex-shrink-0" />
+        <GripVertical
+          draggable
+          onDragStart={(e) => {
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', String(blockIndex));
+            onBlockDragStart?.(blockIndex);
+          }}
+          onDragEnd={() => onBlockDragEnd?.()}
+          className="w-3.5 h-3.5 text-slate-400 cursor-grab flex-shrink-0 hover:text-purple-500"
+          title="Drag to reorder block"
+        />
         <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded-full", styles.badge)}>
           {block.source_type === 'progression_block'
             ? `${block.progression_block_name} · ${block.progression_level_name}`

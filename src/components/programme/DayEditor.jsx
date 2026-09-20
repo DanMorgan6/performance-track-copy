@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { X, ClipboardList, Plus, Layers, Zap, Copy, ClipboardPaste } from 'lucide-react';
 import { Droppable } from '@hello-pangea/dnd';
 import { cn } from '@/lib/utils';
@@ -10,6 +10,8 @@ import TrainingProgramPDFButton from './TrainingProgramPDF';
 const DAY_NAMES = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
 export default function DayEditor({ day, dayIndex, phase, onUpdate, onClose, allDays, weekNumber, patient, libraryExercises, onCopyDay, onPasteDay, hasCopiedDay }) {
+  const [draggedBlockIdx, setDraggedBlockIdx] = useState(null);
+
   if (dayIndex === null || dayIndex === undefined || !day) {
     return (
       <div className="flex flex-col items-center justify-center h-full text-center p-8 text-slate-400">
@@ -74,6 +76,22 @@ export default function DayEditor({ day, dayIndex, phase, onUpdate, onClose, all
     }));
     blocks.splice(idx, 1, ...newBlocks);
     updateBlocks(blocks);
+  };
+
+  const handleBlockDragStart = (idx) => setDraggedBlockIdx(idx);
+  const handleBlockDragEnd = () => setDraggedBlockIdx(null);
+  const handleBlockDragOver = (e, idx) => {
+    e.preventDefault();
+    if (draggedBlockIdx === null || draggedBlockIdx === idx) return;
+    const blocks = [...(day.blocks || [])];
+    const [moved] = blocks.splice(draggedBlockIdx, 1);
+    blocks.splice(idx, 0, moved);
+    updateBlocks(blocks);
+    setDraggedBlockIdx(idx);
+  };
+  const handleBlockDrop = (e) => {
+    e.preventDefault();
+    setDraggedBlockIdx(null);
   };
 
   const isRest = (day.emphasis || 'rest') === 'rest';
@@ -216,6 +234,11 @@ export default function DayEditor({ day, dayIndex, phase, onUpdate, onClose, all
                 onDuplicate={() => duplicateBlock(idx)}
                 onConvert={(type) => convertBlock(idx, type)}
                 onUngroup={() => ungroupBlock(idx)}
+                onBlockDragStart={handleBlockDragStart}
+                onBlockDragEnd={handleBlockDragEnd}
+                onBlockDragOver={handleBlockDragOver}
+                onBlockDrop={handleBlockDrop}
+                isBlockDragging={draggedBlockIdx === idx}
                 onMoveUp={() => {
                   const blocks = [...(day.blocks || [])];
                   if (idx === 0) return;
