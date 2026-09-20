@@ -118,7 +118,7 @@ export default function AcceptInvite() {
   // Loading state
   if (step === 'validating') {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-teal-50/30 p-6 flex items-center justify-center">
+      <div className="performance-shell min-h-screen bg-gradient-to-br from-slate-50 via-white to-teal-50/30 p-6 flex items-center justify-center">
         <div className="max-w-md w-full">
           <div className="bg-white rounded-3xl p-8 border border-slate-100 space-y-6 text-center">
             <div className="animate-spin w-8 h-8 border-2 border-teal-500 border-t-transparent rounded-full mx-auto" />
@@ -132,7 +132,7 @@ export default function AcceptInvite() {
   // Error state
   if (step === 'error') {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-teal-50/30 p-6 flex items-center justify-center">
+      <div className="performance-shell min-h-screen bg-gradient-to-br from-slate-50 via-white to-teal-50/30 p-6 flex items-center justify-center">
         <div className="max-w-md w-full">
           <div className="bg-white rounded-3xl p-8 border border-slate-100 space-y-6">
             <div className="flex items-center justify-center w-14 h-14 rounded-full bg-rose-100 mx-auto">
@@ -157,7 +157,7 @@ export default function AcceptInvite() {
   // Sign in required state
   if (step === 'signin') {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-teal-50/30 p-6 flex items-center justify-center">
+      <div className="performance-shell min-h-screen bg-gradient-to-br from-slate-50 via-white to-teal-50/30 p-6 flex items-center justify-center">
         <div className="max-w-md w-full">
           <div className="bg-white rounded-3xl p-8 border border-slate-100 space-y-6">
             <div className="text-center space-y-2">
@@ -179,7 +179,7 @@ export default function AcceptInvite() {
   // Details form state
   if (step === 'details' && invite) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-teal-50/30 p-6 flex items-center justify-center">
+      <div className="performance-shell min-h-screen bg-gradient-to-br from-slate-50 via-white to-teal-50/30 p-6 flex items-center justify-center">
         <div className="max-w-md w-full">
           <div className="bg-white rounded-3xl p-8 border border-slate-100 space-y-6">
             <div className="text-center space-y-2">
@@ -257,7 +257,7 @@ export default function AcceptInvite() {
   // Success state
   if (step === 'success') {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-teal-50/30 p-6 flex items-center justify-center">
+      <div className="performance-shell min-h-screen bg-gradient-to-br from-slate-50 via-white to-teal-50/30 p-6 flex items-center justify-center">
         <div className="max-w-md w-full">
           <div className="bg-white rounded-3xl p-8 border border-slate-100 space-y-6 text-center">
             <div className="flex items-center justify-center w-14 h-14 rounded-full bg-emerald-100 mx-auto">
