@@ -53,7 +53,8 @@ export default function DayDetail({ day, dayIndex, currentPhase, onBack, patient
       ...data,
       clinic_id: patient.clinic_id,
       patient_id: patient.id,
-      phase_id: currentPhase?.id,
+      plan_id: currentPhase?.plan_id,
+      phase_id: currentPhase?.is_basic ? undefined : currentPhase?.id,
       date: new Date().toISOString().split('T')[0]
     }),
     onSuccess: () => {
@@ -313,7 +314,7 @@ export default function DayDetail({ day, dayIndex, currentPhase, onBack, patient
               dayNote={dayNote}
               date={dateStr}
               patientId={patient.id}
-              planId={currentPhase?.id}
+              planId={currentPhase?.plan_id}
               clinicId={patient.clinic_id}
               onSave={() => {
                 setShowNotes(false);
