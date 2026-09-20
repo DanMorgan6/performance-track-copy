@@ -111,7 +111,7 @@ export default function ClinicOnboarding() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-teal-50/30 flex items-center justify-center p-6">
+    <div className="performance-shell min-h-screen bg-gradient-to-br from-purple-50 via-white to-teal-50/30 flex items-center justify-center p-6">
       <div className="max-w-2xl w-full">
         <div className="text-center mb-8">
           <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-500 to-purple-700 flex items-center justify-center mx-auto mb-4">
