@@ -17,7 +17,7 @@ import { Input } from "@/components/ui/input";
 import { format } from 'date-fns';
 import { Badge } from "@/components/ui/badge";
 
-export default function DayDetail({ day, dayIndex, currentPhase, onBack, patient, selectedDate, milestones = [] }) {
+export default function DayDetail({ day, dayIndex, currentPhase, onBack, patient, selectedDate = null, milestones = [] }) {
   const queryClient = useQueryClient();
   const dateStr = day ? day.date : new Date().toISOString().split('T')[0];
 
