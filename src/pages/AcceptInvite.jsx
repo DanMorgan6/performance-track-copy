@@ -1,276 +1,241 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { createPageUrl } from '@/utils';
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { AlertCircle, CheckCircle2, Loader2, ShieldCheck } from 'lucide-react';
+import { getInviteError } from '@/components/invite/inviteFlow';
+
+function responseData(response) {
+  return response?.data || response || {};
+}
 
 export default function AcceptInvite() {
-  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const token = searchParams.get('t');
-  
-  const [step, setStep] = useState('validating'); // 'validating', 'signin', 'details', 'success', 'error'
+  const token = searchParams.get('t') || searchParams.get('token');
+  const [step, setStep] = useState('validating');
   const [error, setError] = useState('');
   const [invite, setInvite] = useState(null);
-  const [currentUser, setCurrentUser] = useState(null);
+  const [accepting, setAccepting] = useState(false);
   const [patientData, setPatientData] = useState({
     full_name: '',
     date_of_birth: '',
     phone: '',
-    gender: ''
+    gender: '',
   });
 
-  // Validate token on mount
+  const redirectForInvite = (inviteType) => {
+    const destination = inviteType === 'clinician' ? 'CoachDashboard' : 'PatientPortal';
+    window.location.assign(createPageUrl(destination));
+  };
+
   useEffect(() => {
-    const validateToken = async () => {
+    let active = true;
+
+    const inspect = async () => {
       if (!token) {
-        setError('Invalid invite link. No token provided.');
+        setError('This invitation link is incomplete. Please request a new one.');
         setStep('error');
         return;
       }
 
       try {
-        // Authentication comes first so invite RLS can verify the intended email.
-        let user;
-        try {
-          user = await base44.auth.me();
-        } catch {
-          setStep('signin');
-          return;
+        await base44.auth.me();
+      } catch {
+        if (active) setStep('signin');
+        return;
+      }
+
+      try {
+        const response = await base44.functions.invoke('inspectInvite', { token });
+        const details = responseData(response);
+        if (details.error) throw new Error(details.error);
+        if (!active) return;
+
+        setInvite(details);
+        setPatientData((current) => ({
+          ...current,
+          full_name: details.patient_name || current.full_name,
+          date_of_birth: details.patient_date_of_birth || current.date_of_birth,
+        }));
+
+        if (details.already_accepted) {
+          setStep('success');
+          window.setTimeout(() => redirectForInvite(details.invite_type), 600);
+        } else {
+          setStep(details.invite_type === 'clinician' ? 'confirm' : 'details');
         }
-
-        const tokens = await base44.entities.InviteToken.filter({
-          token,
-          status: 'active',
-          invite_type: 'patient',
-          email: user.email
-        });
-        const inviteToken = tokens[0];
-
-        if (!inviteToken || new Date(inviteToken.expires_at) <= new Date()) {
-          setError('Invalid or expired invite link. Please request a new one from your clinician.');
-          setStep('error');
-          return;
-        }
-
-        setInvite(inviteToken);
-        setCurrentUser(user);
-        setStep('details');
       } catch (err) {
-        console.error('Error validating token:', err);
-        setError('Failed to validate invite. Please try again.');
+        if (!active) return;
+        setError(getInviteError(err, 'Unable to validate this invitation.'));
         setStep('error');
       }
     };
 
-    validateToken();
+    inspect();
+    return () => {
+      active = false;
+    };
   }, [token]);
 
-  const handleSignIn = async () => {
+  const handleSignIn = () => {
+    base44.auth.redirectToLogin(window.location.href);
+  };
+
+  const acceptClinicianInvite = async () => {
+    setAccepting(true);
+    setError('');
     try {
-      // Redirect to login, and come back to this page after
-      await base44.auth.redirectToLogin(window.location.href);
+      const response = await base44.functions.invoke('acceptClinicianInvite', { token });
+      const result = responseData(response);
+      if (result.error) throw new Error(result.error);
+      setStep('success');
+      window.setTimeout(() => redirectForInvite('clinician'), 600);
     } catch (err) {
-      setError('Failed to redirect to login. Please try again.');
+      setError(getInviteError(err, 'Unable to accept this invitation.'));
+      setAccepting(false);
     }
   };
 
-  const handleCompleteInvite = async (e) => {
-    e.preventDefault();
-
-    if (!patientData.full_name) {
-      setError('Please enter your full name');
+  const acceptPatientInvite = async (event) => {
+    event.preventDefault();
+    if (!patientData.full_name.trim()) {
+      setError('Please enter your full name.');
       return;
     }
 
-    if (!currentUser) {
-      setError('You must be logged in to complete this');
-      return;
-    }
-
+    setAccepting(true);
+    setError('');
     try {
-      // The backend verifies the signed-in email, links the tenant and consumes
-      // the token atomically using service-role access.
       const response = await base44.functions.invoke('acceptPatientInvite', {
         token,
-        patient_data: patientData
+        patient_data: patientData,
       });
-
-      if (response?.data?.error) {
-        throw new Error(response.data.error);
-      }
-
+      const result = responseData(response);
+      if (result.error) throw new Error(result.error);
       setStep('success');
-
-      // Redirect after delay
-      setTimeout(() => {
-        navigate(createPageUrl('PatientPortal'));
-      }, 2000);
+      window.setTimeout(() => redirectForInvite('patient'), 600);
     } catch (err) {
-      console.error('Error completing invite:', err);
-      setError('Failed to complete registration. Please try again.');
+      setError(getInviteError(err, 'Unable to complete your registration.'));
+      setAccepting(false);
     }
   };
 
-  // Loading state
+  const shell = (children) => (
+    <div className="performance-shell min-h-screen bg-[#171719] p-5 text-zinc-100 flex items-center justify-center">
+      <div className="w-full max-w-md rounded-[28px] border border-white/10 bg-[#242427] p-7 shadow-2xl">
+        {children}
+      </div>
+    </div>
+  );
+
   if (step === 'validating') {
-    return (
-      <div className="performance-shell min-h-screen bg-gradient-to-br from-slate-50 via-white to-teal-50/30 p-6 flex items-center justify-center">
-        <div className="max-w-md w-full">
-          <div className="bg-white rounded-3xl p-8 border border-slate-100 space-y-6 text-center">
-            <div className="animate-spin w-8 h-8 border-2 border-teal-500 border-t-transparent rounded-full mx-auto" />
-            <p className="text-slate-600">Validating your invite...</p>
-          </div>
-        </div>
+    return shell(
+      <div className="space-y-4 text-center">
+        <Loader2 className="mx-auto h-8 w-8 animate-spin text-[#d8ff5f]" />
+        <p className="text-sm text-zinc-400">Checking your secure invitation…</p>
       </div>
     );
   }
 
-  // Error state
-  if (step === 'error') {
-    return (
-      <div className="performance-shell min-h-screen bg-gradient-to-br from-slate-50 via-white to-teal-50/30 p-6 flex items-center justify-center">
-        <div className="max-w-md w-full">
-          <div className="bg-white rounded-3xl p-8 border border-slate-100 space-y-6">
-            <div className="flex items-center justify-center w-14 h-14 rounded-full bg-rose-100 mx-auto">
-              <AlertCircle className="w-7 h-7 text-rose-600" />
-            </div>
-            <div className="text-center space-y-2">
-              <h1 className="text-2xl font-bold text-slate-900">Invite Invalid</h1>
-              <p className="text-slate-600">{error}</p>
-            </div>
-            <Button
-              onClick={() => navigate(createPageUrl('Home'))}
-              className="w-full bg-slate-600 hover:bg-slate-700 text-white rounded-xl"
-            >
-              Back to Home
-            </Button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Sign in required state
   if (step === 'signin') {
-    return (
-      <div className="performance-shell min-h-screen bg-gradient-to-br from-slate-50 via-white to-teal-50/30 p-6 flex items-center justify-center">
-        <div className="max-w-md w-full">
-          <div className="bg-white rounded-3xl p-8 border border-slate-100 space-y-6">
-            <div className="text-center space-y-2">
-              <h1 className="text-3xl font-bold text-slate-900">Sign In Required</h1>
-              <p className="text-slate-600">You need to sign in to accept this invite</p>
-            </div>
-            <Button
-              onClick={handleSignIn}
-              className="w-full bg-teal-600 hover:bg-teal-700 text-white rounded-xl"
-            >
-              Sign In or Create Account
-            </Button>
-          </div>
+    return shell(
+      <div className="space-y-6 text-center">
+        <ShieldCheck className="mx-auto h-12 w-12 text-[#d8ff5f]" />
+        <div>
+          <h1 className="text-2xl font-bold text-white">Sign in to continue</h1>
+          <p className="mt-2 text-sm text-zinc-400">
+            Sign in or create an account using the exact email address that received this invitation.
+          </p>
         </div>
+        <Button onClick={handleSignIn} className="w-full rounded-xl bg-[#d8ff5f] text-zinc-950 hover:bg-[#c9f050]">
+          Sign in or create account
+        </Button>
       </div>
     );
   }
 
-  // Details form state
+  if (step === 'error') {
+    return shell(
+      <div className="space-y-5 text-center">
+        <AlertCircle className="mx-auto h-12 w-12 text-rose-400" />
+        <div>
+          <h1 className="text-2xl font-bold text-white">Invitation problem</h1>
+          <p className="mt-2 text-sm text-zinc-400">{error}</p>
+        </div>
+        <Button onClick={() => window.location.assign(createPageUrl('Home'))} variant="outline" className="w-full rounded-xl border-white/10 bg-white/5 text-white">
+          Return home
+        </Button>
+      </div>
+    );
+  }
+
+  if (step === 'confirm' && invite) {
+    return shell(
+      <div className="space-y-6">
+        <div className="text-center">
+          <CheckCircle2 className="mx-auto h-12 w-12 text-[#d8ff5f]" />
+          <h1 className="mt-4 text-2xl font-bold text-white">Join {invite.clinic_name}</h1>
+          <p className="mt-2 text-sm text-zinc-400">
+            You have been invited as {invite.role_target === 'clinic_admin' ? 'a clinic administrator' : 'a clinician'}.
+          </p>
+        </div>
+        {error && <p className="rounded-xl border border-rose-400/20 bg-rose-400/10 p-3 text-sm text-rose-200">{error}</p>}
+        <Button onClick={acceptClinicianInvite} disabled={accepting} className="w-full rounded-xl bg-[#d8ff5f] text-zinc-950 hover:bg-[#c9f050]">
+          {accepting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          Accept invitation
+        </Button>
+      </div>
+    );
+  }
+
   if (step === 'details' && invite) {
-    return (
-      <div className="performance-shell min-h-screen bg-gradient-to-br from-slate-50 via-white to-teal-50/30 p-6 flex items-center justify-center">
-        <div className="max-w-md w-full">
-          <div className="bg-white rounded-3xl p-8 border border-slate-100 space-y-6">
-            <div className="text-center space-y-2">
-              <h1 className="text-3xl font-bold text-slate-900">Complete Your Profile</h1>
-              <p className="text-slate-600">Fill in your details to complete registration</p>
-            </div>
-
-            <form onSubmit={handleCompleteInvite} className="space-y-4">
-              <div className="space-y-2">
-                <Label>Full Name *</Label>
-                <Input
-                  value={patientData.full_name}
-                  onChange={(e) => setPatientData({...patientData, full_name: e.target.value})}
-                  placeholder="Your full name"
-                  className="rounded-xl"
-                  required
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label>Date of Birth</Label>
-                <Input
-                  type="date"
-                  value={patientData.date_of_birth}
-                  onChange={(e) => setPatientData({...patientData, date_of_birth: e.target.value})}
-                  className="rounded-xl"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label>Gender</Label>
-                <select
-                  value={patientData.gender}
-                  onChange={(e) => setPatientData({...patientData, gender: e.target.value})}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white"
-                >
-                  <option value="">Select gender</option>
-                  <option value="male">Male</option>
-                  <option value="female">Female</option>
-                  <option value="other">Other</option>
-                </select>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Phone (optional)</Label>
-                <Input
-                  type="tel"
-                  value={patientData.phone}
-                  onChange={(e) => setPatientData({...patientData, phone: e.target.value})}
-                  placeholder="Your phone number"
-                  className="rounded-xl"
-                />
-              </div>
-
-              {error && (
-                <div className="flex gap-3 p-3 bg-rose-50 border border-rose-200 rounded-xl">
-                  <AlertCircle className="w-5 h-5 text-rose-600 flex-shrink-0 mt-0.5" />
-                  <p className="text-sm text-rose-700">{error}</p>
-                </div>
-              )}
-
-              <Button
-                type="submit"
-                className="w-full bg-teal-600 hover:bg-teal-700 text-white rounded-xl"
-              >
-                Complete Registration
-              </Button>
-            </form>
-          </div>
+    return shell(
+      <form onSubmit={acceptPatientInvite} className="space-y-5">
+        <div className="text-center">
+          <CheckCircle2 className="mx-auto h-12 w-12 text-[#d8ff5f]" />
+          <h1 className="mt-4 text-2xl font-bold text-white">Join {invite.clinic_name}</h1>
+          <p className="mt-2 text-sm text-zinc-400">Confirm your details to activate your rehabilitation portal.</p>
         </div>
-      </div>
+        <div className="space-y-2">
+          <Label className="text-zinc-300">Full name *</Label>
+          <Input required value={patientData.full_name} onChange={(event) => setPatientData({ ...patientData, full_name: event.target.value })} className="rounded-xl border-white/10 bg-[#171719] text-white" />
+        </div>
+        <div className="space-y-2">
+          <Label className="text-zinc-300">Date of birth</Label>
+          <Input type="date" value={patientData.date_of_birth} onChange={(event) => setPatientData({ ...patientData, date_of_birth: event.target.value })} className="rounded-xl border-white/10 bg-[#171719] text-white" />
+        </div>
+        <div className="space-y-2">
+          <Label className="text-zinc-300">Phone</Label>
+          <Input type="tel" value={patientData.phone} onChange={(event) => setPatientData({ ...patientData, phone: event.target.value })} className="rounded-xl border-white/10 bg-[#171719] text-white" />
+        </div>
+        <div className="space-y-2">
+          <Label className="text-zinc-300">Gender</Label>
+          <select value={patientData.gender} onChange={(event) => setPatientData({ ...patientData, gender: event.target.value })} className="w-full rounded-xl border border-white/10 bg-[#171719] px-3 py-2 text-white">
+            <option value="">Prefer not to say</option>
+            <option value="male">Male</option>
+            <option value="female">Female</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+        {error && <p className="rounded-xl border border-rose-400/20 bg-rose-400/10 p-3 text-sm text-rose-200">{error}</p>}
+        <Button type="submit" disabled={accepting} className="w-full rounded-xl bg-[#d8ff5f] text-zinc-950 hover:bg-[#c9f050]">
+          {accepting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          Activate portal
+        </Button>
+      </form>
     );
   }
 
-  // Success state
   if (step === 'success') {
-    return (
-      <div className="performance-shell min-h-screen bg-gradient-to-br from-slate-50 via-white to-teal-50/30 p-6 flex items-center justify-center">
-        <div className="max-w-md w-full">
-          <div className="bg-white rounded-3xl p-8 border border-slate-100 space-y-6 text-center">
-            <div className="flex items-center justify-center w-14 h-14 rounded-full bg-emerald-100 mx-auto">
-              <CheckCircle2 className="w-7 h-7 text-emerald-600" />
-            </div>
-            <div className="space-y-2">
-              <h1 className="text-3xl font-bold text-slate-900">Welcome!</h1>
-              <p className="text-slate-600">Your account has been created successfully</p>
-            </div>
-            <p className="text-sm text-slate-500">Redirecting to your portal...</p>
-            <div className="animate-spin w-8 h-8 border-2 border-teal-500 border-t-transparent rounded-full mx-auto" />
-          </div>
-        </div>
+    return shell(
+      <div className="space-y-4 text-center">
+        <CheckCircle2 className="mx-auto h-12 w-12 text-[#d8ff5f]" />
+        <h1 className="text-2xl font-bold text-white">Invitation accepted</h1>
+        <p className="text-sm text-zinc-400">Your account is ready. Redirecting you now…</p>
+        <Loader2 className="mx-auto h-6 w-6 animate-spin text-[#d8ff5f]" />
       </div>
     );
   }
