@@ -341,7 +341,7 @@ export default function CreateOutcomeMeasure() {
               <h2 className="text-lg font-semibold text-slate-700">Basic Information</h2>
               
               {/* AI Document Extraction */}
-              <div className="space-y-4 border border-blue-200 bg-blue-50 p-4 rounded-xl">
+              <div className="ai-extraction-light-panel space-y-4 rounded-xl border border-blue-200 bg-blue-50 p-4">
                 <p className="text-sm font-medium text-blue-800 flex items-center gap-2">
                   <Sparkles className="w-4 h-4" /> AI-Powered Document Extraction
                 </p>
