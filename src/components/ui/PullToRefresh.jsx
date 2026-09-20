@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 
 const THRESHOLD = 72; // px to pull before triggering
 
-export default function PullToRefresh({ onRefresh, children, className }) {
+export default function PullToRefresh({ onRefresh, children, className = '' }) {
   const [pullY, setPullY] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
   const startY = useRef(null);
