@@ -11,7 +11,7 @@ import DayCard from '@/components/programme/DayCard';
 import DayEditor from '@/components/programme/DayEditor';
 import ExerciseLibraryPanel from '@/components/programme/ExerciseLibraryPanel';
 import WeeklyStats from '@/components/programme/WeeklyStats';
-import { buildProgressionSessionBlock } from '@/components/programme/progressionBlockUtils';
+import { buildProgressionSessionBlock, mergeProgressionExitCriteria } from '@/components/programme/progressionBlockUtils';
 
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
@@ -226,6 +226,10 @@ export default function ProgrammeScheduleEditor({
       newDays[dayIdx] = { ...day, emphasis: day.emphasis === 'rest' ? 'strength' : day.emphasis, blocks };
       weeks[weekIdx] = { ...weeks[weekIdx], daily_schedule: denormalizeDaySchedule(newDays) };
       phase.weeks = weeks;
+      phase.exit_criteria = mergeProgressionExitCriteria(
+        phase.exit_criteria || [],
+        level.exit_criteria || []
+      );
       newPhases[phaseIdx] = phase;
       return newPhases;
     });
