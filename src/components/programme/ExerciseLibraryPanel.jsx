@@ -8,7 +8,7 @@ const TABS = [
   { id: 'library', label: 'Library', icon: BookOpen },
   { id: 'favourites', label: 'Favourites', icon: Star },
   { id: 'recent', label: 'Recent', icon: Clock },
-  { id: 'templates', label: 'Templates', icon: Layers },
+  { id: 'blocks', label: 'Blocks', icon: Layers },
 ];
 
 const BODY_PART_FILTERS = [
@@ -38,7 +38,7 @@ const CATEGORY_FILTERS = [
   { value: 'functional', label: 'Functional' },
 ];
 
-export default function ExerciseLibraryPanel({ exercises = [], onAddExercise, selectedDayIndex }) {
+export default function ExerciseLibraryPanel({ exercises = [], progressionBlocks = [], onAddExercise, onAddProgressionLevel, selectedDayIndex }) {
   const [tab, setTab] = useState('library');
   const [search, setSearch] = useState('');
   const [bodyPartFilter, setBodyPartFilter] = useState(null);
@@ -54,6 +54,15 @@ export default function ExerciseLibraryPanel({ exercises = [], onAddExercise, se
     return matchesSearch && matchesBodyPart && matchesCategory;
   });
 
+  const filteredBlocks = progressionBlocks.filter(block => {
+    const term = search.toLowerCase();
+    return block.is_active !== false && (
+      block.name?.toLowerCase().includes(term) ||
+      block.description?.toLowerCase().includes(term) ||
+      block.body_part?.toLowerCase().includes(term)
+    );
+  });
+
   const canAdd = selectedDayIndex !== null && selectedDayIndex !== undefined;
 
   return (
@@ -66,7 +75,7 @@ export default function ExerciseLibraryPanel({ exercises = [], onAddExercise, se
           <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search exercises..."
+            placeholder={tab === 'blocks' ? 'Search progression blocks...' : 'Search exercises...'}
             className="pl-8 h-8 text-xs rounded-xl"
           />
         </div>
@@ -204,10 +213,47 @@ export default function ExerciseLibraryPanel({ exercises = [], onAddExercise, se
           </div>
         )}
 
-        {tab === 'templates' && (
-          <div className="text-center py-8 text-xs text-slate-400">
-            <Layers className="w-6 h-6 mx-auto mb-2 opacity-30" />
-            No saved templates yet
+        {tab === 'blocks' && (
+          <div className="p-2 space-y-2">
+            {filteredBlocks.length === 0 ? (
+              <div className="text-center py-8 text-xs text-slate-400">
+                <Layers className="w-6 h-6 mx-auto mb-2 opacity-30" />
+                {search ? 'No blocks match your search' : 'No progression blocks yet'}
+              </div>
+            ) : filteredBlocks.map(block => (
+              <div key={block.id} className="rounded-xl border border-slate-200 bg-slate-50/70 p-2.5">
+                <div className="mb-2">
+                  <p className="text-xs font-semibold text-slate-800">{block.name}</p>
+                  <p className="mt-0.5 text-[9px] text-slate-500 line-clamp-2">{block.description || 'Reusable criteria-led exercise progression'}</p>
+                </div>
+                <div className="space-y-1.5">
+                  {(block.levels || []).map((level, levelIndex) => (
+                    <div key={levelIndex} className="rounded-lg border border-slate-200 bg-white p-2">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="min-w-0">
+                          <p className="truncate text-[10px] font-semibold text-slate-700">{level.name || `Level ${levelIndex + 1}`}</p>
+                          <p className="text-[9px] text-slate-400">{level.exercises?.length || 0} exercises · {level.exit_criteria?.length || 0} criteria</p>
+                        </div>
+                        {canAdd && (
+                          <button
+                            type="button"
+                            onClick={() => onAddProgressionLevel?.(block, level, levelIndex)}
+                            className="whitespace-nowrap rounded-lg bg-purple-600 px-2 py-1 text-[9px] font-semibold text-white hover:bg-purple-700"
+                          >
+                            + Add level
+                          </button>
+                        )}
+                      </div>
+                      {(level.exit_criteria || []).length > 0 && (
+                        <p className="mt-1.5 border-t border-slate-100 pt-1.5 text-[9px] text-amber-700">
+                          Exit: {(level.exit_criteria || []).map(item => item.criterion).filter(Boolean).join(' · ')}
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </div>
