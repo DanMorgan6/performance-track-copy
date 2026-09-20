@@ -10,39 +10,49 @@ Deno.serve(async (req) => {
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
-    // Already linked — nothing to do
-    if (user.patient_id) {
-      return Response.json({ patient_id: user.patient_id, linked: false, already_linked: true });
-    }
-
     const email = normaliseEmail(user.email);
     if (!email) return Response.json({ error: 'No email on account' }, { status: 400 });
 
-    // Find an unlinked patient whose email matches (case-insensitive)
-    const patients = await base44.asServiceRole.entities.Patient.filter({
-      email: { $regex: email, $options: 'i' },
-    });
+    // 1. If the user already has a patient_id, trust it and fetch the record directly.
+    let patient = null;
+    if (user.patient_id) {
+      const existing = await base44.asServiceRole.entities.Patient.filter({ id: user.patient_id });
+      patient = existing[0];
+    }
 
-    const match = patients.find((p) => normaliseEmail(p.email) === email && !p.user_id);
+    // 2. Otherwise (or if that record vanished), resolve by email. Match a patient
+    //    that is either unlinked or already linked to THIS user — never one linked
+    //    to a different account.
+    if (!patient) {
+      const byEmail = await base44.asServiceRole.entities.Patient.filter({
+        email: { $regex: email, $options: 'i' },
+      });
+      patient = byEmail.find(
+        (p) => normaliseEmail(p.email) === email && (p.user_id === user.id || !p.user_id),
+      );
+    }
 
-    if (!match) {
+    if (!patient) {
       return Response.json({ patient_id: null, linked: false });
     }
 
-    // Link the patient record to this user account
-    await base44.asServiceRole.entities.Patient.update(match.id, {
-      user_id: user.id,
-      status: 'active',
-    });
+    // 3. Ensure the bidirectional link is complete (patient.user_id + user.patient_id).
+    //    This also refreshes the user's token data so subsequent RLS checks pass.
+    if (!patient.user_id) {
+      await base44.asServiceRole.entities.Patient.update(patient.id, {
+        user_id: user.id,
+        status: 'active',
+      });
+    }
 
     await base44.auth.updateMe({
-      patient_id: match.id,
-      clinic_id: match.clinic_id,
+      patient_id: patient.id,
+      clinic_id: patient.clinic_id,
       role: 'patient',
       onboarding_completed: true,
     });
 
-    return Response.json({ patient: match, linked: true });
+    return Response.json({ patient, linked: true });
   } catch (error) {
     console.error('linkPatientAccount failed:', error);
     return Response.json(

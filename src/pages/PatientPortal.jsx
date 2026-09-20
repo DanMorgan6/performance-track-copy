@@ -103,8 +103,9 @@ export default function PatientPortal() {
           })
         : [];
 
-      // Auto-link patients who signed up independently (e.g. invite email never arrived)
-      if (patients.length === 0 && !currentUser.patient_id) {
+      // Auto-link patients whose session token predates their patient link, or who
+      // signed up independently (e.g. invite email never arrived).
+      if (patients.length === 0) {
         try {
           const linkRes = await base44.functions.invoke('linkPatientAccount', {});
           if (linkRes?.data?.patient) {
