@@ -49,6 +49,11 @@ const sections = [
         <p><strong>Patient information</strong> may include contact details, injury and health
           information, rehabilitation plans, exercises, pain and symptom logs, outcome measures,
           messages, progress reports and uploaded documents.</p>
+        <p><strong>Optional connected-health information</strong> may include activity, running,
+          heart-rate, HRV, sleep and recovery summaries when a patient or clinic explicitly enables
+          an approved provider connection. Provider access and refresh tokens must not be stored in
+          patient records. Connections can be revoked, and wearable data is used only to inform
+          practitioner review; it does not automatically progress a rehabilitation phase.</p>
         <p>
           Health information is special category data under UK data protection law and requires
           additional protection.
