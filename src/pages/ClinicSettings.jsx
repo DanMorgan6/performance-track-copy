@@ -21,6 +21,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Link } from 'react-router-dom';
+import { titleCaseName } from '@/lib/nameFormat';
 
 export default function ClinicSettings() {
   const queryClient = useQueryClient();
@@ -133,7 +134,7 @@ export default function ClinicSettings() {
               <h3 className="text-lg font-semibold text-slate-900 mb-6">Clinic Information</h3>
               <form onSubmit={(e) => {
                 e.preventDefault();
-                updateClinicMutation.mutate(formData);
+                updateClinicMutation.mutate({ ...formData, name: titleCaseName(formData.name) });
               }} className="space-y-4">
                 <div className="space-y-2">
                   <Label>Clinic Name</Label>

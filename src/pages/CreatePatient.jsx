@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { ArrowLeft, Save, User, Mail, Phone, Calendar, FileText, Stethoscope, Users } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import InjuryCaptureForm from '@/components/injury/InjuryCaptureForm';
+import { titleCaseName } from '@/lib/nameFormat';
 import { createPatientInviteToken } from '@/components/invite/InviteTokenUtils';
 
 export default function CreatePatient() {
@@ -55,6 +56,7 @@ export default function CreatePatient() {
       // Auto-assign current clinician and clinic to patient, set status to 'invited'
       const patient = await base44.entities.Patient.create({
         ...formData,
+        full_name: titleCaseName(formData.full_name),
         assigned_coach: currentUser?.email,
         clinic_id: currentUser?.clinic_id,
         status: 'invited'

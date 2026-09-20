@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Building2, Mail, Phone, MapPin, Sparkles, Calendar } from 'lucide-react';
 import { Switch } from "@/components/ui/switch";
+import { titleCaseName } from '@/lib/nameFormat';
 
 export default function ClinicOnboarding() {
   const navigate = useNavigate();
@@ -82,6 +83,7 @@ export default function ClinicOnboarding() {
       // Create clinic
       const clinic = await base44.entities.Clinic.create({
         ...clinicData,
+        name: titleCaseName(clinicData.name),
         owner_email: currentUser.email,
         subscription_status: 'trial',
         trial_end_date: trialEndDate.toISOString()

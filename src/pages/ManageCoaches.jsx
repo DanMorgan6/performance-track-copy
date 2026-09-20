@@ -9,6 +9,7 @@ import ClinicianInviteManager from "@/components/clinician/ClinicianInviteManage
 import PendingInvitesList from "@/components/clinician/PendingInvitesList";
 import { isClinicAdmin, isPractitioner } from '@/lib/roles';
 import { createPageUrl } from '@/utils';
+import { titleCaseName } from '@/lib/nameFormat';
 
 export default function ManageCoaches() {
   const [showInviteDialog, setShowInviteDialog] = useState(false);
@@ -132,7 +133,7 @@ export default function ManageCoaches() {
                   </div>
                   
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-slate-800 text-sm md:text-base truncate">{coach.full_name}</h3>
+                    <h3 className="font-semibold text-slate-800 text-sm md:text-base truncate">{titleCaseName(coach.full_name)}</h3>
                     <div className="flex items-center gap-1 mt-0.5">
                       <Mail className="w-3 h-3 text-slate-400 flex-shrink-0" />
                       <p className="text-xs text-slate-500 truncate">{coach.email}</p>

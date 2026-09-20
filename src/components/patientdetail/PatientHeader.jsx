@@ -8,6 +8,7 @@ import {
   DropdownMenuTrigger, DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
+import { titleCaseName } from '@/lib/nameFormat';
 
 export default function PatientHeader({
   patient, activePlan, plans,
@@ -30,7 +31,7 @@ export default function PatientHeader({
           <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-purple-500 to-purple-700 flex items-center justify-center text-white font-bold text-xs">
             {patient.full_name?.charAt(0)?.toUpperCase()}
           </div>
-          <span className="text-sm font-semibold text-slate-800 hidden sm:block">{patient.full_name}</span>
+          <span className="text-sm font-semibold text-slate-800 hidden sm:block">{titleCaseName(patient.full_name)}</span>
         </div>
         <div className="w-24" />
       </div>
@@ -45,7 +46,7 @@ export default function PatientHeader({
             </div>
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2 mb-1">
-                <h1 className="text-lg font-bold text-slate-900">{patient.full_name}</h1>
+                <h1 className="text-lg font-bold text-slate-900">{titleCaseName(patient.full_name)}</h1>
                 <span className={cn(
                   "px-2.5 py-0.5 rounded-full text-xs font-semibold",
                   patient.status === 'active' && "bg-emerald-100 text-emerald-700",

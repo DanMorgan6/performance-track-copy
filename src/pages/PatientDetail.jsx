@@ -57,6 +57,7 @@ import AIExtractionReview from "@/components/report/AIExtractionReview";
 import { injuryDiagnosisLibrary } from "@/components/injury/injuryDiagnosisLibrary";
 import { cn } from "@/lib/utils";
 import { isPractitioner } from '@/lib/roles';
+import { titleCaseName } from '@/lib/nameFormat';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -610,7 +611,7 @@ Your Rehabilitation Team`;
               
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-2 mb-1">
-                  <h1 className="text-lg md:text-xl font-bold text-slate-900 truncate">{patient.full_name}</h1>
+                  <h1 className="text-lg md:text-xl font-bold text-slate-900 truncate">{titleCaseName(patient.full_name)}</h1>
                   <span className={cn(
                     "px-3 py-1 rounded-full text-xs font-semibold",
                     patient.status === 'active' && "bg-emerald-100 text-emerald-700",
@@ -1829,7 +1830,7 @@ Your Rehabilitation Team`;
             <AlertDialogHeader>
               <AlertDialogTitle>Delete Patient</AlertDialogTitle>
               <AlertDialogDescription>
-                Are you sure you want to delete {patient?.full_name}? This will permanently remove all their data including plans, assessments, and logs. This action cannot be undone.
+                Are you sure you want to delete {titleCaseName(patient?.full_name)}? This will permanently remove all their data including plans, assessments, and logs. This action cannot be undone.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
@@ -1881,7 +1882,7 @@ Your Rehabilitation Team`;
           onOpenChange={setShowEditPatient}
           formData={editFormData}
           setFormData={setEditFormData}
-          onSave={() => updatePatientMutation.mutate(editFormData)}
+          onSave={() => updatePatientMutation.mutate({ ...editFormData, full_name: titleCaseName(editFormData.full_name) })}
           saving={updatePatientMutation.isPending}
         />
 

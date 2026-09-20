@@ -25,6 +25,7 @@ import { cn } from '@/lib/utils';
 import { isClinicAdmin, isPractitioner } from '@/lib/roles';
 import { isTrialStatus } from '@/components/utils/subscriptionUtils';
 import { createPageUrl } from '@/utils';
+import { titleCaseName } from '@/lib/nameFormat';
 
 const clinicianNav = [
   { name: 'Dashboard', page: 'CoachDashboard', icon: LayoutDashboard },
@@ -65,7 +66,7 @@ function BrandMark({ clinic, compact = false }) {
       {!compact && (
         <div className="min-w-0">
           <p className="truncate text-sm font-extrabold tracking-[-0.02em] text-white">
-            {clinic?.name || 'Performance Track +'}
+            {titleCaseName(clinic?.name) || 'Performance Track +'}
           </p>
           <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-zinc-500">
             Clinical rehab
@@ -204,7 +205,7 @@ export default function Layout({ children, currentPageName }) {
                     {userInitials}
                   </div>
                   <div className="min-w-0">
-                    <p className="truncate text-sm font-bold text-white">{user.full_name}</p>
+                    <p className="truncate text-sm font-bold text-white">{titleCaseName(user.full_name)}</p>
                     <p className="text-xs text-zinc-500">Clinician workspace</p>
                   </div>
                 </div>

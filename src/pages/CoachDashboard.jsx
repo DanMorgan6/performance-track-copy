@@ -32,6 +32,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import PullToRefresh from "@/components/ui/PullToRefresh";
 import MobileSelect from "@/components/ui/MobileSelect";
 import { useQueryClient } from '@tanstack/react-query';
+import { titleCaseName } from '@/lib/nameFormat';
 
 const DAY_IN_MS = 24 * 60 * 60 * 1000;
 
@@ -339,7 +340,7 @@ export default function CoachDashboard() {
               Clinic command centre
             </div>
             <h1 className="text-3xl font-black tracking-[-0.04em] text-white sm:text-4xl">
-              Welcome back{currentUser?.full_name ? `, ${currentUser.full_name.split(' ')[0]}` : ''}
+              Welcome back{currentUser?.full_name ? `, ${titleCaseName(currentUser.full_name).split(' ')[0]}` : ''}
             </h1>
             <p className="mt-2 max-w-xl text-sm leading-relaxed text-zinc-500 sm:text-base">
               Review patient progress, spot clinical priorities and keep every rehabilitation plan moving.
@@ -571,7 +572,7 @@ export default function CoachDashboard() {
                    </div>
 
                    <div className="flex-1 min-w-0">
-                     <h3 className="font-semibold text-slate-800">{patient.full_name}</h3>
+                     <h3 className="font-semibold text-slate-800">{titleCaseName(patient.full_name)}</h3>
                      <div className="flex flex-wrap items-center gap-2 mt-1">
                        <p className="text-sm text-slate-400">{patient.injury_type || 'No injury specified'}</p>
                        {activeInvite && (
