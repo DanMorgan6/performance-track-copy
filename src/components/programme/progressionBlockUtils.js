@@ -1,3 +1,26 @@
+export function mergeProgressionExitCriteria(existingCriteria = [], additionalCriteria = []) {
+  const normalized = new Set(
+    existingCriteria
+      .map(item => item?.criterion?.trim().toLowerCase())
+      .filter(Boolean)
+  );
+  const additions = additionalCriteria
+    .map(item => typeof item === 'string' ? item : item?.criterion)
+    .map(criterion => criterion?.trim())
+    .filter(criterion => criterion && !normalized.has(criterion.toLowerCase()))
+    .map(criterion => {
+      normalized.add(criterion.toLowerCase());
+      return {
+        criterion,
+        criterion_type: 'other',
+        operator: 'clinician_confirmed',
+        target_value: '',
+        is_met: false,
+      };
+    });
+  return [...existingCriteria, ...additions];
+}
+
 export function buildProgressionSessionBlock(progressionBlock, level, levelIndex = 0) {
   if (!progressionBlock?.id || !progressionBlock?.name) {
     throw new Error('A saved progression block is required.');
