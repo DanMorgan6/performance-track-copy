@@ -11,6 +11,7 @@ import DayCard from '@/components/programme/DayCard';
 import DayEditor from '@/components/programme/DayEditor';
 import ExerciseLibraryPanel from '@/components/programme/ExerciseLibraryPanel';
 import WeeklyStats from '@/components/programme/WeeklyStats';
+import { buildProgressionSessionBlock } from '@/components/programme/progressionBlockUtils';
 
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
@@ -217,34 +218,10 @@ export default function ProgrammeScheduleEditor({
       const savedSchedule = weeks[weekIdx]?.daily_schedule;
       const latestWeekDays = savedSchedule ? normalizeDaySchedule(savedSchedule) : createDefaultWeekDays();
       const day = latestWeekDays[dayIdx];
-      const levelExercises = (level.exercises || []).map(exercise => ({
-        library_exercise_id: exercise.library_exercise_id || '',
-        name: exercise.name || '',
-        description: exercise.description || '',
-        sets: String(exercise.sets || 3),
-        reps: exercise.reps || '10',
-        tempo: exercise.tempo || '',
-        rest: exercise.rest || '60s',
-        weight: exercise.weight || '',
-        hold: exercise.hold || '',
-        duration: exercise.duration || '',
-        notes: exercise.notes || exercise.description || '',
-        video_url: exercise.video_url || '',
-        thumbnail_url: exercise.thumbnail_url || '',
-      }));
-      const progressionCriteria = (level.exit_criteria || []).map(item => item.criterion).filter(Boolean);
-      const blocks = [...(day.blocks || []), {
-        type: 'straight',
-        source_type: 'progression_block',
-        progression_block_id: progressionBlock.id,
-        progression_block_name: progressionBlock.name,
-        progression_level_number: level.level_number || levelIndex + 1,
-        progression_level_name: level.name || `Level ${levelIndex + 1}`,
-        progression_exit_criteria: progressionCriteria,
-        exercises: levelExercises,
-        rest_after: '',
-        note: `${progressionBlock.name} · ${level.name || `Level ${levelIndex + 1}`}`,
-      }];
+      const blocks = [
+        ...(day.blocks || []),
+        buildProgressionSessionBlock(progressionBlock, level, levelIndex),
+      ];
       const newDays = [...latestWeekDays];
       newDays[dayIdx] = { ...day, emphasis: day.emphasis === 'rest' ? 'strength' : day.emphasis, blocks };
       weeks[weekIdx] = { ...weeks[weekIdx], daily_schedule: denormalizeDaySchedule(newDays) };
