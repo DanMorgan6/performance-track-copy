@@ -21,7 +21,7 @@ import {
   ChevronRight
 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent } from "@/components/ui/tabs";
 import PhaseTimeline from "@/components/ui/PhaseTimeline";
 import ExitCriteriaCard from "@/components/ui/ExitCriteriaCard";
 import SendOutcomeMeasureDialog from "@/components/outcome/SendOutcomeMeasureDialog";
