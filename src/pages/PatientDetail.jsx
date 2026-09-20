@@ -44,6 +44,9 @@ import RehabPlanPDFButton from "@/components/reports/RehabPlanPDFButton";
 import SaveTemplateDialog from "@/components/reports/SaveTemplateDialog";
 import EditPatientDialog from "@/components/patient/EditPatientDialog";
 import AssessmentsTab from "@/components/patientdetail/AssessmentsTab";
+import PatientWorkspaceNav from "@/components/patientdetail/PatientWorkspaceNav";
+import CriteriaLedPhaseRibbon from "@/components/patientdetail/CriteriaLedPhaseRibbon";
+import LoadRecoveryPanel from "@/components/patientdetail/LoadRecoveryPanel";
 import ClinicianMessaging from "@/components/messaging/ClinicianMessaging";
 import PainTab from "@/components/patientdetail/PainTab";
 import PatientAnalyticsTab from "@/components/analytics/PatientAnalyticsTab";
@@ -84,6 +87,7 @@ export default function PatientDetail() {
   const urlParams = new URLSearchParams(window.location.search);
   const patientId = urlParams.get('id');
   const [selectedPhase, setSelectedPhase] = useState(null);
+  const [activePatientTab, setActivePatientTab] = useState('overview');
   const [showAssessmentForm, setShowAssessmentForm] = useState(false);
   const [editingAssessment, setEditingAssessment] = useState(null);
   const [showSendOutcomeDialog, setShowSendOutcomeDialog] = useState(false);
@@ -784,19 +788,24 @@ Your Rehabilitation Team`;
           </div>
         )}
 
+        {activePlan && (
+          <CriteriaLedPhaseRibbon
+            phases={activePlanPhases}
+            currentPhase={currentPhase}
+            onPhaseClick={(phase) => {
+              setSelectedPhase(phase);
+              setActivePatientTab('plan');
+            }}
+          />
+        )}
+
         {/* Two-Column Layout with Tabs */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-8">
           {/* Main Column (Left) - 2/3 width */}
           <div className="lg:col-span-2 space-y-6">
             {/* Tabs for Content */}
-            <Tabs defaultValue="overview" className="w-full">
-              <div className="overflow-x-auto -mx-3 px-3 lg:mx-0 lg:px-0">
-              <TabsList className="bg-transparent border-b border-slate-200 rounded-none p-0 flex h-auto justify-start min-w-max">
-                {[['overview','Overview'],['calendar','Calendar'],['plan','Plan'],['analytics','Analytics'],['deepdive','Deep Dive'],['assessments','Tests'],['interventions','Interventions'],['outcomes','PROMs'],['pain','Pain'],['exercises','Exercises'],['timeline','Timeline'],['report','Report'],['reports','Docs'],['messages','💬 Messages'],['ai','🤖 AI']].map(([v,l]) => (
-                  <TabsTrigger key={v} value={v} className="rounded-none border-b-2 border-transparent px-3 py-3 text-xs sm:text-sm font-medium text-slate-600 data-[state=active]:border-purple-600 data-[state=active]:text-slate-900 data-[state=active]:bg-transparent hover:text-slate-900 whitespace-nowrap">{l}</TabsTrigger>
-                ))}
-              </TabsList>
-              </div>
+            <Tabs value={activePatientTab} onValueChange={setActivePatientTab} className="w-full">
+              <PatientWorkspaceNav activeTab={activePatientTab} onChange={setActivePatientTab} />
 
               <TabsContent value="overview" className="mt-6">
                 <PatientOverview
@@ -978,6 +987,10 @@ Your Rehabilitation Team`;
                   assessments={assessments}
                   activePlan={activePlan}
                 />
+              </TabsContent>
+
+              <TabsContent value="load-recovery" className="mt-6 mx-3 lg:mx-0">
+                <LoadRecoveryPanel patient={patient} />
               </TabsContent>
 
               <TabsContent value="report" className="mt-6 space-y-4 lg:space-y-6 mx-3 lg:mx-0">
