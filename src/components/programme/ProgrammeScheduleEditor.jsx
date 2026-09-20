@@ -88,6 +88,7 @@ export default function ProgrammeScheduleEditor({
   phases,
   setPhases,
   libraryExercises = [],
+  progressionBlocks = [],
   selectedPhaseIndex,
   setSelectedPhaseIndex,
   selectedWeekIndex,
@@ -193,6 +194,59 @@ export default function ProgrammeScheduleEditor({
       }];
       const newDays = [...latestWeekDays];
       newDays[dayIdx] = { ...day, blocks };
+      weeks[weekIdx] = { ...weeks[weekIdx], daily_schedule: denormalizeDaySchedule(newDays) };
+      phase.weeks = weeks;
+      newPhases[phaseIdx] = phase;
+      return newPhases;
+    });
+  };
+
+  const addProgressionLevelToDay = (progressionBlock, level, levelIndex) => {
+    if (selectedDayIndex === null || !(level.exercises || []).length) return;
+    const phaseIdx = selectedPhaseIndexRef.current;
+    const weekIdx = selectedWeekIndexRef.current;
+    const dayIdx = selectedDayIndex;
+
+    setPhases(prev => {
+      const newPhases = [...prev];
+      const phase = { ...newPhases[phaseIdx] };
+      const weeks = [...(phase.weeks || [])];
+      if (!weeks[weekIdx]) {
+        weeks[weekIdx] = { week_number: weekIdx + 1, daily_schedule: createDefaultWeekDays().map(d => ({ ...d, type: 'training', exercises: [] })) };
+      }
+      const savedSchedule = weeks[weekIdx]?.daily_schedule;
+      const latestWeekDays = savedSchedule ? normalizeDaySchedule(savedSchedule) : createDefaultWeekDays();
+      const day = latestWeekDays[dayIdx];
+      const levelExercises = (level.exercises || []).map(exercise => ({
+        library_exercise_id: exercise.library_exercise_id || '',
+        name: exercise.name || '',
+        description: exercise.description || '',
+        sets: String(exercise.sets || 3),
+        reps: exercise.reps || '10',
+        tempo: exercise.tempo || '',
+        rest: exercise.rest || '60s',
+        weight: exercise.weight || '',
+        hold: exercise.hold || '',
+        duration: exercise.duration || '',
+        notes: exercise.notes || exercise.description || '',
+        video_url: exercise.video_url || '',
+        thumbnail_url: exercise.thumbnail_url || '',
+      }));
+      const progressionCriteria = (level.exit_criteria || []).map(item => item.criterion).filter(Boolean);
+      const blocks = [...(day.blocks || []), {
+        type: 'straight',
+        source_type: 'progression_block',
+        progression_block_id: progressionBlock.id,
+        progression_block_name: progressionBlock.name,
+        progression_level_number: level.level_number || levelIndex + 1,
+        progression_level_name: level.name || `Level ${levelIndex + 1}`,
+        progression_exit_criteria: progressionCriteria,
+        exercises: levelExercises,
+        rest_after: '',
+        note: `${progressionBlock.name} · ${level.name || `Level ${levelIndex + 1}`}`,
+      }];
+      const newDays = [...latestWeekDays];
+      newDays[dayIdx] = { ...day, emphasis: day.emphasis === 'rest' ? 'strength' : day.emphasis, blocks };
       weeks[weekIdx] = { ...weeks[weekIdx], daily_schedule: denormalizeDaySchedule(newDays) };
       phase.weeks = weeks;
       newPhases[phaseIdx] = phase;
@@ -435,7 +489,9 @@ export default function ProgrammeScheduleEditor({
             <div className="h-[600px] lg:h-[680px]">
               <ExerciseLibraryPanel
                 exercises={libraryExercises}
+                progressionBlocks={progressionBlocks}
                 onAddExercise={addExerciseToDay}
+                onAddProgressionLevel={addProgressionLevelToDay}
                 selectedDayIndex={selectedDayIndex}
               />
             </div>
