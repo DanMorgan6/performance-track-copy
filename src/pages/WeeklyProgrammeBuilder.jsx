@@ -11,6 +11,7 @@ import DayCard from '@/components/programme/DayCard';
 import DayEditor from '@/components/programme/DayEditor';
 import ExerciseLibraryPanel from '@/components/programme/ExerciseLibraryPanel';
 import WeeklyStats from '@/components/programme/WeeklyStats';
+import { buildProgressionSessionBlock } from '@/components/programme/progressionBlockUtils';
 
 const DEFAULT_DAY = (dayName) => ({
   day: dayName,
@@ -174,33 +175,7 @@ export default function WeeklyProgrammeBuilder() {
   const addProgressionLevelToDay = (progressionBlock, level, levelIndex) => {
     if (selectedDayIndex === null || !(level.exercises || []).length) return;
     const day = weekDays[selectedDayIndex];
-    const progressionCriteria = (level.exit_criteria || []).map(item => item.criterion).filter(Boolean);
-    const block = {
-      type: 'straight',
-      source_type: 'progression_block',
-      progression_block_id: progressionBlock.id,
-      progression_block_name: progressionBlock.name,
-      progression_level_number: level.level_number || levelIndex + 1,
-      progression_level_name: level.name || `Level ${levelIndex + 1}`,
-      progression_exit_criteria: progressionCriteria,
-      exercises: (level.exercises || []).map(exercise => ({
-        library_exercise_id: exercise.library_exercise_id || '',
-        name: exercise.name || '',
-        description: exercise.description || '',
-        sets: String(exercise.sets || 3),
-        reps: exercise.reps || '10',
-        tempo: exercise.tempo || '',
-        rest: exercise.rest || '60s',
-        weight: exercise.weight || '',
-        hold: exercise.hold || '',
-        duration: exercise.duration || '',
-        notes: exercise.notes || exercise.description || '',
-        video_url: exercise.video_url || '',
-        thumbnail_url: exercise.thumbnail_url || '',
-      })),
-      rest_after: '',
-      note: `${progressionBlock.name} · ${level.name || `Level ${levelIndex + 1}`}`,
-    };
+    const block = buildProgressionSessionBlock(progressionBlock, level, levelIndex);
     updateDay(selectedDayIndex, {
       ...day,
       emphasis: day.emphasis === 'rest' ? 'strength' : day.emphasis,
