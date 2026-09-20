@@ -75,7 +75,18 @@ export default function WeeklyProgrammeBuilder() {
 
   const { data: libraryExercises = [] } = useQuery({
     queryKey: ['exercise-library'],
-    queryFn: () => base44.entities.ExerciseLibrary.list('-created_date')
+    queryFn: async () => {
+      const user = await base44.auth.me();
+      return base44.entities.ExerciseLibrary.filter({ clinic_id: user.clinic_id }, '-created_date');
+    }
+  });
+
+  const { data: progressionBlocks = [] } = useQuery({
+    queryKey: ['progression-blocks'],
+    queryFn: async () => {
+      const user = await base44.auth.me();
+      return base44.entities.ProgressionBlock.filter({ clinic_id: user.clinic_id, is_active: true }, 'name');
+    }
   });
 
   const activePhase = phases[currentPhaseIndex] || null;
@@ -150,11 +161,51 @@ export default function WeeklyProgrammeBuilder() {
         reps: libraryExercise.default_reps || '10',
         tempo: '',
         rest: '60s',
+        notes: libraryExercise.description || '',
+        video_url: libraryExercise.video_url || '',
+        thumbnail_url: libraryExercise.thumbnail_url || '',
       }],
       rest_after: '',
       note: libraryExercise.description || '',
     });
-    updateDay(selectedDayIndex, { ...day, blocks });
+    updateDay(selectedDayIndex, { ...day, emphasis: day.emphasis === 'rest' ? 'strength' : day.emphasis, blocks });
+  };
+
+  const addProgressionLevelToDay = (progressionBlock, level, levelIndex) => {
+    if (selectedDayIndex === null || !(level.exercises || []).length) return;
+    const day = weekDays[selectedDayIndex];
+    const progressionCriteria = (level.exit_criteria || []).map(item => item.criterion).filter(Boolean);
+    const block = {
+      type: 'straight',
+      source_type: 'progression_block',
+      progression_block_id: progressionBlock.id,
+      progression_block_name: progressionBlock.name,
+      progression_level_number: level.level_number || levelIndex + 1,
+      progression_level_name: level.name || `Level ${levelIndex + 1}`,
+      progression_exit_criteria: progressionCriteria,
+      exercises: (level.exercises || []).map(exercise => ({
+        library_exercise_id: exercise.library_exercise_id || '',
+        name: exercise.name || '',
+        description: exercise.description || '',
+        sets: String(exercise.sets || 3),
+        reps: exercise.reps || '10',
+        tempo: exercise.tempo || '',
+        rest: exercise.rest || '60s',
+        weight: exercise.weight || '',
+        hold: exercise.hold || '',
+        duration: exercise.duration || '',
+        notes: exercise.notes || exercise.description || '',
+        video_url: exercise.video_url || '',
+        thumbnail_url: exercise.thumbnail_url || '',
+      })),
+      rest_after: '',
+      note: `${progressionBlock.name} · ${level.name || `Level ${levelIndex + 1}`}`,
+    };
+    updateDay(selectedDayIndex, {
+      ...day,
+      emphasis: day.emphasis === 'rest' ? 'strength' : day.emphasis,
+      blocks: [...(day.blocks || []), block],
+    });
   };
 
   const totalWeeks = activePhase?.duration_weeks || 1;
@@ -284,7 +335,9 @@ export default function WeeklyProgrammeBuilder() {
               <div className="h-[600px] lg:h-[680px]">
                 <ExerciseLibraryPanel
                   exercises={libraryExercises}
+                  progressionBlocks={progressionBlocks}
                   onAddExercise={addExerciseToDay}
+                  onAddProgressionLevel={addProgressionLevelToDay}
                   selectedDayIndex={selectedDayIndex}
                 />
               </div>
