@@ -228,20 +228,20 @@
 .performance-shell .ai-extraction-light-panel input,
 .performance-shell .ai-extraction-light-panel textarea,
 .performance-shell .ai-extraction-light-panel select {
-  color: #0f172a !important;
-  background-color: #ffffff !important;
-  border-color: rgba(30, 58, 95, 0.25) !important;
+  color: #0f172a;
+  background-color: #ffffff;
+  border-color: rgba(30, 58, 95, 0.25);
   color-scheme: light;
 }
 
 .performance-shell .ai-extraction-light-panel input::placeholder,
 .performance-shell .ai-extraction-light-panel textarea::placeholder {
-  color: #64748b !important;
+  color: #64748b;
   opacity: 1;
 }
 
 .performance-shell .ai-extraction-light-panel input[type="file"] {
-  color: #475569 !important;
+  color: #475569;
 }
 
 .performance-shell .ai-extraction-light-panel input[type="file"]::file-selector-button {

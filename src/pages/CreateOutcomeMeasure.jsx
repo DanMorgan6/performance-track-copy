@@ -450,6 +450,7 @@ export default function CreateOutcomeMeasure() {
                       }}
                       placeholder="e.g., 'LEFS questionnaire', 'Knee outcome measure'"
                       className="rounded-xl"
+                      style={{ color: '#0f172a', backgroundColor: '#ffffff', borderColor: 'rgba(30,58,95,0.25)' }}
                     />
                     <Button
                       type="button"
