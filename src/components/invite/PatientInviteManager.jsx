@@ -65,7 +65,7 @@ export default function PatientInviteManager({ patient, clinic, currentUser }) {
         await base44.entities.Patient.update(patient.id, {
           portal_access_sent: false,
           portal_access_sent_date: null
-        });
+        }).catch((updateError) => console.error('Failed to record invite delivery status', updateError));
         console.error('Failed to auto-send invite email', e);
       }
     }
@@ -118,7 +118,7 @@ export default function PatientInviteManager({ patient, clinic, currentUser }) {
       await base44.entities.Patient.update(patient.id, {
         portal_access_sent: false,
         portal_access_sent_date: null
-      });
+      }).catch((updateError) => console.error('Failed to record invite delivery status', updateError));
     }
     setSendingEmail(false);
   };
