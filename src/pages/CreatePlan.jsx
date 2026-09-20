@@ -68,6 +68,7 @@ export default function CreatePlan() {
   }, []);
   
   const [programType, setProgramType] = useState(null);
+  const [creationMode, setCreationMode] = useState(null);
   const [planData, setPlanData] = useState({
     title: '',
     description: '',
@@ -579,7 +580,11 @@ Make the plan progressive, evidence-based, and tailored to the patient's profile
       });
       
       for (const existingPlan of existingPlans) {
-        await base44.entities.RehabPlan.update(existingPlan.id, { status: 'archived' });
+        await base44.entities.RehabPlan.update(existingPlan.id, {
+          status: 'archived',
+          publication_state: 'archived',
+          archived_at: new Date().toISOString()
+        });
       }
 
       // Create the plan with explicit patient_id and clinic_id - MUST be 'active'
@@ -595,7 +600,12 @@ Make the plan progressive, evidence-based, and tailored to the patient's profile
         current_phase: currentPlanData.program_type === 'basic' ? null : 1,
         total_phases: currentPlanData.program_type === 'basic' ? null : currentPhases.length,
         basic_config: currentPlanData.program_type === 'basic' ? currentPlanData.basic_config : null,
-        created_by_clinician: currentUser?.email
+        created_by_clinician: currentUser?.email,
+        creation_mode: creationMode || currentPlanData.program_type,
+        publication_state: 'published',
+        version: 1,
+        published_at: new Date().toISOString(),
+        last_updated_at: new Date().toISOString()
       };
       const plan = await base44.entities.RehabPlan.create(planPayload);
 
@@ -676,8 +686,13 @@ Beaches Performance +`
              {!programType && (
                <ProgramTypeSelector 
                  onSelect={(type) => {
-                   setProgramType(type);
-                   setPlanData({...planData, program_type: type});
+                   const selectedProgramType = type === 'ai_assisted' ? 'phased' : type;
+                   setCreationMode(type);
+                   setProgramType(selectedProgramType);
+                   setPlanData((current) => ({ ...current, program_type: selectedProgramType }));
+                   if (type === 'ai_assisted') {
+                     setShowAiGenerator(true);
+                   }
                  }}
                />
              )}
