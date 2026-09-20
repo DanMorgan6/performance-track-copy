@@ -557,6 +557,10 @@ Your Rehabilitation Team`;
         phone: patient.phone || '',
         date_of_birth: patient.date_of_birth || '',
         gender: patient.gender || '',
+        injury_type: patient.injury_type || '',
+        injury_date: patient.injury_date || '',
+        medications: patient.medications || '',
+        medical_conditions: patient.medical_conditions || '',
         notes: patient.notes || ''
       });
     }

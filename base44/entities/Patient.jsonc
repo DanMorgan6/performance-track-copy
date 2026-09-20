@@ -38,6 +38,14 @@
       "description": "Primary injury or condition",
       "type": "string"
     },
+    "medical_conditions": {
+      "description": "Comorbidities and relevant medical conditions (ever-changing)",
+      "type": "string"
+    },
+    "medications": {
+      "description": "Current medications and dosage notes (updated as they change)",
+      "type": "string"
+    },
     "messaging_enabled": {
       "default": false,
       "description": "Whether the clinician has enabled in-app messaging for this patient",
