@@ -128,6 +128,10 @@ export default function Layout({ children, currentPageName }) {
     () => clinicianNav.find((item) => item.page === currentPageName),
     [currentPageName]
   );
+  const visibleNav = useMemo(
+    () => clinicianNav.filter((item) => item.page !== 'ClinicSettings' || isClinicAdmin(user)),
+    [user]
+  );
   const userInitials = user?.full_name
     ?.split(' ')
     .map((part) => part[0])
@@ -234,7 +238,7 @@ export default function Layout({ children, currentPageName }) {
             )}
 
             <nav className="flex-1 space-y-1 overflow-y-auto px-4 py-2" aria-label="Clinician navigation">
-              {clinicianNav.map((item) => {
+              {visibleNav.map((item) => {
                 const isActive = currentPageName === item.page;
                 return (
                   <Link
@@ -310,7 +314,7 @@ export default function Layout({ children, currentPageName }) {
                   {activeNavItem?.name || 'Menu'}
                 </p>
                 <nav className="space-y-1">
-                  {clinicianNav.map((item) => (
+                  {visibleNav.map((item) => (
                     <Link
                       key={item.page}
                       to={createPageUrl(item.page)}
