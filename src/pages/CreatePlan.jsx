@@ -40,6 +40,8 @@ export default function CreatePlan() {
   const patientId = urlParams.get('patient_id');
 
   const [saving, setSaving] = useState(false);
+  const [currentUser, setCurrentUser] = useState(null);
+  const [exportingPDF, setExportingPDF] = useState(false);
   const submissionInProgressRef = React.useRef(false);
   const [selectedPhaseIndex, setSelectedPhaseIndex] = useState(0);
   const [selectedWeekIndex, setSelectedWeekIndex] = useState(0);
@@ -116,19 +118,21 @@ export default function CreatePlan() {
   useEffect(() => { planDataRef.current = planData; }, [planData]);
 
   const { data: patient } = useQuery({
-    queryKey: ['patient', patientId],
-    queryFn: () => base44.entities.Patient.filter({ id: patientId }).then(res => res[0]),
-    enabled: !!patientId
+    queryKey: ['patient', patientId, currentUser?.clinic_id],
+    queryFn: () => base44.entities.Patient.filter({ id: patientId, clinic_id: currentUser.clinic_id }).then(res => res[0]),
+    enabled: !!patientId && !!currentUser?.clinic_id
   });
 
   const { data: templates = [] } = useQuery({
-    queryKey: ['templates'],
-    queryFn: () => base44.entities.RehabTemplate.list('-created_date')
+    queryKey: ['templates', currentUser?.clinic_id],
+    queryFn: () => base44.entities.RehabTemplate.filter({ clinic_id: currentUser.clinic_id }, '-created_date'),
+    enabled: !!currentUser?.clinic_id
   });
 
   const { data: libraryExercises = [] } = useQuery({
-    queryKey: ['exercise-library'],
-    queryFn: () => base44.entities.ExerciseLibrary.list('-created_date')
+    queryKey: ['exercise-library', currentUser?.clinic_id],
+    queryFn: () => base44.entities.ExerciseLibrary.filter({ clinic_id: currentUser.clinic_id }, '-created_date'),
+    enabled: !!currentUser?.clinic_id
   });
 
   const loadTemplate = (template) => {
@@ -462,9 +466,6 @@ Make the plan progressive, evidence-based, and tailored to the patient's profile
     setPhases(newPhases);
   };
 
-  const [currentUser, setCurrentUser] = useState(null);
-  const [exportingPDF, setExportingPDF] = useState(false);
-
   const handleExportPDF = async () => {
     setExportingPDF(true);
     try {
@@ -530,7 +531,7 @@ Make the plan progressive, evidence-based, and tailored to the patient's profile
 
       // Fetch all existing exercises in one call
       const existingExercises = uniqueExerciseNames.length > 0 
-        ? await base44.entities.ExerciseLibrary.list()
+        ? await base44.entities.ExerciseLibrary.filter({ clinic_id: currentUser.clinic_id })
         : [];
       
       const existingNames = new Set(existingExercises.map(ex => ex.name));
@@ -575,7 +576,8 @@ Make the plan progressive, evidence-based, and tailored to the patient's profile
 
       // Archive any existing active plans for this patient
       const existingPlans = await base44.entities.RehabPlan.filter({ 
-        patient_id: finalPatientId, 
+        patient_id: finalPatientId,
+        clinic_id: currentUser?.clinic_id,
         status: 'active' 
       });
       
@@ -663,7 +665,7 @@ Beaches Performance +`
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 p-4 lg:p-6 overflow-x-hidden">
+    <div className="performance-shell min-h-screen bg-slate-50 p-4 lg:p-6 overflow-x-hidden">
       <div className="max-w-[1600px] mx-auto w-full">
         <Link 
           to={createPageUrl(patientId ? `PatientDetail?id=${patientId}` : 'CoachDashboard')}
