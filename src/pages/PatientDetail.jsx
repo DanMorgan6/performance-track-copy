@@ -1341,102 +1341,23 @@ Your Rehabilitation Team`;
 
                                 queryClient.invalidateQueries({ queryKey: ['patient-phases'] });
 
-                                // Check if all criteria are met and it's the current phase
-                                if (phaseToUpdate.status === 'active') {
-                                  const allMet = updatedCriteria.every(c => c.is_met);
-                                  if (allMet && activePlan) {
-                                    const nextPhaseNumber = phaseToUpdate.phase_number + 1;
-                                    if (nextPhaseNumber <= activePlan.total_phases) {
-                                      // Mark current phase as completed
-                                      await base44.entities.RehabPhase.update(phaseToUpdate.id, { status: 'completed' });
+                                const allMet = updatedCriteria.length > 0 &&
+                                  updatedCriteria.every((criterion) => criterion.is_met);
 
-                                      // Check for phase completion triggers
-                                      const completionTriggers = phaseTriggers.filter(
-                                        t => t.phase_number === phaseToUpdate.phase_number && 
-                                             t.trigger_type === 'phase_complete' && 
-                                             !t.triggered
-                                      );
+                                await base44.entities.RehabPhase.update(phaseToUpdate.id, {
+                                  clinical_decision: 'pending',
+                                  last_criteria_reviewed_at: new Date().toISOString()
+                                });
 
-                                      // Send outcome measures for completed phase
-                                      for (const trigger of completionTriggers) {
-                                        const measure = outcomeMeasures.find(m => m.id === trigger.outcome_measure_id);
-                                        if (measure) {
-                                          const portalUrl = `${window.location.origin}${createPageUrl('PatientPortal')}`;
-
-                                          await base44.entities.PatientOutcomeMeasure.create({
-                                            clinic_id: patient?.clinic_id,
-                                            patient_id: patientId,
-                                            outcome_measure_id: trigger.outcome_measure_id,
-                                            sent_date: new Date().toISOString().split('T')[0],
-                                            status: 'pending',
-                                            frequency: 'one-time',
-                                            notes: `Automatically sent upon completing ${phaseToUpdate.name}`
-                                          });
-
-                                          await base44.integrations.Core.SendEmail({
-                                            to: patient.email,
-                                            subject: `Phase Complete! New Questionnaire Available`,
-                                            body: `Hi ${patient.full_name},\n\nCongratulations on completing ${phaseToUpdate.name}!\n\nAs part of tracking your progress, please complete this questionnaire: ${measure.name}\n\nVisit your portal: ${portalUrl}\n\nBest regards,\nYour Rehabilitation Team`
-                                          });
-
-                                          await base44.entities.PhaseOutcomeTrigger.update(trigger.id, {
-                                            triggered: true,
-                                            triggered_date: new Date().toISOString().split('T')[0]
-                                          });
-                                        }
-                                      }
-
-                                      // Activate next phase
-                                      const nextPhase = activePlanPhases.find(p => p.phase_number === nextPhaseNumber);
-                                      if (nextPhase) {
-                                        await base44.entities.RehabPhase.update(nextPhase.id, { status: 'active' });
-
-                                        // Check for phase start triggers
-                                        const startTriggers = phaseTriggers.filter(
-                                          t => t.phase_number === nextPhaseNumber && 
-                                               t.trigger_type === 'phase_start' && 
-                                               !t.triggered
-                                        );
-
-                                        // Send outcome measures for new phase
-                                        for (const trigger of startTriggers) {
-                                          const measure = outcomeMeasures.find(m => m.id === trigger.outcome_measure_id);
-                                          if (measure) {
-                                            const portalUrl = `${window.location.origin}${createPageUrl('PatientPortal')}`;
-
-                                            await base44.entities.PatientOutcomeMeasure.create({
-                                              clinic_id: patient?.clinic_id,
-                                              patient_id: patientId,
-                                              outcome_measure_id: trigger.outcome_measure_id,
-                                              sent_date: new Date().toISOString().split('T')[0],
-                                              status: 'pending',
-                                              frequency: 'one-time',
-                                              notes: `Automatically sent at start of ${nextPhase.name}`
-                                            });
-
-                                            await base44.integrations.Core.SendEmail({
-                                              to: patient.email,
-                                              subject: `New Phase Started! Questionnaire Available`,
-                                              body: `Hi ${patient.full_name},\n\nYou're now starting ${nextPhase.name}!\n\nPlease complete this baseline questionnaire: ${measure.name}\n\nVisit your portal: ${portalUrl}\n\nBest regards,\nYour Rehabilitation Team`
-                                            });
-
-                                            await base44.entities.PhaseOutcomeTrigger.update(trigger.id, {
-                                              triggered: true,
-                                              triggered_date: new Date().toISOString().split('T')[0]
-                                            });
-                                          }
-                                        }
-                                      }
-
-                                      // Update plan's current phase
-                                      await base44.entities.RehabPlan.update(activePlan.id, { current_phase: nextPhaseNumber });
-
-                                      queryClient.invalidateQueries({ queryKey: ['patient-plans'] });
-                                      queryClient.invalidateQueries({ queryKey: ['patient-outcomes'] });
-                                      queryClient.invalidateQueries({ queryKey: ['phase-triggers'] });
-                                    }
-                                  }
+                                if (activePlan) {
+                                  await base44.entities.RehabPlan.update(activePlan.id, {
+                                    clinical_review_required: allMet,
+                                    last_updated_at: new Date().toISOString(),
+                                    publication_state: 'updated'
+                                  });
+                                  queryClient.invalidateQueries({ queryKey: ['patient-plans'] });
                                 }
+
                               }}
                             />
                             </div>
