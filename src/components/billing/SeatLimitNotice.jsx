@@ -5,13 +5,12 @@ import { Button } from "@/components/ui/button";
 import { AlertCircle, TrendingUp } from 'lucide-react';
 
 const plans = {
-  solo: { name: 'Solo', maxClinicians: 1, nextPlan: 'clinic' },
   clinic: { name: 'Clinic', maxClinicians: 5, nextPlan: 'group' },
   group: { name: 'Group', maxClinicians: 999, nextPlan: null }
 };
 
 export default function SeatLimitNotice({ clinic, currentCount }) {
-  const currentPlan = plans[clinic.subscription_plan] || plans.solo;
+  const currentPlan = plans[clinic.subscription_plan] || plans.clinic;
   const isAtLimit = currentCount >= currentPlan.maxClinicians;
   const isNearLimit = currentCount >= currentPlan.maxClinicians - 1;
 
