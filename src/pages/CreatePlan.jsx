@@ -135,6 +135,12 @@ export default function CreatePlan() {
     enabled: !!currentUser?.clinic_id
   });
 
+  const { data: progressionBlocks = [] } = useQuery({
+    queryKey: ['progression-blocks', currentUser?.clinic_id],
+    queryFn: () => base44.entities.ProgressionBlock.filter({ clinic_id: currentUser.clinic_id, is_active: true }, 'name'),
+    enabled: !!currentUser?.clinic_id
+  });
+
   const loadTemplate = (template) => {
     setPlanData({
       ...planData,
@@ -811,6 +817,7 @@ Performance Track+`
                 phases={phases}
                 setPhases={setPhases}
                 libraryExercises={libraryExercises}
+                progressionBlocks={progressionBlocks}
                 selectedPhaseIndex={selectedPhaseIndex}
                 setSelectedPhaseIndex={setSelectedPhaseIndex}
                 selectedWeekIndex={selectedWeekIndex}
