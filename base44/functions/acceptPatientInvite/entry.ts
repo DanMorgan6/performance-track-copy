@@ -1,7 +1,7 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { createClientFromRequest } from 'npm:@base44/sdk';
 
 type PatientProfileInput = {
-  full_name: string;
+  full_name?: string;
   date_of_birth?: string;
   phone?: string;
   gender?: string;
@@ -15,110 +15,111 @@ Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
-    if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    if (!user) return Response.json({ error: 'Please sign in to continue.' }, { status: 401 });
 
     const body = await req.json() as {
-      invite_id?: string;
       token?: string;
       patient_data?: PatientProfileInput;
     };
-    const patientData = body.patient_data;
-
-    if ((!body.invite_id && !body.token) || !patientData?.full_name?.trim()) {
-      return Response.json({ error: 'Invite and patient name are required' }, { status: 400 });
+    if (!body.token) {
+      return Response.json({ error: 'Invite token is required.' }, { status: 400 });
     }
 
-    let clinicId: string;
-    let patientId: string | undefined;
-    let injuryType: string | undefined;
-    let invitedEmail: string;
-    let markInviteAccepted: () => Promise<unknown>;
+    const tokens = await base44.asServiceRole.entities.InviteToken.filter({
+      token: body.token,
+      invite_type: 'patient',
+    });
+    const invite = tokens[0];
 
-    if (body.token) {
-      const tokens = await base44.asServiceRole.entities.InviteToken.filter({
-        token: body.token,
-        status: 'active',
-        invite_type: 'patient',
-      });
-      const invite = tokens[0];
-
-      if (!invite) {
-        return Response.json({ error: 'Invite is invalid or has already been used' }, { status: 400 });
-      }
-      if (invite.expires_at && Date.parse(invite.expires_at) <= Date.now()) {
+    if (!invite || invite.status === 'revoked') {
+      return Response.json({ error: 'This invitation is invalid or has been revoked.' }, { status: 404 });
+    }
+    if (normaliseEmail(invite.email) !== normaliseEmail(user.email)) {
+      return Response.json({ error: 'This invitation belongs to a different email address.' }, { status: 403 });
+    }
+    if (invite.expires_at && Date.parse(invite.expires_at) <= Date.now()) {
+      if (invite.status === 'active') {
         await base44.asServiceRole.entities.InviteToken.update(invite.id, { status: 'expired' });
-        return Response.json({ error: 'Invite has expired' }, { status: 400 });
       }
-
-      clinicId = invite.clinic_id;
-      patientId = invite.patient_id;
-      invitedEmail = invite.email;
-      markInviteAccepted = () => base44.asServiceRole.entities.InviteToken.update(invite.id, {
-        status: 'used',
-        used_at: new Date().toISOString(),
-      });
-
-      if (!patientId) {
-        return Response.json({ error: 'Invite is not linked to a patient record' }, { status: 400 });
-      }
-    } else {
-      const invites = await base44.asServiceRole.entities.PatientInvite.filter({ id: body.invite_id });
-      const invite = invites[0];
-
-      if (!invite || invite.status !== 'active') {
-        return Response.json({ error: 'Invite is invalid or has already been used' }, { status: 400 });
-      }
-      if (invite.expires_at && Date.parse(invite.expires_at) <= Date.now()) {
-        await base44.asServiceRole.entities.PatientInvite.update(invite.id, { status: 'expired' });
-        return Response.json({ error: 'Invite has expired' }, { status: 400 });
-      }
-
-      clinicId = invite.clinic_id;
-      invitedEmail = invite.patient_email;
-      injuryType = invite.injury_type;
-      markInviteAccepted = () => base44.asServiceRole.entities.PatientInvite.update(invite.id, {
-        status: 'accepted',
-        accepted_date: new Date().toISOString().split('T')[0],
-      });
+      return Response.json({ error: 'This invitation has expired. Please request a new one.' }, { status: 410 });
+    }
+    if (!invite.patient_id) {
+      return Response.json({ error: 'This invitation is not linked to a patient record.' }, { status: 409 });
     }
 
-    if (normaliseEmail(invitedEmail) !== normaliseEmail(user.email)) {
-      return Response.json({ error: 'This invite belongs to a different email address' }, { status: 403 });
+    const patients = await base44.asServiceRole.entities.Patient.filter({
+      id: invite.patient_id,
+      clinic_id: invite.clinic_id,
+    });
+    const patient = patients[0];
+
+    if (!patient) {
+      return Response.json({ error: 'The linked patient record no longer exists.' }, { status: 409 });
     }
 
-    const existing = patientId
-      ? await base44.asServiceRole.entities.Patient.filter({ id: patientId, clinic_id: clinicId })
-      : await base44.asServiceRole.entities.Patient.filter({ clinic_id: clinicId, email: user.email });
+    if (invite.status === 'used') {
+      if (patient.user_id === user.id && user.patient_id === patient.id) {
+        return Response.json({ patient_id: patient.id, already_accepted: true });
+      }
+      return Response.json({ error: 'This invitation has already been used.' }, { status: 409 });
+    }
+    if (invite.status !== 'active') {
+      return Response.json({ error: 'This invitation is no longer active.' }, { status: 409 });
+    }
+
+    const patientData = body.patient_data || {};
+    const fullName = String(patientData.full_name || patient.full_name || '').trim();
+    if (!fullName) {
+      return Response.json({ error: 'Patient name is required.' }, { status: 400 });
+    }
 
     const patientPayload = {
-      full_name: patientData.full_name.trim(),
-      date_of_birth: patientData.date_of_birth || null,
-      phone: patientData.phone || null,
-      gender: patientData.gender || null,
-      email: user.email,
-      clinic_id: clinicId,
-      ...(injuryType ? { injury_type: injuryType } : {}),
+      full_name: fullName,
+      date_of_birth: patientData.date_of_birth || patient.date_of_birth || null,
+      phone: patientData.phone || patient.phone || null,
+      gender: patientData.gender || patient.gender || null,
+      email: normaliseEmail(user.email),
+      clinic_id: invite.clinic_id,
       user_id: user.id,
       status: 'active',
     };
 
-    const patient = existing[0]
-      ? await base44.asServiceRole.entities.Patient.update(existing[0].id, patientPayload)
-      : await base44.asServiceRole.entities.Patient.create(patientPayload);
+    await base44.asServiceRole.entities.Patient.update(patient.id, patientPayload);
 
-    await base44.auth.updateMe({
-      clinic_id: clinicId,
+    // App roles and tenant links are privileged fields. Always assign them
+    // through the service role after the signed-in email owns the invite.
+    await base44.asServiceRole.entities.User.update(user.id, {
+      clinic_id: invite.clinic_id,
       patient_id: patient.id,
       role: 'patient',
       onboarding_completed: true,
     });
-    await markInviteAccepted();
 
-    return Response.json({ patient_id: patient.id });
+    await base44.asServiceRole.entities.InviteToken.update(invite.id, {
+      status: 'used',
+      used_at: new Date().toISOString(),
+    });
+
+    const duplicateTokens = await base44.asServiceRole.entities.InviteToken.filter({
+      clinic_id: invite.clinic_id,
+      patient_id: patient.id,
+      invite_type: 'patient',
+      status: 'active',
+    });
+    for (const duplicate of duplicateTokens) {
+      if (duplicate.id !== invite.id) {
+        await base44.asServiceRole.entities.InviteToken.update(duplicate.id, {
+          status: 'revoked',
+          revoked_at: new Date().toISOString(),
+        });
+      }
+    }
+
+    return Response.json({ patient_id: patient.id, success: true });
   } catch (error) {
     console.error('Patient invite acceptance failed:', error);
     return Response.json(
-      { error: error instanceof Error ? error.message : 'Unable to accept invite' },
+      { error: error instanceof Error ? error.message : 'Unable to accept invitation.' },
       { status: 500 },
     );
   }
