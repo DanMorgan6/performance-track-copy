@@ -16,7 +16,7 @@ export default function BasicProgramBuilder({
   planData, 
   setPlanData, 
   libraryExercises = [],
-  onComplete 
+  onComplete = null
 }) {
   const [selectedDays, setSelectedDays] = useState(FREQUENCY_PATTERNS[3].days);
   const [exerciseSearch, setExerciseSearch] = useState('');
