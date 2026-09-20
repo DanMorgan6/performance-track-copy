@@ -275,6 +275,8 @@
     }
   },
   "required": [
+    "clinic_id",
+    "patient_id",
     "plan_id",
     "phase_number",
     "name"
