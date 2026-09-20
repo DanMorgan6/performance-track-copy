@@ -11,7 +11,7 @@ import DayCard from '@/components/programme/DayCard';
 import DayEditor from '@/components/programme/DayEditor';
 import ExerciseLibraryPanel from '@/components/programme/ExerciseLibraryPanel';
 import WeeklyStats from '@/components/programme/WeeklyStats';
-import { buildProgressionSessionBlock } from '@/components/programme/progressionBlockUtils';
+import { buildProgressionSessionBlock, mergeProgressionExitCriteria } from '@/components/programme/progressionBlockUtils';
 
 const DEFAULT_DAY = (dayName) => ({
   day: dayName,
@@ -113,7 +113,18 @@ export default function WeeklyProgrammeBuilder() {
         weeks[weekIndex] = { week_number: weekIndex + 1, daily_schedule: [] };
       }
       weeks[weekIndex] = { ...weeks[weekIndex], daily_schedule: weekDays };
-      await base44.entities.RehabPhase.update(activePhase.id, { weeks });
+      const progressionCriteria = weekDays.flatMap(day =>
+        (day.blocks || []).flatMap(block =>
+          block.source_type === 'progression_block'
+            ? (block.progression_exit_criteria || [])
+            : []
+        )
+      );
+      const exit_criteria = mergeProgressionExitCriteria(
+        activePhase.exit_criteria || [],
+        progressionCriteria
+      );
+      await base44.entities.RehabPhase.update(activePhase.id, { weeks, exit_criteria });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['phases', activePlan?.id] });
