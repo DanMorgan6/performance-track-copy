@@ -16,7 +16,7 @@ export default function MonthlyCalendarView({
   outcomeMeasures = [],
   checkins = [],
   onDayClick,
-  onAddMilestone,
+  onAddMilestone = null,
   showAddMilestone = false,
   startDate 
 }) {
