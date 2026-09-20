@@ -96,20 +96,33 @@ export default function PatientPortal() {
         setIsPatient(true);
 
       // Resolve the patient through the authenticated tenant link, never by email alone.
-      const patients = currentUser.patient_id && currentUser.clinic_id
+      let patients = currentUser.patient_id && currentUser.clinic_id
         ? await base44.entities.Patient.filter({
             id: currentUser.patient_id,
             clinic_id: currentUser.clinic_id
           })
         : [];
+
+      // Auto-link patients who signed up independently (e.g. invite email never arrived)
+      if (patients.length === 0 && !currentUser.patient_id) {
+        try {
+          const linkRes = await base44.functions.invoke('linkPatientAccount', {});
+          if (linkRes?.data?.patient) {
+            setPatient(linkRes.data.patient);
+            patients = [linkRes.data.patient];
+          }
+        } catch {
+          // linking failed; fall through to onboarding below
+        }
+      }
+
       if (patients.length > 0) {
-        const foundPatient = patients[0];
-        setPatient(foundPatient);
+        setPatient(patients[0]);
 
         // Clinician data not loaded (patients lack User list permission)
         // booking_url falls back to clinic.booking_url below
-      } else if (!currentUser.onboarding_completed) {
-        // Show onboarding if no patient record found
+      } else {
+        // No linked patient record — show onboarding instead of hanging on the loader
         setShowOnboarding(true);
       }
 
