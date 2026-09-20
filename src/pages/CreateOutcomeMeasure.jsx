@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { createPageUrl } from '@/utils';
 import { Link } from 'react-router-dom';
@@ -23,7 +23,7 @@ import {
   Copy,
   UserPlus
 } from 'lucide-react';
-import { cn } from "@/lib/utils";
+import { isPractitioner } from '@/lib/roles';
 import AssignOutcomeMeasureDialog from "@/components/outcome/AssignOutcomeMeasureDialog";
 
 export default function CreateOutcomeMeasure() {
@@ -62,7 +62,7 @@ export default function CreateOutcomeMeasure() {
   React.useEffect(() => {
     const checkAccess = async () => {
       const currentUser = await base44.auth.me();
-      if (currentUser.role !== 'admin') {
+      if (!isPractitioner(currentUser)) {
         window.location.href = createPageUrl('PatientPortal');
       }
     };
@@ -168,6 +168,7 @@ export default function CreateOutcomeMeasure() {
     setSaving(true);
 
     try {
+      const user = await base44.auth.me();
       // Calculate total max score from all questions
       const calculatedMax = measureData.questions.reduce((sum, q) => {
         const maxOptionScore = Math.max(...q.options.map(o => o.score || 0));
@@ -176,6 +177,7 @@ export default function CreateOutcomeMeasure() {
 
       const dataToSave = {
         ...measureData,
+        clinic_id: user.clinic_id,
         total_score_max: calculatedMax
       };
 
@@ -339,7 +341,7 @@ export default function CreateOutcomeMeasure() {
               <h2 className="text-lg font-semibold text-slate-700">Basic Information</h2>
               
               {/* AI Document Extraction */}
-              <div className="space-y-4 border border-blue-200 bg-blue-50 p-4 rounded-xl">
+              <div className="ai-extraction-light-panel space-y-4 rounded-xl border border-blue-200 bg-blue-50 p-4">
                 <p className="text-sm font-medium text-blue-800 flex items-center gap-2">
                   <Sparkles className="w-4 h-4" /> AI-Powered Document Extraction
                 </p>
