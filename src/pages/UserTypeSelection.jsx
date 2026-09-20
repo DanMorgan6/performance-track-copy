@@ -33,22 +33,19 @@ export default function UserTypeSelection() {
     try {
       // Check for invite codes in URL
       const params = new URLSearchParams(window.location.search);
-      const patientInviteCode = params.get('patient_invite_code');
-      const clinicianInviteCode = params.get('clinician_invite_code');
-      
+      const inviteToken = params.get('t') || params.get('token');
+
       if (roleType === 'clinic') {
-        // Set the canonical clinic administrator role.
-        await base44.auth.updateMe({ role: 'clinic_admin' });
+        // Clinic creation has its own protected onboarding checks. Never allow
+        // this screen to grant itself a privileged role.
         navigate(createPageUrl('ClinicOnboarding'));
       } else if (roleType === 'patient') {
-        if (!patientInviteCode) {
-          alert('Patient signup requires an invite code');
+        if (!inviteToken) {
+          alert('Patient access requires the secure link sent by your clinician.');
           setSelecting(false);
           return;
         }
-        // Set as patient and redirect to invite acceptance
-        await base44.auth.updateMe({ role: 'patient' });
-        navigate(createPageUrl('PatientInviteAccept') + `?code=${patientInviteCode}`);
+        navigate(`${createPageUrl('AcceptInvite')}?t=${encodeURIComponent(inviteToken)}`);
       }
     } catch (error) {
       alert('Failed to set user type. Please try again.');
