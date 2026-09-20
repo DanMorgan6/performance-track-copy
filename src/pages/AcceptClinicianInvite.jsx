@@ -95,18 +95,13 @@ export default function AcceptClinicianInvite() {
         return;
       }
 
-      // Update user with clinic_id and role
-      await base44.auth.updateMe({
-        clinic_id: invite.clinic_id,
-        role: invite.role_target || 'clinician',
-        onboarding_completed: true
-      });
-
-      // Mark invite as used
-      await base44.entities.InviteToken.update(invite.id, {
-        status: 'used',
-        used_at: new Date().toISOString()
-      });
+      // Apply role + clinic link server-side (role is a built-in and can't be set via updateMe)
+      const res = await base44.functions.invoke('acceptClinicianInvite', { token: inviteToken });
+      if (res?.data?.error) {
+        setError(res.data.error);
+        setAccepting(false);
+        return;
+      }
 
       // Redirect to clinic dashboard
       setTimeout(() => {
