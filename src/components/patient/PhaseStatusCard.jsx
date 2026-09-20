@@ -1,7 +1,7 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle2, Lock, AlertCircle, Repeat } from 'lucide-react';
+import { CheckCircle2, Lock, AlertCircle, Clock3, Target } from 'lucide-react';
 import { cn } from "@/lib/utils";
 import { getPhaseStatusMessage } from '@/components/plan/PhaseProgressionEngine';
 
@@ -16,12 +16,19 @@ export default function PhaseStatusCard({ phase, status, criteriaProgress }) {
       border: 'border-emerald-200',
       badgeClass: 'bg-emerald-100 text-emerald-700'
     },
-    repeating: {
-      icon: Repeat,
+    review_due: {
+      icon: Clock3,
       color: 'text-amber-600',
       bg: 'bg-amber-50',
       border: 'border-amber-200',
       badgeClass: 'bg-amber-100 text-amber-700'
+    },
+    review_ready: {
+      icon: Target,
+      color: 'text-lime-700',
+      bg: 'bg-lime-50',
+      border: 'border-lime-200',
+      badgeClass: 'bg-lime-100 text-lime-800'
     },
     completed: {
       icon: CheckCircle2,
@@ -51,7 +58,15 @@ export default function PhaseStatusCard({ phase, status, criteriaProgress }) {
           </CardTitle>
           <Badge className={config.badgeClass}>
             <Icon className="w-3 h-3 mr-1" />
-            {status === 'active' ? 'Active' : status === 'repeating' ? 'Repeating' : status === 'completed' ? 'Completed' : 'Locked'}
+            {status === 'active'
+              ? 'Active'
+              : status === 'review_due'
+                ? 'Review due'
+                : status === 'review_ready'
+                  ? 'Review ready'
+                  : status === 'completed'
+                    ? 'Completed'
+                    : 'Locked'}
           </Badge>
         </div>
         {phase.description && (
@@ -61,12 +76,12 @@ export default function PhaseStatusCard({ phase, status, criteriaProgress }) {
 
       <CardContent>
         {/* Status Message */}
-        {status === 'repeating' && (
+        {(status === 'review_due' || status === 'review_ready') && (
           <div className="flex items-start gap-2 bg-amber-100 border border-amber-300 rounded-lg p-3 mb-3">
             <AlertCircle className="w-4 h-4 text-amber-600 mt-0.5 flex-shrink-0" />
             <div className="text-sm text-amber-900">
               <p className="font-medium">{getPhaseStatusMessage(phase, status)}</p>
-              <p className="text-xs mt-1 text-amber-700">Complete all exit criteria to unlock the next phase.</p>
+              <p className="text-xs mt-1 text-amber-700">Only a practitioner can sign off progression to the next phase.</p>
             </div>
           </div>
         )}
@@ -133,7 +148,7 @@ export default function PhaseStatusCard({ phase, status, criteriaProgress }) {
 
         {/* No criteria message */}
         {(!phase.exit_criteria || phase.exit_criteria.length === 0) && status !== 'locked' && (
-          <p className="text-sm text-slate-500 italic">No exit criteria defined for this phase.</p>
+          <p className="text-sm text-slate-500 italic">Exit criteria are required before this phase can be progressed.</p>
         )}
       </CardContent>
     </Card>
