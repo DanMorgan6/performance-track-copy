@@ -155,7 +155,7 @@ export default function PatientPortal() {
     queryFn: async () => {
       const allPhases = [];
       for (const plan of plans) {
-        const planPhases = await base44.entities.RehabPhase.filter({ plan_id: plan.id });
+        const planPhases = await base44.entities.RehabPhase.filter({ plan_id: plan.id, clinic_id: patient.clinic_id });
         allPhases.push(...planPhases);
       }
       return allPhases;
@@ -168,7 +168,7 @@ export default function PatientPortal() {
     queryFn: async () => {
       // Security: Only fetch pain logs for the current patient
       if (!patient?.id) return [];
-      return base44.entities.PainLog.filter({ patient_id: patient.id }, '-date');
+      return base44.entities.PainLog.filter({ patient_id: patient.id, clinic_id: patient.clinic_id }, '-date');
     },
     enabled: !!patient?.id
   });
@@ -178,7 +178,7 @@ export default function PatientPortal() {
     queryFn: async () => {
       // Security: Only fetch exercise logs for the current patient
       if (!patient?.id) return [];
-      return base44.entities.ExerciseLog.filter({ patient_id: patient.id }, '-date');
+      return base44.entities.ExerciseLog.filter({ patient_id: patient.id, clinic_id: patient.clinic_id }, '-date');
     },
     enabled: !!patient?.id
   });
@@ -188,7 +188,7 @@ export default function PatientPortal() {
     queryFn: async () => {
       // Security: Only fetch assessments for the current patient
       if (!patient?.id) return [];
-      return base44.entities.ObjectiveAssessment.filter({ patient_id: patient.id }, '-assessment_date');
+      return base44.entities.ObjectiveAssessment.filter({ patient_id: patient.id, clinic_id: patient.clinic_id }, '-assessment_date');
     },
     enabled: !!patient?.id
   });
@@ -197,7 +197,7 @@ export default function PatientPortal() {
     queryKey: ['my-interventions', patient?.id],
     queryFn: async () => {
       if (!patient?.id) return [];
-      return base44.entities.Intervention.filter({ patient_id: patient.id }, '-intervention_date');
+      return base44.entities.Intervention.filter({ patient_id: patient.id, clinic_id: patient.clinic_id }, '-intervention_date');
     },
     enabled: !!patient?.id
   });
@@ -206,7 +206,7 @@ export default function PatientPortal() {
     queryKey: ['my-outcomes', patient?.id],
     queryFn: async () => {
       if (!patient?.id) return [];
-      return base44.entities.PatientOutcomeMeasure.filter({ patient_id: patient.id }, '-sent_date');
+      return base44.entities.PatientOutcomeMeasure.filter({ patient_id: patient.id, clinic_id: patient.clinic_id }, '-sent_date');
     },
     enabled: !!patient?.id
   });
@@ -220,7 +220,7 @@ export default function PatientPortal() {
     queryKey: ['my-daily-notes', patient?.id],
     queryFn: async () => {
       if (!patient?.id) return [];
-      return base44.entities.DailyNote.filter({ patient_id: patient.id }, '-date');
+      return base44.entities.DailyNote.filter({ patient_id: patient.id, clinic_id: patient.clinic_id }, '-date');
     },
     enabled: !!patient?.id
   });
