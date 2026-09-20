@@ -47,6 +47,7 @@ import AssessmentsTab from "@/components/patientdetail/AssessmentsTab";
 import PatientWorkspaceNav from "@/components/patientdetail/PatientWorkspaceNav";
 import CriteriaLedPhaseRibbon from "@/components/patientdetail/CriteriaLedPhaseRibbon";
 import LoadRecoveryPanel from "@/components/patientdetail/LoadRecoveryPanel";
+import ClinicalPhaseDecision from "@/components/patientdetail/ClinicalPhaseDecision";
 import ClinicianMessaging from "@/components/messaging/ClinicianMessaging";
 import PainTab from "@/components/patientdetail/PainTab";
 import PatientAnalyticsTab from "@/components/analytics/PatientAnalyticsTab";
@@ -1358,6 +1359,24 @@ Your Rehabilitation Team`;
                                   queryClient.invalidateQueries({ queryKey: ['patient-plans'] });
                                 }
 
+                              }}
+                            />
+
+                            <ClinicalPhaseDecision
+                              phase={selectedPhase || currentPhase}
+                              plan={activePlan}
+                              phases={activePlanPhases}
+                              patient={patient}
+                              phaseTriggers={phaseTriggers}
+                              outcomeMeasures={outcomeMeasures}
+                              onCompleted={async () => {
+                                setSelectedPhase(null);
+                                await Promise.all([
+                                  queryClient.invalidateQueries({ queryKey: ['patient-phases'] }),
+                                  queryClient.invalidateQueries({ queryKey: ['patient-plans'] }),
+                                  queryClient.invalidateQueries({ queryKey: ['patient-outcomes'] }),
+                                  queryClient.invalidateQueries({ queryKey: ['phase-triggers'] })
+                                ]);
                               }}
                             />
                             </div>
