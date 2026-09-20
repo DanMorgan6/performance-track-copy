@@ -75,13 +75,19 @@ Deno.serve(async (req) => {
 
     const patientPayload = {
       full_name: fullName,
-      date_of_birth: patientData.date_of_birth || patient.date_of_birth || null,
-      phone: patientData.phone || patient.phone || null,
-      gender: patientData.gender || patient.gender || null,
       email: normaliseEmail(user.email),
       clinic_id: invite.clinic_id,
       user_id: user.id,
       status: 'active',
+      ...((patientData.date_of_birth || patient.date_of_birth)
+        ? { date_of_birth: patientData.date_of_birth || patient.date_of_birth }
+        : {}),
+      ...((patientData.phone || patient.phone)
+        ? { phone: patientData.phone || patient.phone }
+        : {}),
+      ...((patientData.gender || patient.gender)
+        ? { gender: patientData.gender || patient.gender }
+        : {}),
     };
 
     await base44.asServiceRole.entities.Patient.update(patient.id, patientPayload);
