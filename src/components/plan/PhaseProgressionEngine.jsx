@@ -108,6 +108,48 @@ export function getWeekScheduleForDate(phase, plan, targetDate) {
   return phase.weeks[weekIndex >= 0 ? weekIndex : 0];
 }
 
+/**
+ * Adapts a Quick Plan into the same read-only schedule shape used by the
+ * patient calendar. It is deliberately not a clinical phase and has no exit
+ * criteria or progression state.
+ */
+export function createBasicDeliveryPhase(plan) {
+  if (!plan || plan.program_type !== 'basic') return null;
+
+  const config = plan.basic_config || {};
+  const exercises = Array.isArray(config.exercise_bundle) ? config.exercise_bundle : [];
+  const fallbackDays = ['Monday', 'Wednesday', 'Friday'];
+  const selectedDays = new Set(
+    Array.isArray(config.days_of_week_pattern) && config.days_of_week_pattern.length > 0
+      ? config.days_of_week_pattern
+      : fallbackDays.slice(0, config.frequency_per_week || 3)
+  );
+  const weekdays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+
+  return {
+    id: null,
+    plan_id: plan.id,
+    is_basic: true,
+    phase_number: 1,
+    name: plan.title || 'Quick exercise plan',
+    description: plan.description || 'Your current exercise programme',
+    status: 'active',
+    criteriaMet: false,
+    criteriaProgress: { completed: 0, total: 0, percentage: 0 },
+    exercises,
+    weeks: [{
+      week_number: 1,
+      daily_schedule: weekdays.map((day) => ({
+        day,
+        type: selectedDays.has(day) ? 'training' : 'rest',
+        exercises: selectedDays.has(day)
+          ? exercises.map((exercise) => ({ ...exercise }))
+          : []
+      }))
+    }]
+  };
+}
+
 export function canUnlockPhase(phaseNumber, phases) {
   if (phaseNumber === 1) return true;
 
