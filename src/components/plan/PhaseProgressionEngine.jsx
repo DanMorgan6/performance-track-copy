@@ -1,185 +1,135 @@
 import { addWeeks, differenceInDays, startOfDay } from 'date-fns';
 
 /**
- * Phase Progression Engine
- * Single source of truth for phase-based rehab progression logic
+ * Criteria-led rehabilitation progression.
+ * Time is used only to indicate when a clinical review is due.
+ * This module never advances or completes a phase automatically.
  */
 
-/**
- * Check if all exit criteria for a phase are met
- */
 export function areExitCriteriaMet(phase) {
   if (!phase?.exit_criteria || phase.exit_criteria.length === 0) {
-    // No criteria defined = automatically met
-    return true;
+    return false;
   }
 
-  // All criteria must be met (AND logic)
-  return phase.exit_criteria.every(criterion => criterion.is_met === true);
+  return phase.exit_criteria.every((criterion) => criterion.is_met === true);
 }
 
-/**
- * Calculate phase status based on timeline and exit criteria
- */
-export function getPhaseStatus(phase, plan, currentDate = new Date()) {
-  if (!phase || !plan) return 'locked';
+function getPlannedPhaseStart(phase, plan) {
+  const planStartDate = plan?.start_date ? new Date(plan.start_date) : null;
+  if (!planStartDate || Number.isNaN(planStartDate.getTime())) return null;
 
-  const planStartDate = plan.start_date ? new Date(plan.start_date) : null;
-  if (!planStartDate) return 'locked';
-
-  const today = startOfDay(currentDate);
-  const planStart = startOfDay(planStartDate);
-
-  // Calculate when this phase should start based on previous phases
-  let phaseStartDate = planStart;
+  let phaseStartDate = startOfDay(planStartDate);
   const allPhases = Array.isArray(plan.phases) ? plan.phases : [];
-  
-  for (let i = 1; i < phase.phase_number; i++) {
-    const prevPhase = allPhases.find(p => p.phase_number === i);
-    if (prevPhase) {
-      phaseStartDate = addWeeks(phaseStartDate, prevPhase.duration_weeks || 0);
+
+  for (let phaseNumber = 1; phaseNumber < phase.phase_number; phaseNumber += 1) {
+    const previousPhase = allPhases.find((item) => item.phase_number === phaseNumber);
+    if (previousPhase) {
+      phaseStartDate = addWeeks(phaseStartDate, previousPhase.duration_weeks || 0);
     }
   }
 
-  // Calculate phase end date
-  const phaseEndDate = addWeeks(phaseStartDate, phase.duration_weeks || 0);
+  return phaseStartDate;
+}
 
-  // Determine status
-  if (today < phaseStartDate) {
-    // Phase hasn't started yet
+export function getPhaseStatus(phase, plan, currentDate = new Date()) {
+  if (!phase || !plan) return 'locked';
+
+  if (phase.status === 'completed' || phase.phase_number < plan.current_phase) {
+    return 'completed';
+  }
+
+  if (phase.phase_number > plan.current_phase) {
     return 'locked';
   }
 
   const criteriaMet = areExitCriteriaMet(phase);
+  if (criteriaMet) {
+    return 'review_ready';
+  }
 
-  if (today >= phaseEndDate) {
-    // Phase duration has elapsed
-    if (criteriaMet) {
-      return 'completed';
-    } else {
-      return 'repeating'; // Auto-repeat until criteria met
+  const plannedStart = getPlannedPhaseStart(phase, plan);
+  if (plannedStart && phase.duration_weeks) {
+    const plannedReviewDate = addWeeks(plannedStart, phase.duration_weeks);
+    if (startOfDay(currentDate) >= plannedReviewDate) {
+      return 'review_due';
     }
   }
 
-  // We're within the phase timeframe
-  if (phase.phase_number === plan.current_phase) {
-    return 'active';
-  }
-
-  return 'locked';
+  return 'active';
 }
 
-/**
- * Get the actual active phase considering auto-repeat logic
- */
 export function getActivePhase(plan, phases, currentDate = new Date()) {
   if (!plan || !phases || phases.length === 0) return null;
 
   const sortedPhases = [...phases].sort((a, b) => a.phase_number - b.phase_number);
-  
-  for (const phase of sortedPhases) {
-    const status = getPhaseStatus(phase, { ...plan, phases: sortedPhases }, currentDate);
-    
-    if (status === 'active' || status === 'repeating') {
-      return {
-        ...phase,
-        status,
-        criteriaMet: areExitCriteriaMet(phase),
-        criteriaProgress: getExitCriteriaProgress(phase)
-      };
-    }
-  }
+  const storedCurrentPhase = sortedPhases.find(
+    (phase) => phase.phase_number === plan.current_phase || phase.status === 'active'
+  );
+  const phase = storedCurrentPhase || sortedPhases.find((item) => item.status !== 'completed') || sortedPhases[0];
+  const status = getPhaseStatus(phase, { ...plan, phases: sortedPhases }, currentDate);
 
-  // No active phase - return the first phase
-  return sortedPhases[0] ? {
-    ...sortedPhases[0],
-    status: 'active',
-    criteriaMet: areExitCriteriaMet(sortedPhases[0]),
-    criteriaProgress: getExitCriteriaProgress(sortedPhases[0])
-  } : null;
+  return {
+    ...phase,
+    status,
+    criteriaMet: areExitCriteriaMet(phase),
+    criteriaProgress: getExitCriteriaProgress(phase)
+  };
 }
 
-/**
- * Get exit criteria progress
- */
 export function getExitCriteriaProgress(phase) {
   if (!phase?.exit_criteria || phase.exit_criteria.length === 0) {
-    return { completed: 0, total: 0, percentage: 100 };
+    return { completed: 0, total: 0, percentage: 0 };
   }
 
-  const completed = phase.exit_criteria.filter(c => c.is_met === true).length;
+  const completed = phase.exit_criteria.filter((criterion) => criterion.is_met === true).length;
   const total = phase.exit_criteria.length;
-  const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
 
-  return { completed, total, percentage };
+  return {
+    completed,
+    total,
+    percentage: Math.round((completed / total) * 100)
+  };
 }
 
 /**
- * Get the appropriate week schedule for a given date within a phase
- * Handles auto-repeat by cycling through phase weeks
+ * Returns the planned week to display. Cycling the schedule does not change
+ * phase status and cannot unlock the next phase.
  */
 export function getWeekScheduleForDate(phase, plan, targetDate) {
   if (!phase?.weeks || phase.weeks.length === 0) return null;
 
-  const planStartDate = plan.start_date ? new Date(plan.start_date) : null;
-  if (!planStartDate) return null;
+  const phaseStartDate = getPlannedPhaseStart(phase, plan);
+  if (!phaseStartDate) return null;
 
-  // Calculate phase start
-  let phaseStartDate = new Date(planStartDate);
-  const allPhases = Array.isArray(plan.phases) ? plan.phases : [];
-  
-  for (let i = 1; i < phase.phase_number; i++) {
-    const prevPhase = allPhases.find(p => p.phase_number === i);
-    if (prevPhase) {
-      phaseStartDate = addWeeks(phaseStartDate, prevPhase.duration_weeks || 0);
-    }
-  }
-
-  // Calculate weeks since phase start
   const daysSincePhaseStart = differenceInDays(new Date(targetDate), phaseStartDate);
   const weeksSincePhaseStart = Math.floor(daysSincePhaseStart / 7);
-
-  // If we're in auto-repeat mode (beyond original duration), cycle through weeks
   const weekIndex = weeksSincePhaseStart % phase.weeks.length;
-  
+
   return phase.weeks[weekIndex >= 0 ? weekIndex : 0];
 }
 
-/**
- * Check if a phase can be unlocked (all previous phases completed)
- */
-export function canUnlockPhase(phaseNumber, phases, plan) {
+export function canUnlockPhase(phaseNumber, phases) {
   if (phaseNumber === 1) return true;
 
-  const sortedPhases = [...phases].sort((a, b) => a.phase_number - b.phase_number);
-  
-  for (const phase of sortedPhases) {
-    if (phase.phase_number >= phaseNumber) break;
-    
-    const status = getPhaseStatus(phase, { ...plan, phases: sortedPhases });
-    if (status !== 'completed') {
-      return false;
-    }
-  }
-
-  return true;
+  return [...phases]
+    .filter((phase) => phase.phase_number < phaseNumber)
+    .every((phase) => phase.status === 'completed');
 }
 
-/**
- * Get display message for phase status
- */
 export function getPhaseStatusMessage(phase, status) {
   if (!phase) return '';
 
   switch (status) {
     case 'active':
-      return 'Current Phase';
-    case 'repeating':
-      return `Continue ${phase.name} until criteria met`;
+      return 'Continue the current phase and reassess the exit criteria.';
+    case 'review_due':
+      return 'The planned review point has arrived; criteria remain outstanding.';
+    case 'review_ready':
+      return 'Exit criteria are recorded as met. Practitioner review is required before progression.';
     case 'completed':
-      return 'Phase Completed';
+      return 'Phase completed following practitioner review.';
     case 'locked':
-      return 'Locked - Complete previous phase first';
+      return 'Complete and clinically sign off the previous phase first.';
     default:
       return '';
   }
