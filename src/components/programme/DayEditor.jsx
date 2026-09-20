@@ -32,7 +32,7 @@ export default function DayEditor({ day, dayIndex, phase, onUpdate, onClose, all
     const blocks = [...(day.blocks || [])];
     blocks.push({
       type,
-      exercises: [{ name: '', sets: '3', reps: '10', tempo: '', rest: '60s' }],
+      exercises: [{ name: '', sets: '3', reps: '10', hold: '', tempo: '', rest: '60s' }],
       rest_after: '',
       rounds: type === 'circuit' ? '3' : undefined,
       note: '',

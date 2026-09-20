@@ -53,8 +53,8 @@ function ExerciseRow({ exercise, index, blockType, blockLabel, onUpdate, onRemov
           placeholder="Exercise name..."
           className="h-7 text-xs rounded-lg border-slate-200"
         />
-        <div className="grid grid-cols-5 gap-1">
-          {[['sets', 'Sets'], ['reps', 'Reps'], ['weight', 'Weight'], ['tempo', 'Tempo'], ['rest', 'Rest']].map(([field, label]) => (
+        <div className="grid grid-cols-6 gap-1">
+          {[['sets', 'Sets'], ['reps', 'Reps'], ['hold', 'Hold'], ['weight', 'Weight'], ['tempo', 'Tempo'], ['rest', 'Rest']].map(([field, label]) => (
             <div key={field} className="space-y-0.5">
               <span className="text-[9px] text-slate-400 font-medium">{label}</span>
               <Input
@@ -97,7 +97,7 @@ export default function SessionBlock({ block, blockIndex, totalBlocks, onUpdate,
   const blockLabel = BLOCK_LETTERS[blockIndex] || String(blockIndex + 1);
 
   const addExercise = () => {
-    onUpdate({ ...block, exercises: [...(block.exercises || []), { name: '', sets: '3', reps: '10', tempo: '', rest: '60s' }] });
+    onUpdate({ ...block, exercises: [...(block.exercises || []), { name: '', sets: '3', reps: '10', hold: '', tempo: '', rest: '60s' }] });
   };
 
   const updateExercise = (exIdx, field, value) => {
