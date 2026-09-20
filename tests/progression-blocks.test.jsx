@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildProgressionSessionBlock } from '../src/components/programme/progressionBlockUtils';
+import { buildProgressionSessionBlock, mergeProgressionExitCriteria } from '../src/components/programme/progressionBlockUtils';
 
 describe('progression blocks', () => {
   it('creates an editable patient-specific exercise snapshot', () => {
@@ -43,5 +43,30 @@ describe('progression blocks', () => {
       { name: 'Level 1', exercises: [] },
       0
     )).toThrow('no exercises');
+  });
+
+  it('merges new block criteria into phase criteria without duplicates', () => {
+    const existing = [{
+      criterion: 'Pain <= 3',
+      criterion_type: 'pain',
+      operator: 'less_than_or_equal',
+      target_value: '3',
+      is_met: true,
+    }];
+
+    const result = mergeProgressionExitCriteria(existing, [
+      ' pain <= 3 ',
+      { criterion: '20 controlled single-leg raises' },
+    ]);
+
+    expect(result).toHaveLength(2);
+    expect(result[0]).toBe(existing[0]);
+    expect(result[1]).toEqual({
+      criterion: '20 controlled single-leg raises',
+      criterion_type: 'other',
+      operator: 'clinician_confirmed',
+      target_value: '',
+      is_met: false,
+    });
   });
 });
