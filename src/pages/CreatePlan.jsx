@@ -286,7 +286,7 @@ Create a comprehensive rehabilitation plan with 3-5 phases. Each phase should in
 
 Make the plan progressive, evidence-based, and tailored to the patient's profile while learning from the template patterns above.`;
 
-      const result = await base44.integrations.Core.InvokeLLM({
+      const result = /** @type {any} */ (await base44.integrations.Core.InvokeLLM({
         prompt: prompt,
         response_json_schema: {
           type: "object",
@@ -330,7 +330,7 @@ Make the plan progressive, evidence-based, and tailored to the patient's profile
             }
           }
         }
-      });
+      }));
 
       // Load the generated plan
       setPlanData({
@@ -501,6 +501,11 @@ Make the plan progressive, evidence-based, and tailored to the patient's profile
   const handleSubmit = async (e) => {
     e.preventDefault();
     
+    if (!currentUser?.clinic_id) {
+      alert('Your clinic account is still loading. Please wait a moment and try again.');
+      return;
+    }
+
     // Prevent duplicate submissions
     if (submissionInProgressRef.current) return;
     
@@ -683,7 +688,7 @@ Beaches Performance +`
             )}
           </div>
 
-          <form onSubmit={handleSubmit} onKeyDown={(e) => { if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA') e.preventDefault(); }} className="space-y-8">
+          <form onSubmit={handleSubmit} onKeyDown={(e) => { if (e.key === 'Enter' && !(e.target instanceof HTMLTextAreaElement)) e.preventDefault(); }} className="space-y-8">
              {/* Program Type Selection */}
              {!programType && (
                <ProgramTypeSelector 
