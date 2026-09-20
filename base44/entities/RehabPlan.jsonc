@@ -78,6 +78,55 @@
     "created_by_clinician": {
       "type": "string"
     },
+    "creation_mode": {
+      "description": "Workflow used to create the plan",
+      "enum": [
+        "basic",
+        "phased",
+        "ai_assisted"
+      ],
+      "type": "string"
+    },
+    "publication_state": {
+      "default": "draft",
+      "description": "Patient-facing plan lifecycle state",
+      "enum": [
+        "draft",
+        "published",
+        "updated",
+        "archived"
+      ],
+      "type": "string"
+    },
+    "version": {
+      "default": 1,
+      "minimum": 1,
+      "type": "integer"
+    },
+    "change_summary": {
+      "description": "Clinical reason for the latest material plan change",
+      "type": "string"
+    },
+    "published_at": {
+      "format": "date-time",
+      "type": "string"
+    },
+    "last_updated_at": {
+      "format": "date-time",
+      "type": "string"
+    },
+    "patient_viewed_at": {
+      "format": "date-time",
+      "type": "string"
+    },
+    "archived_at": {
+      "format": "date-time",
+      "type": "string"
+    },
+    "clinical_review_required": {
+      "default": false,
+      "type": "boolean"
+    },
     "current_phase": {
       "default": 1,
       "type": "number"
