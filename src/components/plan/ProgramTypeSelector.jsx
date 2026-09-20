@@ -38,7 +38,7 @@ export default function ProgramTypeSelector({ onSelect }) {
     <div className="space-y-4">
       <div>
         <p className="text-xs font-bold uppercase tracking-[0.14em] text-[#d8ff5f]">Choose a workflow</p>
-        <h2 className="mt-2 text-xl font-bold text-white">How would you like to programme?</h2>
+        <h2 className="mt-2 text-xl font-bold text-slate-900">How would you like to programme?</h2>
         <p className="mt-1 text-sm text-zinc-500">All routes remain editable and under practitioner control.</p>
       </div>
 
