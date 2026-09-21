@@ -15,7 +15,7 @@ export default function ClinicOnboarding() {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [currentUser, setCurrentUser] = useState(null);
+  const [error, setError] = useState('');
   const [clinicData, setClinicData] = useState({
     name: '',
     contact_email: '',
@@ -36,7 +36,6 @@ export default function ClinicOnboarding() {
   React.useEffect(() => {
     const loadUser = async () => {
       const user = await base44.auth.me();
-      setCurrentUser(user);
       setClinicData(prev => ({ ...prev, contact_email: user.email }));
       
       // Check if already onboarded
@@ -74,40 +73,25 @@ export default function ClinicOnboarding() {
   const handleFinalSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
+    setError('');
 
     try {
-      // Calculate trial end date (14 days from now)
-      const trialEndDate = new Date();
-      trialEndDate.setDate(trialEndDate.getDate() + 14);
-
-      // Create clinic
-      const clinic = await base44.entities.Clinic.create({
-        ...clinicData,
-        name: titleCaseName(clinicData.name),
-        owner_email: currentUser.email,
-        subscription_status: 'trial',
-        trial_end_date: trialEndDate.toISOString()
+      const response = await base44.functions.invoke('provisionClinic', {
+        clinic: {
+          ...clinicData,
+          name: titleCaseName(clinicData.name),
+        },
+        profile: userData,
       });
-      await base44.entities.Clinic.update(clinic.id, {
-        clinic_id: clinic.id,
-        monthly_price_pence: 3000
-      });
+      const result = response?.data || response || {};
+      if (result.error) throw new Error(result.error);
 
-      // Update user profile
-      await base44.auth.updateMe({
-        clinic_id: clinic.id,
-        role: 'clinic_admin',
-        job_title: userData.job_title,
-        specialties: userData.specialties,
-        booking_enabled: userData.booking_enabled,
-        booking_url: userData.booking_url,
-        onboarding_completed: true
-      });
-
-      // Redirect with replace to prevent back button loop
-      window.location.href = createPageUrl('CoachDashboard');
-    } catch (error) {
-      console.error('Onboarding error:', error);
+      // Billing is deliberately the next step. Clinic creation and privileged
+      // role assignment have already completed securely on the server.
+      window.location.assign(createPageUrl('Checkout'));
+    } catch (err) {
+      console.error('Onboarding error:', err);
+      setError(err?.response?.data?.error || err?.message || 'Unable to create your clinic. Please try again.');
       setLoading(false);
     }
   };
@@ -389,9 +373,15 @@ export default function ClinicOnboarding() {
               <div className="bg-purple-50 rounded-xl p-4 border border-purple-100">
                 <h3 className="font-semibold text-purple-900 mb-2">🎉 14-Day Free Trial</h3>
                 <p className="text-sm text-purple-700">
-                  Your clinic starts with a 14-day free trial. You can manage up to 50 patients and 5 clinicians.
+                  Your clinic starts with a 14-day free trial, includes unlimited patient programmes, and is £30/month for up to 5 practitioners after the trial.
                 </p>
               </div>
+
+              {error && (
+                <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700" role="alert">
+                  {error}
+                </div>
+              )}
 
               <div className="flex gap-3">
                 <Button 
