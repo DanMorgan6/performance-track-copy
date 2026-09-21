@@ -22,7 +22,9 @@ export default function Checkout() {
           navigate(createPageUrl('CoachDashboard'));
           return;
         }
-        const clinics = await base44.entities.Clinic.filter({ owner_email: user.email });
+        const clinics = user.clinic_id
+          ? await base44.entities.Clinic.filter({ id: user.clinic_id })
+          : [];
         if (clinics.length) {
           const users = await base44.entities.User.list();
           const count = users.filter(u => isPractitioner(u) && u.clinic_id === clinics[0].id).length;
