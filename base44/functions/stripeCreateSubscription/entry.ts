@@ -11,12 +11,16 @@ function createStripeClient() {
   return new Stripe(secretKey);
 }
 
+function getRole(user: Record<string, unknown>) {
+  return String(user?._app_role || user?.role || '');
+}
+
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
 
-    if (!user || !CLINIC_ADMIN_ROLES.has(user.role)) {
+    if (!user || !CLINIC_ADMIN_ROLES.has(getRole(user))) {
       return Response.json({ error: 'Clinic administrator access required' }, { status: 403 });
     }
 
@@ -32,7 +36,7 @@ Deno.serve(async (req) => {
     }
 
     const clinicUsers = await base44.asServiceRole.entities.User.filter({ clinic_id: clinicId });
-    const practitionerCount = clinicUsers.filter((member) => PRACTITIONER_ROLES.has(member.role)).length;
+    const practitionerCount = clinicUsers.filter((member) => PRACTITIONER_ROLES.has(getRole(member))).length;
     const seatCount = Math.max(1, practitionerCount);
 
     if (seatCount > MAX_SELF_SERVICE_PRACTITIONERS) {
@@ -54,6 +58,13 @@ Deno.serve(async (req) => {
     }
 
     const stripe = createStripeClient();
+    if (clinic.stripe_subscription_id) {
+      return Response.json(
+        { error: 'This clinic already has a subscription. Manage it from Clinic Settings.' },
+        { status: 409 },
+      );
+    }
+
     let customerId = clinic.stripe_customer_id;
 
     if (!customerId) {
@@ -64,6 +75,8 @@ Deno.serve(async (req) => {
           clinic_id: clinic.id,
           base44_app_id: Deno.env.get('BASE44_APP_ID') || '',
         },
+      }, {
+        idempotencyKey: `performance-track-customer-${clinic.id}`,
       });
       customerId = customer.id;
       await base44.asServiceRole.entities.Clinic.update(clinic.id, {
@@ -89,12 +102,14 @@ Deno.serve(async (req) => {
       line_items: [{ price: priceId, quantity: 1 }],
       subscription_data: subscriptionData,
       success_url: `${origin}/CoachDashboard?subscription_success=true`,
-      cancel_url: `${origin}/Pricing`,
+      cancel_url: `${origin}/Checkout`,
       metadata: {
         clinic_id: clinic.id,
         seat_count: String(seatCount),
         base44_app_id: Deno.env.get('BASE44_APP_ID') || '',
       },
+    }, {
+      idempotencyKey: `performance-track-checkout-${clinic.id}-${priceId}-${clinic.trial_end_date || 'no-trial'}`,
     });
 
     return Response.json({ url: session.url, session_id: session.id });
