@@ -67,34 +67,13 @@
       "type": "array"
     }
   },
-  "required": [
-    "clinic_id",
-    "job_title",
-    "specialties",
-    "booking_url"
-  ],
+  "required": [],
   "rls": {
     "create": false,
     "delete": {
-      "$and": [
-        {
-          "$or": [
-            {
-              "user_condition": {
-                "role": "admin"
-              }
-            },
-            {
-              "user_condition": {
-                "role": "clinic_admin"
-              }
-            }
-          ]
-        },
-        {
-          "data.clinic_id": "{{user.data.clinic_id}}"
-        }
-      ]
+      "user_condition": {
+        "role": "admin"
+      }
     },
     "read": {
       "$or": [
