@@ -74,7 +74,7 @@ export default function Pricing() {
               <p className="mt-2 font-bold text-[#d8ff5f]">{plan.seats}</p>
               <p className="mt-4 max-w-md leading-7 text-zinc-400">{plan.description}</p>
               <Button
-                onClick={() => navigate(createPageUrl('Checkout'))}
+                onClick={() => navigate(createPageUrl('ClinicOnboarding'))}
                 className="mt-8 min-h-12 w-full rounded-2xl bg-[#d8ff5f] font-black text-zinc-950 hover:bg-[#e3ff86]"
               >
                 Start free trial
