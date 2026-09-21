@@ -91,6 +91,16 @@ export default function AcceptInvite() {
       const response = await base44.functions.invoke('acceptClinicianInvite', { token });
       const result = responseData(response);
       if (result.error) throw new Error(result.error);
+
+      // Recalculate the clinic's Stripe tier from server-side practitioner data.
+      // Invitation acceptance remains successful if billing reconciliation needs
+      // administrator attention.
+      try {
+        await base44.functions.invoke('syncClinicSubscriptionTier', {});
+      } catch (billingError) {
+        console.error('Clinic billing reconciliation failed:', billingError);
+      }
+
       setStep('success');
       window.setTimeout(() => redirectForInvite('clinician'), 600);
     } catch (err) {
