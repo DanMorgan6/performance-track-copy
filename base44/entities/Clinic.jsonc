@@ -20,12 +20,26 @@
     },
     "clinic_id": {
       "description": "Tenant identifier; equal to the Clinic record id",
-      "type": "string"
+      "type": "string",
+      "rls": {
+        "update": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
     },
     "clinician_seat_count": {
       "default": 0,
       "description": "Number of active clinicians (seats)",
-      "type": "number"
+      "type": "number",
+      "rls": {
+        "update": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
     },
     "contact_email": {
       "description": "Main contact email",
@@ -34,12 +48,26 @@
     "current_period_end": {
       "description": "Current billing period end date",
       "format": "date-time",
-      "type": "string"
+      "type": "string",
+      "rls": {
+        "update": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
     },
     "current_period_start": {
       "description": "Current billing period start",
       "format": "date-time",
-      "type": "string"
+      "type": "string",
+      "rls": {
+        "update": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
     },
     "logo_url": {
       "description": "Clinic logo image URL",
@@ -48,7 +76,14 @@
     "monthly_price_pence": {
       "default": 0,
       "description": "Monthly subscription price in pence: 3000 for 0-5 practitioners, 4500 for 6-10 practitioners",
-      "type": "number"
+      "type": "number",
+      "rls": {
+        "update": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
     },
     "name": {
       "description": "Clinic name",
@@ -56,18 +91,39 @@
     },
     "owner_email": {
       "description": "Clinic owner/admin email",
-      "type": "string"
+      "type": "string",
+      "rls": {
+        "update": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
     },
     "phone": {
       "type": "string"
     },
     "stripe_customer_id": {
       "description": "Stripe customer ID",
-      "type": "string"
+      "type": "string",
+      "rls": {
+        "update": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
     },
     "stripe_subscription_id": {
       "description": "Stripe subscription ID",
-      "type": "string"
+      "type": "string",
+      "rls": {
+        "update": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
     },
     "subscription_status": {
       "default": "trialing",
@@ -81,17 +137,38 @@
         "canceled",
         "incomplete"
       ],
-      "type": "string"
+      "type": "string",
+      "rls": {
+        "update": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
     },
     "trial_end_date": {
       "description": "Trial end date (14 days after start)",
       "format": "date-time",
-      "type": "string"
+      "type": "string",
+      "rls": {
+        "update": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
     },
     "trial_start_date": {
-      "description": "Trial start date (14 days from this)",
+      "description": "Trial start date",
       "format": "date-time",
-      "type": "string"
+      "type": "string",
+      "rls": {
+        "update": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
     }
   },
   "required": [
@@ -101,39 +178,14 @@
   ],
   "rls": {
     "create": {
-      "$or": [
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        },
-        {
-          "user_condition": {
-            "role": "clinic_admin"
-          }
-        }
-      ]
+      "user_condition": {
+        "role": "admin"
+      }
     },
     "delete": {
-      "$and": [
-        {
-          "$or": [
-            {
-              "user_condition": {
-                "role": "admin"
-              }
-            },
-            {
-              "user_condition": {
-                "role": "clinic_admin"
-              }
-            }
-          ]
-        },
-        {
-          "data.clinic_id": "{{user.data.clinic_id}}"
-        }
-      ]
+      "user_condition": {
+        "role": "admin"
+      }
     },
     "read": {
       "$or": [
