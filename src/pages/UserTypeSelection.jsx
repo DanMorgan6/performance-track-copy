@@ -73,8 +73,8 @@ export default function UserTypeSelection() {
                 <Stethoscope className="w-8 h-8 text-purple-600" />
               </div>
             </div>
-            <h3 className="text-2xl font-bold text-slate-900 mb-2">Clinic / Clinician</h3>
-            <p className="text-slate-600 mb-6">Manage patients, create rehabilitation programmes, and track progress</p>
+            <h3 className="text-2xl font-bold text-slate-900 mb-2">Create a clinic</h3>
+            <p className="text-slate-600 mb-6">Set up a new, private clinic workspace as its administrator</p>
             <ul className="text-sm text-slate-500 space-y-2 mb-6 text-left">
               <li>✓ Create rehabilitation plans</li>
               <li>✓ Manage patient programmes</li>
@@ -110,6 +110,10 @@ export default function UserTypeSelection() {
             </div>
           </button>
         </div>
+
+        <p className="mt-6 text-center text-sm text-slate-500">
+          Joining an existing clinic or activating a patient portal? Use the secure invitation link sent to your email.
+        </p>
       </div>
     </div>
   );
