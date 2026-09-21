@@ -48,6 +48,12 @@ Deno.serve(async (req) => {
     if (invite.status !== 'active') {
       return Response.json({ error: 'This invitation is no longer active.' }, { status: 409 });
     }
+    if (user.clinic_id && user.clinic_id !== invite.clinic_id) {
+      return Response.json(
+        { error: 'This account already belongs to another clinic. Use a separate account for this invitation.' },
+        { status: 409 },
+      );
+    }
 
     await base44.asServiceRole.entities.User.update(user.id, {
       role: roleTarget,
