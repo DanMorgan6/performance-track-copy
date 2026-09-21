@@ -5,6 +5,14 @@ const stripeSecretKey = Deno.env.get('STRIPE_SECRET_KEY');
 if (!stripeSecretKey) throw new Error('Stripe is not configured');
 const stripe = new Stripe(stripeSecretKey);
 
+function normaliseSubscriptionStatus(status: string) {
+  if (status === 'incomplete_expired') return 'incomplete';
+  if (status === 'paused') return 'unpaid';
+  return ['trialing', 'active', 'past_due', 'unpaid', 'canceled', 'incomplete'].includes(status)
+    ? status
+    : 'incomplete';
+}
+
 Deno.serve(async (req) => {
   const signature = req.headers.get('stripe-signature');
   const webhookSecret = Deno.env.get('STRIPE_WEBHOOK_SECRET');
@@ -50,7 +58,7 @@ Deno.serve(async (req) => {
           }, 0);
         }
 
-        const status = subscription.status === 'trialing' ? 'trialing' : 'active';
+        const status = normaliseSubscriptionStatus(subscription.status);
 
         await base44.asServiceRole.entities.Clinic.update(clinic.id, {
           stripe_subscription_id: subscription.id,
@@ -91,10 +99,7 @@ Deno.serve(async (req) => {
           }, 0);
         }
 
-        const status = subscription.status === 'trialing' ? 'trialing' :
-                       subscription.status === 'active' ? 'active' :
-                       subscription.status === 'past_due' ? 'past_due' :
-                       subscription.status === 'canceled' ? 'canceled' : subscription.status;
+        const status = normaliseSubscriptionStatus(subscription.status);
 
         await base44.asServiceRole.entities.Clinic.update(clinic.id, {
           subscription_status: status,
