@@ -50,7 +50,9 @@ export default function Checkout() {
 
     try {
       const user = await base44.auth.me();
-      const clinics = await base44.entities.Clinic.filter({ owner_email: user.email });
+      const clinics = user.clinic_id
+        ? await base44.entities.Clinic.filter({ id: user.clinic_id })
+        : [];
       if (!clinics.length) {
         alert('Please complete clinic onboarding first');
         navigate(createPageUrl('ClinicOnboarding'));
