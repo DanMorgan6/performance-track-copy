@@ -11,8 +11,15 @@
       "type": "string"
     },
     "clinic_id": {
-      "description": "Reference to Clinic - required for clinic_admin and clinician roles",
-      "type": "string"
+      "description": "Reference to Clinic - assigned only by trusted backend functions",
+      "type": "string",
+      "rls": {
+        "update": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
     },
     "job_title": {
       "description": "Job title (for clinicians)",
@@ -25,18 +32,32 @@
     },
     "patient_id": {
       "description": "Reference to the linked Patient record for patient users",
-      "type": "string"
+      "type": "string",
+      "rls": {
+        "update": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
     },
     "role": {
       "default": "patient",
-      "description": "User role in the system",
+      "description": "User role in the system; assigned only by trusted backend functions",
       "enum": [
         "clinic_admin",
         "clinician",
         "patient",
         "admin"
       ],
-      "type": "string"
+      "type": "string",
+      "rls": {
+        "update": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
     },
     "specialties": {
       "description": "Professional specialties (for clinicians)",
