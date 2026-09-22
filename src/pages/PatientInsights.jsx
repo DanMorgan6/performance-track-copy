@@ -125,8 +125,9 @@ export default function PatientInsights() {
   });
 
   const { data: outcomeMeasures = [] } = useQuery({
-    queryKey: ['outcome-measures'],
-    queryFn: () => base44.entities.OutcomeMeasure.list()
+    queryKey: ['outcome-measures', patient?.clinic_id],
+    queryFn: () => base44.entities.OutcomeMeasure.filter({ clinic_id: patient.clinic_id }),
+    enabled: !!patient?.clinic_id
   });
 
   const { data: dailyNotes = [] } = useQuery({
