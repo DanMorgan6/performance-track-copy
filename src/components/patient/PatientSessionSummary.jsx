@@ -95,6 +95,51 @@ export default function PatientSessionSummary({ patient, planId, phaseId, date }
     setForm((current) => ({ ...current, [field]: value }));
   };
 
+  const isComplete = saved || Boolean(existing);
+  const displayDuration = existing?.duration_minutes ?? form.duration_minutes ?? 0;
+  const displayRpe = existing?.session_rpe ?? form.session_rpe ?? 0;
+  const displayLoad = existing?.internal_session_load ?? internalLoad;
+  const displayStatus = existing?.completion_status ?? form.completion_status ?? 'completed';
+  const statusLabel = {
+    completed: 'Completed',
+    part_completed: 'Partly completed',
+    stopped: 'Stopped',
+  }[displayStatus] || 'Completed';
+
+  if (isComplete) {
+    return (
+      <section className="rounded-[24px] border border-emerald-400/25 bg-[#242427] p-4 text-white">
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-400/15">
+            <CheckCircle2 className="h-5 w-5 text-emerald-300" />
+          </div>
+          <div className="flex-1">
+            <h3 className="font-bold text-white">Session complete</h3>
+            <p className="text-xs text-zinc-400">This session response has been recorded and locked for clinician review.</p>
+          </div>
+        </div>
+        <div className="mt-3 grid grid-cols-4 gap-2 text-center">
+          <div className="rounded-xl bg-white/[0.04] p-2">
+            <p className="text-[10px] uppercase tracking-wide text-zinc-500">Duration</p>
+            <p className="mt-0.5 text-sm font-bold text-white">{displayDuration}m</p>
+          </div>
+          <div className="rounded-xl bg-white/[0.04] p-2">
+            <p className="text-[10px] uppercase tracking-wide text-zinc-500">RPE</p>
+            <p className="mt-0.5 text-sm font-bold text-white">{displayRpe}</p>
+          </div>
+          <div className="rounded-xl bg-white/[0.04] p-2">
+            <p className="text-[10px] uppercase tracking-wide text-zinc-500">Load</p>
+            <p className="mt-0.5 text-sm font-bold text-[#d8ff5f]">{displayLoad} AU</p>
+          </div>
+          <div className="rounded-xl bg-white/[0.04] p-2">
+            <p className="text-[10px] uppercase tracking-wide text-zinc-500">Status</p>
+            <p className="mt-0.5 text-sm font-bold text-white">{statusLabel}</p>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section className="rounded-[24px] border border-white/[0.08] bg-[#242427] p-5 text-white">
       <div className="flex items-start gap-3">
