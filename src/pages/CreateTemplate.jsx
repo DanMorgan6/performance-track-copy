@@ -454,7 +454,9 @@ Create a comprehensive rehabilitation template with 3-5 phases. Each phase shoul
         (phase.exercises || []).forEach(ex => { if (ex.name) allExercises.push(ex); });
       }
 
-      const existingExercises = allExercises.length > 0 ? await base44.entities.ExerciseLibrary.list() : [];
+      const existingExercises = allExercises.length > 0
+        ? await base44.entities.ExerciseLibrary.filter({ clinic_id: user.clinic_id })
+        : [];
       const existingNames = new Set(existingExercises.map(ex => ex.name));
       const seenNames = new Set();
       const uniqueNewExercises = allExercises.filter(ex => {
