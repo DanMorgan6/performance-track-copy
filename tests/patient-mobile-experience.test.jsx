@@ -12,6 +12,20 @@ describe('patient mobile experience', () => {
     expect(insights).toContain('Insights could not load');
   });
 
+  it('uses the branded splash for patient startup states', () => {
+    const portal = readFileSync('src/pages/PatientPortal.jsx', 'utf8');
+    const insights = readFileSync('src/pages/PatientInsights.jsx', 'utf8');
+    const splash = readFileSync('src/components/patient/PatientPortalSplash.jsx', 'utf8');
+
+    expect(portal).toContain('<PatientPortalSplash');
+    expect(insights).toContain('<PatientPortalSplash');
+    expect(portal).not.toContain('Loading your portal...');
+    expect(insights).not.toContain('Loading your insights...');
+    expect(splash).toContain('Performance Track');
+    expect(splash).toContain('Plan rehab · Prove progress · Move forward');
+    expect(splash).toContain('role="status"');
+  });
+
   it('keeps the patient profile drawer independently scrollable on mobile', () => {
     const profile = readFileSync('src/components/patient/PatientProfilePanel.jsx', 'utf8');
     const portal = readFileSync('src/pages/PatientPortal.jsx', 'utf8');
