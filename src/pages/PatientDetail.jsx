@@ -181,7 +181,7 @@ export default function PatientDetail() {
     queryFn: () => base44.entities.ExerciseLog.filter({
       clinic_id: patient.clinic_id,
       patient_id: patientId,
-    }, '-date'),
+    }, '-date', 500),
     enabled: Boolean(patient?.clinic_id && patientId),
   });
 
