@@ -12,6 +12,8 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import MobileSelect from '@/components/ui/MobileSelect';
 import BasicProgramBuilder from '@/components/plan/BasicProgramBuilder';
+import MonitoringSettingsCard from '@/components/plan/MonitoringSettingsCard';
+import { getPlanMode, getMonitoringLevel, isMorningCheckInEnabled, PLAN_MODE_LABELS } from '@/lib/planModes';
 import ProgrammeScheduleEditor from '@/components/programme/ProgrammeScheduleEditor.jsx';
 import { generatePlanPDF, uploadAndEmailPDF } from '@/components/reports/PlanPDFGenerator';
 
@@ -131,6 +133,9 @@ export default function EditPlan() {
     setPlanData({
       ...plan,
       program_type: plan.program_type || 'phased',
+      plan_mode: getPlanMode(plan),
+      monitoring_level: getMonitoringLevel(plan),
+      morning_check_in_enabled: isMorningCheckInEnabled(plan),
       basic_config: plan.basic_config || {
         frequency_per_week: 3,
         weekend_rest_days: true,
@@ -295,6 +300,9 @@ export default function EditPlan() {
         target_end_date: planData.target_end_date || null,
         status: planData.status,
         program_type: planData.program_type,
+        plan_mode: planData.plan_mode,
+        monitoring_level: planData.monitoring_level,
+        morning_check_in_enabled: planData.morning_check_in_enabled,
         basic_config: planData.program_type === 'basic' ? planData.basic_config : null,
         total_phases: planData.program_type === 'phased' ? phases.length : null,
         current_phase: planData.program_type === 'phased' ? (planData.current_phase || 1) : null,
@@ -427,7 +435,7 @@ export default function EditPlan() {
               </p>
             </div>
             <span className="w-fit rounded-full border border-purple-200 bg-purple-50 px-3 py-1.5 text-xs font-semibold text-purple-600">
-              {isBasic ? 'Quick Plan' : 'Phased Rehab'}
+              {PLAN_MODE_LABELS[getPlanMode(planData)] || 'Phased Plan'}
             </span>
           </div>
 
@@ -496,6 +504,11 @@ export default function EditPlan() {
                 </div>
               </div>
             </section>
+
+            <MonitoringSettingsCard
+              planData={planData}
+              onChange={setPlanData}
+            />
 
             {isBasic ? (
               <BasicProgramBuilder
