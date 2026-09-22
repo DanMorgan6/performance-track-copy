@@ -311,6 +311,13 @@ export default function DayDetail({ day, dayIndex, currentPhase, onBack, onPrevi
             </div>
           ))}
 
+          <PatientSessionSummary
+            patient={patient}
+            planId={currentPhase?.plan_id}
+            phaseId={currentPhase?.is_basic ? undefined : currentPhase?.id}
+            date={dateStr}
+          />
+
           {/* Day Notes */}
           {showNotes ? (
             <DayNotesEditor
@@ -369,86 +376,20 @@ export default function DayDetail({ day, dayIndex, currentPhase, onBack, onPrevi
         </div>
       ) : null}
 
-      {/* Exercise Log Dialog */}
+      {/* Exercise performance log */}
       <Dialog open={showLogDialog} onOpenChange={setShowLogDialog}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="performance-shell max-w-2xl border-white/10 bg-[#171719] text-white">
           <DialogHeader>
-            <DialogTitle>Log Exercise</DialogTitle>
+            <DialogTitle className="text-white">Log exercise performance</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="bg-slate-50 rounded-xl p-3">
-              <h4 className="font-semibold text-slate-800">{selectedExercise?.name}</h4>
-              <p className="text-sm text-slate-500 mt-1">
-                Target: {selectedExercise?.sets} sets × {selectedExercise?.reps} reps
-              </p>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Sets Completed</Label>
-                <Input
-                  type="number"
-                  value={logData.sets_completed}
-                  onChange={(e) => setLogData({...logData, sets_completed: parseInt(e.target.value)})}
-                  className="rounded-xl"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Reps Completed</Label>
-                <Input
-                  value={logData.reps_completed}
-                  onChange={(e) => setLogData({...logData, reps_completed: e.target.value})}
-                  placeholder="e.g., 10"
-                  className="rounded-xl"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label>How Difficult?</Label>
-              <select
-                value={logData.difficulty}
-                onChange={(e) => setLogData({...logData, difficulty: e.target.value})}
-                className="w-full px-3 py-2 border border-slate-200 rounded-xl"
-              >
-                <option value="too_easy">Too Easy</option>
-                <option value="appropriate">Just Right</option>
-                <option value="challenging">Challenging</option>
-                <option value="too_hard">Too Hard</option>
-              </select>
-            </div>
-
-            <div className="space-y-2">
-              <Label>Notes (Optional)</Label>
-              <Textarea
-                value={logData.notes}
-                onChange={(e) => setLogData({...logData, notes: e.target.value})}
-                placeholder="How did it feel? Any issues?"
-                className="rounded-xl"
-                rows={3}
-              />
-            </div>
-
-            <div className="flex gap-3 pt-4">
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setShowLogDialog(false);
-                  setSelectedExercise(null);
-                }}
-                className="flex-1 rounded-xl"
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={() => createExerciseLogMutation.mutate(logData)}
-                disabled={createExerciseLogMutation.isPending}
-                className="flex-1 bg-purple-600 hover:bg-purple-700 text-white rounded-xl"
-              >
-                {createExerciseLogMutation.isPending ? 'Saving...' : 'Save Log'}
-              </Button>
-            </div>
-          </div>
+          {selectedExercise && (
+            <ExercisePerformanceForm
+              key={selectedExercise.name}
+              exercise={selectedExercise}
+              onSubmit={(data) => createExerciseLogMutation.mutate(data)}
+              isSaving={createExerciseLogMutation.isPending}
+            />
+          )}
         </DialogContent>
       </Dialog>
     </div>
