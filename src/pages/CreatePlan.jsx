@@ -430,27 +430,32 @@ Make the plan progressive, evidence-based, and tailored to the patient's profile
 
   const updatePhase = (index, field, value) => {
     const newPhases = [...phases];
-    newPhases[index] = { ...newPhases[index], [field]: value };
-    
-    // If duration_weeks changed, adjust weeks array
-    if (field === 'duration_weeks' && value !== newPhases[index].duration_weeks) {
-      const currentWeekCount = newPhases[index].weeks?.length || 1;
-      if (value > currentWeekCount) {
-        // Add new weeks
-        for (let i = currentWeekCount; i < value; i++) {
-          newPhases[index].weeks.push({
+    const existingPhase = newPhases[index];
+    const updatedPhase = {
+      ...existingPhase,
+      weeks: [...(existingPhase.weeks || [])],
+      [field]: value
+    };
+
+    // Keep the week data in sync whenever duration changes.
+    if (field === 'duration_weeks') {
+      const duration = Math.max(1, Number(value) || 1);
+      const currentWeekCount = updatedPhase.weeks.length;
+      if (duration > currentWeekCount) {
+        for (let i = currentWeekCount; i < duration; i++) {
+          updatedPhase.weeks.push({
             week_number: i + 1,
             daily_schedule: createDefaultWeek()
           });
         }
-      } else if (value < currentWeekCount) {
-        // Remove extra weeks
-        newPhases[index].weeks = newPhases[index].weeks.slice(0, value);
+      } else if (duration < currentWeekCount) {
+        updatedPhase.weeks = updatedPhase.weeks.slice(0, duration);
       }
-      // Reset to first week when duration changes
+      updatedPhase.duration_weeks = duration;
       setSelectedWeekIndex(0);
     }
-    
+
+    newPhases[index] = updatedPhase;
     setPhases(newPhases);
   };
 
