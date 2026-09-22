@@ -55,6 +55,7 @@ function normalizeDaySchedule(schedule) {
           duration: ex.duration || '',
           notes: ex.notes || '',
           video_url: ex.video_url || '',
+          tracking_mode: ex.tracking_mode || 'inherit',
         })),
         rest_after: '',
         note: '',
@@ -189,6 +190,7 @@ export default function ProgrammeScheduleEditor({
           tempo: '', rest: '60s', weight: '', hold: '', duration: '',
           notes: libraryExercise.description || '',
           video_url: libraryExercise.video_url || '',
+          tracking_mode: 'inherit',
         }],
         rest_after: '',
         note: '',
@@ -256,6 +258,7 @@ export default function ProgrammeScheduleEditor({
       duration: '',
       notes: exercise.description || '',
       video_url: exercise.video_url || '',
+      tracking_mode: 'inherit',
     };
 
     // Drop onto an existing block (block-{index})
