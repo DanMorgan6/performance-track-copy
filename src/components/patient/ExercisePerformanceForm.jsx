@@ -113,7 +113,7 @@ export default function ExercisePerformanceForm({ exercise, onSubmit, isSaving =
       reps_completed: String(totalReps),
       weight: isMeasurable ? Math.round(averageLoad * 10) / 10 : 0,
       planned_sets: Number(exercise?.sets) || 0,
-      planned_reps: String(exercise?.reps || ''),
+      planned_reps: String((Number(exercise?.sets) || 0) * parsePrescriptionReps(exercise?.reps)),
       planned_weight: String(exercise?.weight || ''),
       ...summary,
       pain_during: Number(painDuring),
