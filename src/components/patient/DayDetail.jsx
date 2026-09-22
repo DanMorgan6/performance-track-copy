@@ -4,7 +4,7 @@ import { base44 } from '@/api/base44Client';
 import DayNotesEditor from '@/components/patient/DayNotesEditor';
 import ExerciseVideoPreview from '@/components/exercise/ExerciseVideoPreview';
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, CheckCircle, Info, TestTube, XCircle, AlertCircle, Calendar } from 'lucide-react';
+import { ArrowLeft, ChevronLeft, ChevronRight, CheckCircle, Info, TestTube, XCircle, AlertCircle, Calendar } from 'lucide-react';
 import { cn } from "@/lib/utils";
 import {
   Dialog,
@@ -18,7 +18,7 @@ import { Input } from "@/components/ui/input";
 import { format } from 'date-fns';
 import { Badge } from "@/components/ui/badge";
 
-export default function DayDetail({ day, dayIndex, currentPhase, onBack, patient, selectedDate = null, milestones = [] }) {
+export default function DayDetail({ day, dayIndex, currentPhase, onBack, onPrevious, onNext, hasPrevious = false, hasNext = false, patient, selectedDate = null, milestones = [] }) {
   const queryClient = useQueryClient();
   const dateStr = day ? day.date : new Date().toISOString().split('T')[0];
 
@@ -89,21 +89,51 @@ export default function DayDetail({ day, dayIndex, currentPhase, onBack, patient
   return (
     <div className="space-y-4">
       {/* Header */}
-      <div className="bg-white rounded-2xl p-5 border border-slate-100">
-        <div className="flex items-center gap-3">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={onBack}
-            className="rounded-lg"
-          >
-            <ArrowLeft className="w-4 h-4" />
-          </Button>
-          <div className="flex-1">
-            <h2 className="text-xl font-bold text-slate-800">{day?.day || (selectedDate ? format(new Date(selectedDate), 'EEEE') : 'Day Details')}</h2>
-            <p className="text-sm text-slate-500 capitalize">{day?.type ? `${day.type} Day` : ''}</p>
+      <div className="bg-white rounded-2xl p-4 border border-slate-100">
+        {onPrevious || onNext ? (
+          <div className="grid grid-cols-[44px_1fr_44px] items-center gap-3">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onPrevious}
+              disabled={!hasPrevious}
+              className="h-11 w-11 rounded-xl border border-slate-200 disabled:opacity-30"
+              aria-label="Previous day"
+            >
+              <ChevronLeft className="h-5 w-5" />
+            </Button>
+            <div className="min-w-0 text-center">
+              <h2 className="truncate text-xl font-bold text-slate-800">{day?.day || 'Day Details'}</h2>
+              <p className="text-sm text-slate-500 capitalize">{day?.type ? `${day.type} Day` : ''}</p>
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onNext}
+              disabled={!hasNext}
+              className="h-11 w-11 rounded-xl border border-slate-200 disabled:opacity-30"
+              aria-label="Next day"
+            >
+              <ChevronRight className="h-5 w-5" />
+            </Button>
           </div>
-        </div>
+        ) : (
+          <div className="flex items-center gap-3">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onBack}
+              className="rounded-lg"
+              aria-label="Back to calendar"
+            >
+              <ArrowLeft className="w-4 h-4" />
+            </Button>
+            <div className="flex-1">
+              <h2 className="text-xl font-bold text-slate-800">{day?.day || (selectedDate ? format(new Date(selectedDate), 'EEEE') : 'Day Details')}</h2>
+              <p className="text-sm text-slate-500 capitalize">{day?.type ? `${day.type} Day` : ''}</p>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Testing Milestones */}
