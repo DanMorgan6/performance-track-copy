@@ -15,6 +15,7 @@ export default function PatientAnalyticsTab({
   assessments,
   patientOutcomeMeasures,
   currentPhase,
+  activePlan,
   adherenceRate,
   avgPainLevel,
   dailyNotes,
@@ -54,7 +55,7 @@ export default function PatientAnalyticsTab({
       {/* Adherence Chart */}
       <div className="bg-white rounded-2xl p-6 border border-slate-100">
         <h3 className="text-lg font-semibold text-slate-800 mb-4">Exercise Adherence</h3>
-        <AdherenceChart exerciseLogs={exerciseLogs} currentPhase={currentPhase} days={30} />
+        <AdherenceChart exerciseLogs={exerciseLogs} currentPhase={currentPhase} activePlan={activePlan} days={30} />
       </div>
 
       {/* Daily Check-Ins */}

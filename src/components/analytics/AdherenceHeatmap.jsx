@@ -2,24 +2,20 @@ import React from 'react';
 import { format, eachDayOfInterval, subDays, startOfDay } from 'date-fns';
 import { cn } from '@/lib/utils';
 
-export default function AdherenceHeatmap({ exerciseLogs, days = 84 }) {
+// dailyData: { [dateStr]: { expected, completed } } built by the shared adherence helpers,
+// so this chart renders the same truth used everywhere else.
+export default function AdherenceHeatmap({ dailyData = {}, days = 84 }) {
   const today = startOfDay(new Date());
   const startDate = subDays(today, days - 1);
-
   const allDays = eachDayOfInterval({ start: startDate, end: today });
 
-  // Build a map of date -> { completed, total }
-  const logMap = {};
-  exerciseLogs.forEach(log => {
-    if (!logMap[log.date]) logMap[log.date] = { completed: 0, total: 0 };
-    logMap[log.date].total++;
-    if (log.completed) logMap[log.date].completed++;
-  });
-
   const getColor = (dateStr) => {
-    const data = logMap[dateStr];
-    if (!data || data.total === 0) return 'bg-slate-100';
-    const rate = data.completed / data.total;
+    const data = dailyData[dateStr];
+    if (!data || data.expected === 0) {
+      // Rest day or pre-plan: neutral, unless unexpected activity was logged.
+      return (!data || data.completed === 0) ? 'bg-slate-100' : 'bg-amber-300';
+    }
+    const rate = data.completed / data.expected;
     if (rate >= 0.8) return 'bg-emerald-500';
     if (rate >= 0.5) return 'bg-emerald-300';
     if (rate > 0) return 'bg-amber-300';
@@ -44,11 +40,11 @@ export default function AdherenceHeatmap({ exerciseLogs, days = 84 }) {
           <div key={wi} className="flex flex-col gap-1">
             {week.map((day) => {
               const dateStr = format(day, 'yyyy-MM-dd');
-              const data = logMap[dateStr];
+              const data = dailyData[dateStr];
               return (
                 <div
                   key={dateStr}
-                  title={`${format(day, 'MMM d')}: ${data ? `${data.completed}/${data.total} completed` : 'No data'}`}
+                  title={`${format(day, 'MMM d')}: ${data ? `${data.completed}/${data.expected} completed` : 'No data'}`}
                   className={cn('w-3.5 h-3.5 rounded-sm cursor-default transition-all hover:scale-125', getColor(dateStr))}
                 />
               );

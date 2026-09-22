@@ -4,6 +4,7 @@ import { base44 } from '@/api/base44Client';
 import { format, subDays } from 'date-fns';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
 import AdherenceHeatmap from './AdherenceHeatmap';
+import { calculatePlanAdherence, calculateRangeAdherence, buildDailyAdherenceMap } from '@/lib/adherence';
 import { TrendingUp, TrendingDown, Minus, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -28,16 +29,24 @@ export default function PatientDeepDive({ patient, onClose }) {
     queryFn: () => base44.entities.OutcomeMeasure.list(),
   });
 
-  // Weekly adherence data (last 12 weeks)
+  const { data: plans = [] } = useQuery({
+    queryKey: ['deep-plans', patient.id],
+    queryFn: () => base44.entities.RehabPlan.filter({ patient_id: patient.id }, '-created_date'),
+  });
+  const activePlan = plans.find(p => p.status === 'active');
+  const { data: phases = [] } = useQuery({
+    queryKey: ['deep-phases', activePlan?.id],
+    queryFn: () => activePlan ? base44.entities.RehabPhase.filter({ plan_id: activePlan.id }) : [],
+    enabled: !!activePlan,
+  });
+  const currentPhase = phases.find(ph => ph.status === 'active');
+
+  // Weekly adherence data (last 12 weeks) — completed / prescribed, same truth as everywhere else.
   const weeklyAdherence = Array.from({ length: 12 }, (_, i) => {
     const weekEnd = subDays(new Date(), i * 7);
     const weekStart = subDays(weekEnd, 6);
-    const weekLogs = exerciseLogs.filter(l => {
-      const d = new Date(l.date);
-      return d >= weekStart && d <= weekEnd;
-    });
-    const rate = weekLogs.length > 0 ? Math.round((weekLogs.filter(l => l.completed).length / weekLogs.length) * 100) : 0;
-    return { week: format(weekStart, 'MMM d'), adherence: rate };
+    const range = calculateRangeAdherence(activePlan, currentPhase, exerciseLogs, weekStart, weekEnd);
+    return { week: format(weekStart, 'MMM d'), adherence: range.expected > 0 ? range.rate : 0 };
   }).reverse();
 
   // Pain trend (last 30 logs)
@@ -61,9 +70,8 @@ export default function PatientDeepDive({ patient, onClose }) {
     });
 
   // Overall stats
-  const totalLogs = exerciseLogs.length;
-  const completedLogs = exerciseLogs.filter(l => l.completed).length;
-  const overallAdherence = totalLogs > 0 ? Math.round((completedLogs / totalLogs) * 100) : 0;
+  const overallAdherence = calculatePlanAdherence(activePlan, currentPhase, exerciseLogs).rate;
+  const adherenceMap = buildDailyAdherenceMap(activePlan, currentPhase, exerciseLogs, subDays(new Date(), 83), new Date());
   const avgPain = painLogs.length > 0
     ? (painLogs.reduce((s, l) => s + l.pain_level, 0) / painLogs.length).toFixed(1)
     : 'N/A';
@@ -112,7 +120,7 @@ export default function PatientDeepDive({ patient, onClose }) {
           {/* Adherence Heatmap */}
           <div>
             <h3 className="text-sm font-semibold text-slate-700 mb-3">Exercise Adherence (Last 12 Weeks)</h3>
-            <AdherenceHeatmap exerciseLogs={exerciseLogs} days={84} />
+            <AdherenceHeatmap dailyData={adherenceMap} days={84} />
           </div>
 
           {/* Adherence trend */}

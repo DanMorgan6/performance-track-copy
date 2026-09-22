@@ -977,6 +977,7 @@ Your Rehabilitation Team`;
                   assessments={assessments}
                   patientOutcomeMeasures={patientOutcomeMeasures}
                   currentPhase={currentPhase}
+                  activePlan={activePlan}
                   adherenceRate={adherenceRate}
                   avgPainLevel={avgPainLevel}
                   dailyNotes={dailyNotes}
@@ -992,6 +993,7 @@ Your Rehabilitation Team`;
                   outcomeMeasures={outcomeMeasures}
                   assessments={assessments}
                   activePlan={activePlan}
+                  currentPhase={currentPhase}
                 />
               </TabsContent>
 

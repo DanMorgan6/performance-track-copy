@@ -2,20 +2,20 @@ import React from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { format, subDays, eachDayOfInterval } from 'date-fns';
 import { cn } from "@/lib/utils";
+import { prescribedExercisesForDate, completedExercisesForDate } from '@/lib/adherence';
 
-export default function AdherenceChart({ exerciseLogs, currentPhase, days = 14 }) {
+export default function AdherenceChart({ exerciseLogs, currentPhase, activePlan, days = 14 }) {
   const endDate = new Date();
   const startDate = subDays(endDate, days - 1);
   const dateRange = eachDayOfInterval({ start: startDate, end: endDate });
 
-  // Calculate daily adherence
+  // Daily adherence: completed / prescribed, using the plan's weekly schedule.
   const adherenceData = dateRange.map(date => {
     const dateStr = format(date, 'yyyy-MM-dd');
-    const dayLogs = exerciseLogs.filter(log => log.date === dateStr);
-    
-    // Get expected exercises for this day
-    const expectedCount = currentPhase?.exercises?.length || 0;
-    const completedCount = dayLogs.filter(log => log.completed).length;
+    const expectedCount = activePlan
+      ? prescribedExercisesForDate(activePlan, currentPhase, date)
+      : (currentPhase?.exercises?.length || 0);
+    const completedCount = completedExercisesForDate(exerciseLogs, dateStr);
     const adherenceRate = expectedCount > 0 ? (completedCount / expectedCount) * 100 : 0;
 
     return {
@@ -52,19 +52,19 @@ export default function AdherenceChart({ exerciseLogs, currentPhase, days = 14 }
       <ResponsiveContainer width="100%" height={250}>
         <BarChart data={adherenceData}>
           <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-          <XAxis 
-            dataKey="date" 
+          <XAxis
+            dataKey="date"
             tick={{ fill: '#64748b', fontSize: 12 }}
             stroke="#cbd5e1"
           />
-          <YAxis 
+          <YAxis
             tick={{ fill: '#64748b', fontSize: 12 }}
             stroke="#cbd5e1"
             domain={[0, 100]}
           />
-          <Tooltip 
-            contentStyle={{ 
-              backgroundColor: 'white', 
+          <Tooltip
+            contentStyle={{
+              backgroundColor: 'white',
               border: '1px solid #e2e8f0',
               borderRadius: '8px',
               boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'

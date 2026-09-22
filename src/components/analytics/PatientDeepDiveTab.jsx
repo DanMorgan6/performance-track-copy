@@ -6,6 +6,7 @@ import {
 } from 'recharts';
 import { cn } from '@/lib/utils';
 import AdherenceHeatmap from './AdherenceHeatmap';
+import { calculatePlanAdherence, calculateRangeAdherence, buildDailyAdherenceMap } from '@/lib/adherence';
 import { TrendingDown, TrendingUp, Minus, Activity, AlertCircle, BarChart3 } from 'lucide-react';
 
 // ─── Longitudinal Progress Chart ─────────────────────────────────────────────
@@ -177,7 +178,7 @@ function LongitudinalChart({ painLogs, patientOutcomeMeasures, outcomeMeasures, 
 }
 
 // ─── Correlation Scatter Plot ─────────────────────────────────────────────────
-function CorrelationChart({ exerciseLogs, painLogs, patientOutcomeMeasures, outcomeMeasures }) {
+function CorrelationChart({ exerciseLogs, painLogs, patientOutcomeMeasures, outcomeMeasures, activePlan, currentPhase }) {
   const [xAxis, setXAxis] = useState('adherence'); // 'adherence'
   const [yAxis, setYAxis] = useState('pain');       // 'pain' | 'outcome'
 
@@ -188,13 +189,8 @@ function CorrelationChart({ exerciseLogs, painLogs, patientOutcomeMeasures, outc
     const weekEnd = subDays(new Date(), i * 7);
     const weekStart = subDays(weekEnd, 6);
 
-    const weekLogs = exerciseLogs.filter(l => {
-      const d = new Date(l.date);
-      return d >= weekStart && d <= weekEnd;
-    });
-    const adherence = weekLogs.length > 0
-      ? Math.round((weekLogs.filter(l => l.completed).length / weekLogs.length) * 100)
-      : null;
+    const range = calculateRangeAdherence(activePlan, currentPhase, exerciseLogs, weekStart, weekEnd);
+    const adherence = range.expected > 0 ? range.rate : null;
 
     const weekPain = painLogs.filter(l => {
       const d = new Date(l.date);
@@ -296,11 +292,12 @@ export default function PatientDeepDiveTab({
   outcomeMeasures,
   assessments,
   activePlan,
+  currentPhase,
 }) {
   // Summary stats
   const totalLogs = exerciseLogs.length;
-  const completedLogs = exerciseLogs.filter(l => l.completed).length;
-  const overallAdherence = totalLogs > 0 ? Math.round((completedLogs / totalLogs) * 100) : 0;
+  const overallAdherence = calculatePlanAdherence(activePlan, currentPhase, exerciseLogs).rate;
+  const adherenceMap = buildDailyAdherenceMap(activePlan, currentPhase, exerciseLogs, subDays(new Date(), 83), new Date());
 
   const avgPain = painLogs.length > 0
     ? (painLogs.reduce((s, l) => s + l.pain_level, 0) / painLogs.length).toFixed(1)
@@ -358,7 +355,7 @@ export default function PatientDeepDiveTab({
           <h3 className="text-sm font-semibold text-slate-800">Exercise Adherence Heatmap</h3>
           <span className="text-xs text-slate-400 ml-auto">Last 12 weeks</span>
         </div>
-        <AdherenceHeatmap exerciseLogs={exerciseLogs} days={84} />
+        <AdherenceHeatmap dailyData={adherenceMap} days={84} />
       </div>
 
       {/* Longitudinal Progress */}
@@ -387,6 +384,8 @@ export default function PatientDeepDiveTab({
           painLogs={painLogs}
           patientOutcomeMeasures={patientOutcomeMeasures}
           outcomeMeasures={outcomeMeasures}
+          activePlan={activePlan}
+          currentPhase={currentPhase}
         />
       </div>
     </div>

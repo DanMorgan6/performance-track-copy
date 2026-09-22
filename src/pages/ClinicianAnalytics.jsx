@@ -15,6 +15,7 @@ import PatientDeepDive from '@/components/analytics/PatientDeepDive';
 import OutcomeTrendsChart from '@/components/analytics/OutcomeTrendsChart';
 import AnalyticsExport from '@/components/analytics/AnalyticsExport';
 import { cn } from '@/lib/utils';
+import { calculatePlanAdherence, calculateRangeAdherence, calculateClinicAdherence, buildClinicDailyAdherenceMap } from '@/lib/adherence';
 
 const TABS = [
   { id: 'overview', label: 'Overview' },
@@ -64,6 +65,16 @@ export default function ClinicianAnalytics() {
       return all;
     },
     enabled: patients.length > 0,
+  });
+
+  const activePlanIds = plans.filter(p => p.status === 'active').map(p => p.id);
+  const { data: phases = [] } = useQuery({
+    queryKey: ['analytics-phases', activePlanIds.join(',')],
+    queryFn: async () => {
+      const groups = await Promise.all(activePlanIds.map(id => base44.entities.RehabPhase.filter({ plan_id: id })));
+      return groups.flat();
+    },
+    enabled: activePlanIds.length > 0,
   });
 
   const { data: dailyNotes = [] } = useQuery({
@@ -122,10 +133,11 @@ export default function ClinicianAnalytics() {
   const recentPlans = plans.filter(p => new Date(p.created_date) >= rangeStart);
   const recentNotes = dailyNotes.filter(n => new Date(n.date) >= rangeStart);
 
-  // Key metrics
-  const adherenceRate = recentExerciseLogs.length > 0
-    ? Math.round((recentExerciseLogs.filter(l => l.completed).length / recentExerciseLogs.length) * 100)
-    : 0;
+  // Key metrics — clinic-wide adherence = completed / prescribed across all active plans.
+  const clinicAdherence = calculateClinicAdherence(patients, plans, phases, exerciseLogs, rangeStart, new Date());
+  const adherenceRate = clinicAdherence.rate;
+  const chartDays = dateRange === '3m' ? 90 : dateRange === '6m' ? 180 : 365;
+  const clinicDailyMap = buildClinicDailyAdherenceMap(patients, plans, phases, exerciseLogs, subDays(new Date(), chartDays - 1), new Date());
 
   const avgRecoveryTime = (() => {
     const done = recentPlans.filter(p => p.status === 'completed' && p.start_date && p.target_end_date);
@@ -147,9 +159,12 @@ export default function ClinicianAnalytics() {
   // Per-patient adherence for breakdown table
   const patientStats = patients.map(p => {
     const logs = exerciseLogs.filter(l => l.patient_id === p.id);
-    const recent7 = logs.filter(l => new Date(l.date) >= subDays(new Date(), 7));
-    const adherence = logs.length > 0 ? Math.round((logs.filter(l => l.completed).length / logs.length) * 100) : null;
-    const recentAdherence = recent7.length > 0 ? Math.round((recent7.filter(l => l.completed).length / recent7.length) * 100) : null;
+    const activePlan = plans.find(pl => pl.patient_id === p.id && pl.status === 'active');
+    const currentPhase = phases.find(ph => ph.patient_id === p.id && ph.status === 'active');
+    const overall = calculatePlanAdherence(activePlan, currentPhase, logs);
+    const adherence = overall.expected > 0 ? overall.rate : null;
+    const recent7 = calculateRangeAdherence(activePlan, currentPhase, logs, subDays(new Date(), 7), new Date());
+    const recentAdherence = recent7.expected > 0 ? recent7.rate : null;
     const pains = painLogs.filter(l => l.patient_id === p.id);
     const avgPain = pains.length > 0 ? (pains.reduce((s, l) => s + l.pain_level, 0) / pains.length).toFixed(1) : null;
     const pending = patientOutcomeMeasures.filter(o => o.patient_id === p.id && o.status === 'pending').length;
@@ -163,9 +178,11 @@ export default function ClinicianAnalytics() {
 
   // Alert count
   const alertCount = patients.reduce((count, p) => {
-    const recent7 = exerciseLogs.filter(l => l.patient_id === p.id && new Date(l.date) >= subDays(new Date(), 7));
-    const adherence = recent7.length >= 2 ? (recent7.filter(l => l.completed).length / recent7.length) * 100 : null;
-    if (adherence !== null && adherence < 50) count++;
+    const logs = exerciseLogs.filter(l => l.patient_id === p.id);
+    const activePlan = plans.find(pl => pl.patient_id === p.id && pl.status === 'active');
+    const currentPhase = phases.find(ph => ph.patient_id === p.id && ph.status === 'active');
+    const recent7 = calculateRangeAdherence(activePlan, currentPhase, logs, subDays(new Date(), 7), new Date());
+    if (recent7.expected > 0 && recent7.rate < 50) count++;
     const latestPain = painLogs.filter(l => l.patient_id === p.id).sort((a, b) => new Date(b.date) - new Date(a.date))[0];
     if (latestPain?.pain_level >= 8 && new Date(latestPain.date) >= subDays(new Date(), 7)) count++;
     return count;
@@ -239,7 +256,7 @@ export default function ClinicianAnalytics() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm">
               <h3 className="text-sm font-semibold text-slate-800 mb-4">Adherence Over Time</h3>
-              <AdherenceMetricsChart exerciseLogs={recentExerciseLogs} dateRange={dateRange} />
+              <AdherenceMetricsChart dailyData={clinicDailyMap} dateRange={dateRange} />
             </div>
             <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm">
               <h3 className="text-sm font-semibold text-slate-800 mb-4">Injury Type Distribution</h3>
@@ -255,7 +272,7 @@ export default function ClinicianAnalytics() {
             </div>
             <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm md:col-span-2">
               <h3 className="text-sm font-semibold text-slate-800 mb-4">Clinic-Wide Exercise Adherence Heatmap</h3>
-              <AdherenceHeatmap exerciseLogs={recentExerciseLogs} days={dateRange === '3m' ? 90 : dateRange === '6m' ? 180 : 365} />
+              <AdherenceHeatmap dailyData={clinicDailyMap} days={chartDays} />
             </div>
           </div>
         )}
