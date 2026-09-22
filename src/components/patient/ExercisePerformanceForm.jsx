@@ -1,21 +1,12 @@
-import React, { useMemo, useState } from 'react';
-import { AlertTriangle, CheckCircle2, Dumbbell, Plus, Trash2 } from 'lucide-react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { AlertTriangle, CheckCircle2, Dumbbell, History, Plus, Trash2 } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { parsePrescriptionReps, rirToRpe, summariseWorkingSets } from '@/lib/trainingMetrics';
-
-const MOVEMENT_TYPES = [
-  { value: 'dynamic_external_load', label: 'Weights / machine' },
-  { value: 'bodyweight', label: 'Bodyweight' },
-  { value: 'banded', label: 'Banded' },
-  { value: 'assisted', label: 'Assisted' },
-  { value: 'isometric', label: 'Isometric hold' },
-  { value: 'balance_control', label: 'Balance / control' },
-  { value: 'other', label: 'Other' },
-];
 
 const makeSet = (setNumber, exercise) => ({
   set_number: setNumber,
@@ -25,41 +16,78 @@ const makeSet = (setNumber, exercise) => ({
   rir: 3,
   set_rpe: 7,
   hold_seconds: Number.parseFloat(exercise?.hold || exercise?.duration) || 0,
-  peak_force: '',
-  average_force: '',
-  force_unit: 'N',
   technique_acceptable: true,
   rom_acceptable: true,
   pain_limited: false,
   notes: '',
 });
 
-export default function ExercisePerformanceForm({ exercise, onSubmit, isSaving = false }) {
+const latestSetSummary = (log) => {
+  const sets = (log?.working_sets || []).filter((set) => set.completed !== false);
+  if (!sets.length) return null;
+  const representative = sets[0];
+  return {
+    load: Number(representative.external_load) || 0,
+    reps: Number(representative.reps) || 0,
+    rir: representative.rir == null ? null : Number(representative.rir),
+    sets: sets.length,
+  };
+};
+
+export default function ExercisePerformanceForm({ exercise, patient, onSubmit, isSaving = false }) {
   const plannedSetCount = Math.min(10, Math.max(1, Number(exercise?.sets) || 1));
-  const [movementType, setMovementType] = useState(
-    Number.parseFloat(exercise?.weight) > 0 ? 'dynamic_external_load' : 'bodyweight',
-  );
-  const [loadUnit, setLoadUnit] = useState('kg');
-  const [equipment, setEquipment] = useState('');
-  const [variation, setVariation] = useState('');
-  const [assistanceLevel, setAssistanceLevel] = useState('');
-  const [rangePosition, setRangePosition] = useState('');
-  const [side, setSide] = useState('not_applicable');
+  const isIsometric = Number.parseFloat(exercise?.hold || exercise?.duration) > 0;
+  const side = exercise?.side || 'not_applicable';
   const [workingSets, setWorkingSets] = useState(
     Array.from({ length: plannedSetCount }, (_, index) => makeSet(index + 1, exercise)),
   );
   const [painDuring, setPainDuring] = useState(0);
-  const [painAfter, setPainAfter] = useState(0);
-  const [difficulty, setDifficulty] = useState('appropriate');
   const [modified, setModified] = useState(false);
   const [modificationReason, setModificationReason] = useState('');
-  const [notes, setNotes] = useState('');
+  const hydratedFromPrevious = useRef(false);
+
+  const { data: previousLogs = [], isLoading: loadingPrevious } = useQuery({
+    queryKey: ['previous-exercise-performance', patient?.clinic_id, patient?.id, exercise?.name],
+    queryFn: () => base44.entities.ExerciseLog.filter({
+      clinic_id: patient.clinic_id,
+      patient_id: patient.id,
+      exercise_name: exercise.name,
+    }, '-date', 10),
+    enabled: Boolean(patient?.clinic_id && patient?.id && exercise?.name),
+  });
+
+  const today = new Date().toISOString().slice(0, 10);
+  const previousLog = previousLogs.find((log) => log.date < today) || previousLogs[0] || null;
+  const previousSummary = latestSetSummary(previousLog);
+
+  useEffect(() => {
+    if (!previousLog?.working_sets?.length || hydratedFromPrevious.current) return;
+    hydratedFromPrevious.current = true;
+    const completedPrevious = previousLog.working_sets.filter((set) => set.completed !== false);
+    setWorkingSets((current) => current.map((set, index) => {
+      const prior = completedPrevious[index] || completedPrevious[0];
+      if (!prior) return set;
+      return {
+        ...set,
+        reps: Number(prior.reps) || set.reps,
+        external_load: Number(prior.external_load) || 0,
+        rir: prior.rir == null ? set.rir : Number(prior.rir),
+        set_rpe: prior.rir == null ? set.set_rpe : rirToRpe(Number(prior.rir)),
+        hold_seconds: Number(prior.hold_seconds) || set.hold_seconds,
+      };
+    }));
+  }, [previousLog]);
+
+  const movementType = isIsometric
+    ? 'isometric'
+    : workingSets.some((set) => Number(set.external_load) > 0)
+      ? 'dynamic_external_load'
+      : 'bodyweight';
 
   const summary = useMemo(
     () => summariseWorkingSets(workingSets, movementType),
     [workingSets, movementType],
   );
-  const isMeasurable = movementType === 'dynamic_external_load';
 
   const updateSet = (index, field, value) => {
     setWorkingSets((sets) => sets.map((set, setIndex) => {
@@ -71,7 +99,14 @@ export default function ExercisePerformanceForm({ exercise, onSubmit, isSaving =
   };
 
   const addSet = () => {
-    setWorkingSets((sets) => [...sets, makeSet(sets.length + 1, exercise)]);
+    const previous = workingSets.at(-1);
+    setWorkingSets((sets) => [...sets, {
+      ...makeSet(sets.length + 1, exercise),
+      reps: previous?.reps ?? parsePrescriptionReps(exercise?.reps),
+      external_load: previous?.external_load ?? 0,
+      rir: previous?.rir ?? 3,
+      set_rpe: previous?.set_rpe ?? 7,
+    }]);
   };
 
   const removeSet = (index) => {
@@ -86,231 +121,186 @@ export default function ExercisePerformanceForm({ exercise, onSubmit, isSaving =
     const averageLoad = completedSets.length
       ? completedSets.reduce((sum, set) => sum + (Number(set.external_load) || 0), 0) / completedSets.length
       : 0;
+    const submittedMovementType = isIsometric
+      ? 'isometric'
+      : completedSets.some((set) => Number(set.external_load) > 0)
+        ? 'dynamic_external_load'
+        : 'bodyweight';
 
     onSubmit({
       exercise_name: exercise?.name,
-      exercise_key: [exercise?.name, variation, equipment, side, loadUnit].filter(Boolean).join(' | '),
-      equipment,
-      exercise_variation: variation,
-      assistance_level: assistanceLevel,
-      range_position: rangePosition,
-      movement_type: movementType,
+      exercise_key: [exercise?.name, side].filter(Boolean).join(' | '),
+      movement_type: submittedMovementType,
       side,
-      load_unit: isMeasurable ? loadUnit : movementType === 'bodyweight' ? 'bodyweight' : 'none',
-      working_sets: workingSets.map((set) => ({
+      load_unit: submittedMovementType === 'dynamic_external_load' ? 'kg' : submittedMovementType === 'bodyweight' ? 'bodyweight' : 'none',
+      working_sets: completedSets.map((set, index) => ({
         ...set,
+        set_number: index + 1,
         reps: Number(set.reps) || 0,
-        external_load: isMeasurable ? Number(set.external_load) || 0 : 0,
-        rir: Math.min(4, Math.max(0, Number(set.rir) || 0)),
-        set_rpe: Math.min(10, Math.max(0, Number(set.set_rpe) || 0)),
-        hold_seconds: movementType === 'isometric' ? Number(set.hold_seconds) || 0 : undefined,
-        peak_force: movementType === 'isometric' && set.peak_force !== '' ? Number(set.peak_force) : undefined,
-        average_force: movementType === 'isometric' && set.average_force !== '' ? Number(set.average_force) : undefined,
-        force_unit: movementType === 'isometric' && (set.peak_force !== '' || set.average_force !== '') ? set.force_unit : undefined,
-        force_duration: movementType === 'isometric' && set.average_force !== '' ? Number(set.average_force) * (Number(set.hold_seconds) || 0) : undefined,
+        external_load: Number(set.external_load) || 0,
+        rir: Number(set.rir),
+        set_rpe: rirToRpe(Number(set.rir)),
+        hold_seconds: Number(set.hold_seconds) || 0,
+        technique_acceptable: true,
+        rom_acceptable: true,
+        pain_limited: set.pain_limited === true,
       })),
+      planned_sets: Number(exercise?.sets) || plannedSetCount,
+      planned_reps: exercise?.reps || '',
+      planned_weight: exercise?.weight || '',
       sets_completed: completedSets.length,
       reps_completed: String(totalReps),
-      weight: isMeasurable ? Math.round(averageLoad * 10) / 10 : 0,
-      planned_sets: Number(exercise?.sets) || 0,
-      planned_reps: String((Number(exercise?.sets) || 0) * parsePrescriptionReps(exercise?.reps)),
-      planned_weight: String(exercise?.weight || ''),
-      ...summary,
-      pain_during: Number(painDuring),
-      pain_after: Number(painAfter),
-      difficulty,
-      technique_acceptable: completedSets.every((set) => set.technique_acceptable !== false),
-      rom_acceptable: completedSets.every((set) => set.rom_acceptable !== false),
+      weight: averageLoad,
+      volume_load: summary.volume_load,
+      hard_sets: summary.hard_sets,
+      estimated_strength: summary.estimated_strength,
+      estimated_strength_confidence: summary.estimated_strength_confidence,
+      hold_duration_seconds: summary.hold_duration_seconds,
+      pain_during: Number(painDuring) || 0,
       pain_limited: completedSets.some((set) => set.pain_limited),
+      technique_acceptable: true,
+      rom_acceptable: true,
       modified,
       modification_reason: modified ? modificationReason : '',
-      notes,
       completed: true,
     });
   };
 
   return (
-    <div className="performance-shell max-h-[75dvh] space-y-5 overflow-y-auto bg-[#171719] p-1 text-white">
-      <div className="rounded-2xl border border-white/10 bg-[#242427] p-4">
-        <h4 className="font-bold text-white">{exercise?.name}</h4>
-        <p className="mt-1 text-sm text-zinc-400">
-          Planned: {exercise?.sets || '—'} sets × {exercise?.reps || '—'} reps
-        </p>
-      </div>
-
-      <div className="space-y-3">
-        <Label className="text-zinc-200">Exercise type</Label>
-        <select
-          value={movementType}
-          onChange={(event) => setMovementType(event.target.value)}
-          className="w-full rounded-xl border border-white/10 bg-[#242427] px-3 py-3 text-white"
-        >
-          {MOVEMENT_TYPES.map((type) => <option key={type.value} value={type.value}>{type.label}</option>)}
-        </select>
-        <div className="grid grid-cols-2 gap-3">
-          <Input value={equipment} onChange={(event) => setEquipment(event.target.value)} placeholder="Equipment / machine" />
-          <Input value={variation} onChange={(event) => setVariation(event.target.value)} placeholder="Variation / setup" />
-          <Input value={assistanceLevel} onChange={(event) => setAssistanceLevel(event.target.value)} placeholder="Assistance level" />
-          <Input value={rangePosition} onChange={(event) => setRangePosition(event.target.value)} placeholder="Range / position" />
-        </div>
-        <select
-          value={side}
-          onChange={(event) => setSide(event.target.value)}
-          className="w-full rounded-xl border border-white/10 bg-[#242427] px-3 py-3 text-white"
-        >
-          <option value="not_applicable">Side: not applicable</option>
-          <option value="left">Left side</option>
-          <option value="right">Right side</option>
-          <option value="bilateral">Both sides</option>
-        </select>
-      </div>
-
-      <div className="space-y-3">
-        <div>
-          <h5 className="font-bold text-white">Working sets</h5>
-          <p className="mt-1 text-xs leading-relaxed text-zinc-400">
-            RIR means “How many more good-quality repetitions could you have completed?” 0 = none, 1 = one, up to 4+.
-          </p>
-        </div>
-
-        {workingSets.map((set, index) => (
-          <div key={set.set_number} className="space-y-3 rounded-2xl border border-white/10 bg-[#242427] p-4">
-            <div className="flex items-center justify-between">
-              <span className="font-bold text-white">Set {index + 1}</span>
-              <div className="flex items-center gap-3">
-                <label className="flex items-center gap-2 text-xs text-zinc-400">
-                  <Checkbox checked={set.completed !== false} onCheckedChange={(checked) => updateSet(index, 'completed', checked === true)} />
-                  Completed
-                </label>
-                {workingSets.length > 1 && (
-                  <button type="button" onClick={() => removeSet(index)} aria-label={`Remove set ${index + 1}`} className="text-zinc-500 hover:text-rose-300">
-                    <Trash2 className="h-4 w-4" />
-                  </button>
-                )}
-              </div>
-            </div>
-
-            <div className={`grid gap-3 ${isMeasurable ? 'grid-cols-3' : 'grid-cols-2'}`}>
-              <label className="space-y-1 text-xs text-zinc-400">
-                Reps
-                <Input type="number" min="0" value={set.reps} onChange={(event) => updateSet(index, 'reps', event.target.value)} />
-              </label>
-              {isMeasurable && (
-                <label className="space-y-1 text-xs text-zinc-400">
-                  Load
-                  <div className="flex gap-1">
-                    <Input type="number" min="0" step="0.5" value={set.external_load} onChange={(event) => updateSet(index, 'external_load', event.target.value)} />
-                    <select value={loadUnit} onChange={(event) => setLoadUnit(event.target.value)} className="rounded-lg border border-white/10 bg-[#171719] px-1 text-xs text-white">
-                      <option value="kg">kg</option>
-                      <option value="lb">lb</option>
-                    </select>
-                  </div>
-                </label>
-              )}
-              <label className="space-y-1 text-xs text-zinc-400">
-                RIR
-                <select value={set.rir} onChange={(event) => updateSet(index, 'rir', event.target.value)} className="h-10 w-full rounded-lg border border-white/10 bg-[#171719] px-2 text-white">
-                  <option value="0">0 · RPE 10</option>
-                  <option value="1">1 · RPE 9</option>
-                  <option value="2">2 · RPE 8</option>
-                  <option value="3">3 · RPE 7</option>
-                  <option value="4">4+ · RPE ≤6</option>
-                </select>
-              </label>
-            </div>
-
-            {movementType === 'isometric' && (
-              <div className="grid grid-cols-2 gap-3">
-                <label className="space-y-1 text-xs text-zinc-400">
-                  Hold duration (seconds)
-                  <Input type="number" min="0" value={set.hold_seconds} onChange={(event) => updateSet(index, 'hold_seconds', event.target.value)} />
-                </label>
-                <label className="space-y-1 text-xs text-zinc-400">
-                  Force unit
-                  <select value={set.force_unit} onChange={(event) => updateSet(index, 'force_unit', event.target.value)} className="h-10 w-full rounded-lg border border-white/10 bg-[#171719] px-2 text-white">
-                    <option value="N">N</option>
-                    <option value="kgf">kgf</option>
-                    <option value="lb">lb</option>
-                  </select>
-                </label>
-                <label className="space-y-1 text-xs text-zinc-400">
-                  Peak force (optional)
-                  <Input type="number" min="0" value={set.peak_force} onChange={(event) => updateSet(index, 'peak_force', event.target.value)} />
-                </label>
-                <label className="space-y-1 text-xs text-zinc-400">
-                  Average force (optional)
-                  <Input type="number" min="0" value={set.average_force} onChange={(event) => updateSet(index, 'average_force', event.target.value)} />
-                </label>
-              </div>
-            )}
-
-            <div className="grid gap-2 sm:grid-cols-3">
-              {[
-                ['technique_acceptable', 'Good technique'],
-                ['rom_acceptable', 'Usual range'],
-                ['pain_limited', 'Stopped by pain'],
-              ].map(([field, label]) => (
-                <label key={field} className="flex items-center gap-2 text-xs text-zinc-300">
-                  <Checkbox checked={set[field] === true} onCheckedChange={(checked) => updateSet(index, field, checked === true)} />
-                  {label}
-                </label>
-              ))}
-            </div>
-          </div>
-        ))}
-
-        <Button type="button" variant="outline" onClick={addSet} className="w-full border-white/10 bg-transparent text-white hover:bg-white/5">
-          <Plus className="mr-2 h-4 w-4" /> Add working set
-        </Button>
-      </div>
-
-      <div className="rounded-2xl border border-[#d8ff5f]/20 bg-[#d8ff5f]/[0.06] p-4">
+    <div className="space-y-4 text-white">
+      <div className="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-4">
         <div className="flex items-start gap-3">
-          <Dumbbell className="mt-0.5 h-5 w-5 text-[#d8ff5f]" />
-          <div className="min-w-0">
-            <p className="text-sm font-bold text-white">Performance summary</p>
-            <div className="mt-2 grid grid-cols-2 gap-2 text-xs text-zinc-300">
-              <span>Hard sets: <strong className="text-white">{summary.hard_sets}</strong></span>
-              <span>Volume load: <strong className="text-white">{isMeasurable ? `${summary.volume_load} ${loadUnit}` : 'Not applicable'}</strong></span>
-              <span className="col-span-2">Estimated Strength: <strong className="text-white">{summary.estimated_strength ? `${summary.estimated_strength} ${loadUnit}` : 'Not eligible from these sets'}</strong></span>
-              <span className="col-span-2 text-zinc-500">Confidence: {summary.estimated_strength_confidence.replace('_', ' ')}</span>
-            </div>
+          <Dumbbell className="mt-0.5 h-5 w-5 shrink-0 text-[#d8ff5f]" />
+          <div className="min-w-0 flex-1">
+            <h3 className="font-bold text-white">{exercise?.name}</h3>
+            <p className="mt-1 text-xs text-zinc-400">
+              {exercise?.sets || plannedSetCount} sets · {exercise?.reps || (isIsometric ? exercise?.hold : 'record reps')}
+            </p>
           </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
-        <label className="space-y-1 text-xs text-zinc-400">Pain during (0–10)<Input type="number" min="0" max="10" value={painDuring} onChange={(event) => setPainDuring(event.target.value)} /></label>
-        <label className="space-y-1 text-xs text-zinc-400">Pain after (0–10)<Input type="number" min="0" max="10" value={painAfter} onChange={(event) => setPainAfter(event.target.value)} /></label>
+      <div className="rounded-2xl border border-teal-300/15 bg-teal-300/[0.05] p-3">
+        <div className="flex items-center gap-2 text-xs text-teal-200">
+          <History className="h-4 w-4" />
+          {loadingPrevious ? (
+            <span>Finding your last entry…</span>
+          ) : previousSummary ? (
+            <span>
+              Last time: {previousSummary.sets} sets × {previousSummary.reps} reps · {previousSummary.load > 0 ? `${previousSummary.load} kg` : 'bodyweight'}
+              {previousSummary.rir == null ? '' : ` · ${previousSummary.rir} RIR`}. Pre-filled below.
+            </span>
+          ) : (
+            <span>First recorded session for this exercise.</span>
+          )}
+        </div>
       </div>
 
       <div className="space-y-2">
-        <Label className="text-zinc-200">How difficult was it?</Label>
-        <select value={difficulty} onChange={(event) => setDifficulty(event.target.value)} className="w-full rounded-xl border border-white/10 bg-[#242427] px-3 py-3 text-white">
-          <option value="too_easy">Too easy</option>
-          <option value="appropriate">Appropriate</option>
-          <option value="challenging">Challenging</option>
-          <option value="too_hard">Too hard</option>
-        </select>
+        {workingSets.map((set, index) => (
+          <div key={set.set_number} className="rounded-2xl border border-white/[0.08] bg-[#171719] p-3">
+            <div className="grid grid-cols-[auto_1fr_1fr_1fr_auto] items-end gap-2">
+              <label className="pb-2 text-xs font-bold text-zinc-500">#{index + 1}</label>
+              <label className="space-y-1 text-[11px] text-zinc-400">
+                {isIsometric ? 'Hold (sec)' : 'Reps'}
+                <Input
+                  type="number"
+                  min="0"
+                  value={isIsometric ? set.hold_seconds : set.reps}
+                  onChange={(event) => updateSet(index, isIsometric ? 'hold_seconds' : 'reps', event.target.value)}
+                  className="h-10"
+                />
+              </label>
+              {!isIsometric && (
+                <label className="space-y-1 text-[11px] text-zinc-400">
+                  Load kg
+                  <Input
+                    type="number"
+                    min="0"
+                    step="0.5"
+                    value={set.external_load}
+                    onChange={(event) => updateSet(index, 'external_load', event.target.value)}
+                    className="h-10"
+                  />
+                </label>
+              )}
+              <label className="space-y-1 text-[11px] text-zinc-400">
+                Reps left
+                <select
+                  value={set.rir}
+                  onChange={(event) => updateSet(index, 'rir', Number(event.target.value))}
+                  className="h-10 w-full rounded-md border border-white/10 bg-[#242427] px-2 text-sm text-white"
+                  aria-label={`Repetitions in reserve for set ${index + 1}`}
+                >
+                  {[0, 1, 2, 3, 4].map((value) => <option key={value} value={value}>{value === 4 ? '4+' : value}</option>)}
+                </select>
+              </label>
+              <button
+                type="button"
+                onClick={() => removeSet(index)}
+                disabled={workingSets.length === 1}
+                className="mb-1 rounded-lg p-2 text-zinc-600 hover:bg-white/[0.05] hover:text-rose-300 disabled:opacity-20"
+                aria-label={`Remove set ${index + 1}`}
+              >
+                <Trash2 className="h-4 w-4" />
+              </button>
+            </div>
+            {!isIsometric && Number(set.external_load) === 0 && (
+              <p className="mt-2 text-[11px] text-zinc-500">0 kg is recorded as bodyweight.</p>
+            )}
+            <label className="mt-2 flex items-center gap-2 text-xs text-zinc-400">
+              <Checkbox checked={set.pain_limited} onCheckedChange={(checked) => updateSet(index, 'pain_limited', checked === true)} />
+              I stopped this set because of pain
+            </label>
+          </div>
+        ))}
       </div>
 
-      <label className="flex items-center gap-3 rounded-xl border border-white/10 bg-[#242427] p-3 text-sm text-zinc-200">
-        <Checkbox checked={modified} onCheckedChange={(checked) => setModified(checked === true)} />
-        I changed or could not complete the prescribed exercise
-      </label>
-      {modified && <Textarea value={modificationReason} onChange={(event) => setModificationReason(event.target.value)} placeholder="What did you change, and why?" />}
-      <Textarea value={notes} onChange={(event) => setNotes(event.target.value)} placeholder="Optional exercise notes" />
+      <button type="button" onClick={addSet} className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-white/10 py-2.5 text-sm text-zinc-400 hover:border-[#d8ff5f]/30 hover:text-[#d8ff5f]">
+        <Plus className="h-4 w-4" /> Add set
+      </button>
 
-      {(Number(painDuring) > 3 || workingSets.some((set) => set.pain_limited)) && (
-        <div className="flex gap-3 rounded-xl border border-amber-300/20 bg-amber-300/10 p-3 text-sm text-amber-100">
-          <AlertTriangle className="h-5 w-5 shrink-0" />
-          This response will be highlighted for clinician review. It will not automatically change your phase.
+      <div className="grid grid-cols-2 gap-3">
+        <label className="space-y-1 text-xs text-zinc-400">
+          Pain during (0–10)
+          <Input type="number" min="0" max="10" value={painDuring} onChange={(event) => setPainDuring(event.target.value)} />
+        </label>
+        <div className="rounded-xl border border-[#d8ff5f]/15 bg-[#d8ff5f]/[0.05] p-3">
+          <p className="text-[10px] uppercase tracking-wide text-zinc-500">Work completed</p>
+          <p className="mt-1 font-bold text-white">{summary.hard_sets} working sets</p>
+          <p className="text-xs text-zinc-500">{summary.volume_load > 0 ? `${summary.volume_load.toFixed(0)} kg volume` : isIsometric ? `${summary.hold_duration_seconds || 0}s holds` : 'Bodyweight'}</p>
+        </div>
+      </div>
+
+      {summary.estimated_strength && (
+        <div className="rounded-xl border border-violet-300/15 bg-violet-300/[0.05] p-3 text-sm">
+          <span className="font-bold text-violet-200">Estimated Strength: {summary.estimated_strength.toFixed(1)} kg</span>
+          <span className="ml-2 text-xs text-zinc-500">({summary.estimated_strength_confidence} confidence)</span>
         </div>
       )}
 
-      <Button onClick={submit} disabled={isSaving} className="w-full rounded-xl bg-[#d8ff5f] py-6 font-bold text-[#171719] hover:bg-[#c8ef50]">
+      <label className="flex items-center gap-3 rounded-xl border border-white/10 bg-[#171719] p-3 text-sm text-zinc-200">
+        <Checkbox checked={modified} onCheckedChange={(checked) => setModified(checked === true)} />
+        I changed the prescribed exercise
+      </label>
+      {modified && (
+        <Textarea value={modificationReason} onChange={(event) => setModificationReason(event.target.value)} placeholder="Briefly tell your clinician what changed" />
+      )}
+
+      {workingSets.some((set) => set.pain_limited) && (
+        <div className="flex items-start gap-2 rounded-xl border border-amber-300/20 bg-amber-300/[0.06] p-3 text-xs text-amber-200">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+          Pain-limited sets will be visible to your clinician and excluded from Estimated Strength.
+        </div>
+      )}
+
+      <Button
+        onClick={submit}
+        disabled={isSaving}
+        className="w-full rounded-xl bg-[#d8ff5f] py-6 font-bold text-[#171719] hover:bg-[#c8ef50]"
+      >
         <CheckCircle2 className="mr-2 h-5 w-5" />
-        {isSaving ? 'Saving…' : 'Save exercise log'}
+        {isSaving ? 'Saving…' : 'Save exercise'}
       </Button>
     </div>
   );
