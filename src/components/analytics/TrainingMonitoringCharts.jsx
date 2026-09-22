@@ -102,19 +102,19 @@ function ReadinessPanel({ summary }) {
   );
 }
 
-export default function TrainingMonitoringCharts({ exerciseLogs = [], sessionLogs = [] }) {
+export default function TrainingMonitoringCharts({ exerciseLogs = [], sessionLogs = [], morningCheckIns = [] }) {
   const [loadView, setLoadView] = useState('daily');
   const exerciseGroups = useMemo(() => buildExerciseTrendGroups(exerciseLogs), [exerciseLogs]);
   const [selectedKey, setSelectedKey] = useState('');
 
   const selectedExercise = exerciseGroups.find((group) => group.key === selectedKey) || exerciseGroups[0];
   const internalLoad = useMemo(() => buildInternalLoadSeries(sessionLogs, loadView), [sessionLogs, loadView]);
-  const responseData = useMemo(() => buildResponseSeries(sessionLogs), [sessionLogs]);
-  const readiness = useMemo(() => buildReadinessSummary(sessionLogs), [sessionLogs]);
+  const responseData = useMemo(() => buildResponseSeries(sessionLogs, morningCheckIns), [sessionLogs, morningCheckIns]);
+  const readiness = useMemo(() => buildReadinessSummary(sessionLogs, morningCheckIns), [sessionLogs, morningCheckIns]);
 
   const hasInternalLoad = internalLoad.some((row) => row.value > 0);
   const hasResponseData = responseData.some((row) => (
-    row.immediatePain != null || row.nextMorning != null || row.fatigue != null || row.recovery != null
+    row.immediatePain != null || row.nextMorning != null || row.fatigue != null || row.recovery != null || row.sleepQuality != null
   ));
 
   const viewCopy = {
@@ -169,7 +169,7 @@ export default function TrainingMonitoringCharts({ exerciseLogs = [], sessionLog
       <ChartCard
         icon={HeartPulse}
         title="Clinical response & recovery"
-        subtitle="Pain, next-morning symptoms, fatigue and recovery remain visible as separate 0–10 measures."
+        subtitle="Session pain and the following daily morning symptoms, fatigue, recovery and sleep remain separate 0–10 measures."
       >
         {hasResponseData ? (
           <ResponsiveContainer width="100%" height={285}>
@@ -183,9 +183,10 @@ export default function TrainingMonitoringCharts({ exerciseLogs = [], sessionLog
               <Line type="monotone" dataKey="nextMorning" name="Next morning" stroke="#fbbf24" strokeWidth={2.5} connectNulls dot={{ r: 3 }} />
               <Line type="monotone" dataKey="fatigue" name="Fatigue" stroke="#a78bfa" strokeWidth={2.5} connectNulls dot={{ r: 3 }} />
               <Line type="monotone" dataKey="recovery" name="Recovery" stroke="#5eead4" strokeWidth={2.5} connectNulls dot={{ r: 3 }} />
+              <Line type="monotone" dataKey="sleepQuality" name="Sleep" stroke="#60a5fa" strokeWidth={2.5} connectNulls dot={{ r: 3 }} />
             </ComposedChart>
           </ResponsiveContainer>
-        ) : <EmptyChart message="Pain, fatigue, recovery and next-morning responses will appear after session check-ins." />}
+        ) : <EmptyChart message="Session pain and daily morning check-ins will populate this graph." />}
       </ChartCard>
 
       <div className="rounded-[24px] border border-white/[0.08] bg-[#242427]">
