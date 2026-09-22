@@ -11,41 +11,87 @@ import AssessmentsSummary from '@/components/patient/AssessmentsSummary.jsx';
 import OutcomeMeasuresTrends from '@/components/patient/OutcomeMeasuresTrends.jsx';
 import InterventionsTimeline from '@/components/patient/InterventionsTimeline.jsx';
 import { TrendingUp, AlertCircle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+
+function responseData(response) {
+  return response?.data || response || {};
+}
 
 export default function PatientInsights() {
   const [user, setUser] = useState(null);
   const [patient, setPatient] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
+  const [loadAttempt, setLoadAttempt] = useState(0);
 
   useEffect(() => {
+    let active = true;
+
     const loadUser = async () => {
+      setLoading(true);
+      setLoadError('');
+
       try {
         const currentUser = await base44.auth.me();
+        if (!active) return;
         setUser(currentUser);
 
-        // Clinic staff should not access patient insights
+        // Clinic staff should not access patient insights.
         if (isPractitioner(currentUser)) {
-          window.location.href = createPageUrl('CoachDashboard');
+          window.location.assign(createPageUrl('CoachDashboard'));
           return;
         }
 
-        // Find patient by email
-        const patients = await base44.entities.Patient.filter({ email: currentUser.email });
-        if (patients.length > 0) {
-          setPatient(patients[0]);
+        // Resolve through the protected ownership repair so stale patient IDs and
+        // newly refreshed sessions behave exactly like PatientPortal.
+        let resolvedPatient = null;
+        try {
+          const linkResult = await base44.functions.invoke('linkPatientAccount', {});
+          resolvedPatient = responseData(linkResult).patient || null;
+        } catch (repairError) {
+          console.warn('Patient insights account reconciliation failed', repairError);
         }
-      } catch (e) {
-        window.location.href = createPageUrl('PatientPortal');
+
+        if (!resolvedPatient && currentUser.patient_id && currentUser.clinic_id) {
+          const linkedPatients = await base44.entities.Patient.filter({
+            id: currentUser.patient_id,
+            clinic_id: currentUser.clinic_id,
+          });
+          resolvedPatient = linkedPatients[0] || null;
+        }
+
+        if (!resolvedPatient) {
+          throw new Error('No securely linked patient record was found.');
+        }
+
+        if (active) setPatient(resolvedPatient);
+      } catch (error) {
+        console.error('Patient insights startup failed', error);
+        if (active) {
+          setLoadError('We could not load your progress insights. Please try again.');
+        }
+      } finally {
+        if (active) setLoading(false);
       }
     };
+
     loadUser();
-  }, []);
+    return () => {
+      active = false;
+    };
+  }, [loadAttempt]);
+
+  const retryLoad = () => {
+    setPatient(null);
+    setLoadAttempt((attempt) => attempt + 1);
+  };
 
   // Fetch all canonical data sources (same as PatientPortal)
   const { data: painLogs = [] } = useQuery({
     queryKey: ['my-pain', patient?.id],
     queryFn: async () => {
       if (!patient?.id) return [];
-      return base44.entities.PainLog.filter({ patient_id: patient.id }, '-date');
+      return base44.entities.PainLog.filter({ patient_id: patient.id, clinic_id: patient.clinic_id }, '-date');
     },
     enabled: !!patient?.id
   });
@@ -54,7 +100,7 @@ export default function PatientInsights() {
     queryKey: ['my-assessments', patient?.id],
     queryFn: async () => {
       if (!patient?.id) return [];
-      return base44.entities.ObjectiveAssessment.filter({ patient_id: patient.id }, '-assessment_date');
+      return base44.entities.ObjectiveAssessment.filter({ patient_id: patient.id, clinic_id: patient.clinic_id }, '-assessment_date');
     },
     enabled: !!patient?.id
   });
@@ -64,7 +110,7 @@ export default function PatientInsights() {
     queryFn: async () => {
       if (!patient?.id) return [];
       // Only show interventions visible to patient
-      return base44.entities.Intervention.filter({ patient_id: patient.id, visible_to_patient: true }, '-intervention_date');
+      return base44.entities.Intervention.filter({ patient_id: patient.id, clinic_id: patient.clinic_id, visible_to_patient: true }, '-intervention_date');
     },
     enabled: !!patient?.id
   });
@@ -73,7 +119,7 @@ export default function PatientInsights() {
     queryKey: ['my-outcomes', patient?.id],
     queryFn: async () => {
       if (!patient?.id) return [];
-      return base44.entities.PatientOutcomeMeasure.filter({ patient_id: patient.id }, '-sent_date');
+      return base44.entities.PatientOutcomeMeasure.filter({ patient_id: patient.id, clinic_id: patient.clinic_id }, '-sent_date');
     },
     enabled: !!patient?.id
   });
@@ -87,20 +133,20 @@ export default function PatientInsights() {
     queryKey: ['my-daily-notes', patient?.id],
     queryFn: async () => {
       if (!patient?.id) return [];
-      return base44.entities.DailyNote.filter({ patient_id: patient.id }, '-date');
+      return base44.entities.DailyNote.filter({ patient_id: patient.id, clinic_id: patient.clinic_id }, '-date');
     },
     enabled: !!patient?.id
   });
 
   const { data: visibleReports = [] } = useQuery({
     queryKey: ['my-visible-reports', patient?.id],
-    queryFn: () => base44.entities.Report.filter({ patient_id: patient?.id, visible_to_patient: true }, '-date'),
+    queryFn: () => base44.entities.Report.filter({ patient_id: patient?.id, clinic_id: patient?.clinic_id, visible_to_patient: true }, '-date'),
     enabled: !!patient?.id
   });
 
-  if (!user || !patient) {
+  if (loading) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+      <div className="min-h-[100dvh] bg-slate-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin w-8 h-8 border-2 border-purple-500 border-t-transparent rounded-full mx-auto mb-4" />
           <p className="text-slate-500">Loading your insights...</p>
@@ -109,22 +155,41 @@ export default function PatientInsights() {
     );
   }
 
+  if (loadError || !user || !patient) {
+    return (
+      <div className="min-h-[100dvh] bg-slate-50 flex items-center justify-center p-6">
+        <div className="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-7 text-center shadow-xl shadow-black/20">
+          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-400/10 text-amber-400">
+            <AlertCircle className="h-6 w-6" />
+          </div>
+          <h1 className="text-xl font-bold text-slate-800">Insights could not load</h1>
+          <p className="mt-2 text-sm text-slate-500">
+            {loadError || 'Your patient session could not be verified.'}
+          </p>
+          <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-center">
+            <Button onClick={retryLoad}>Try again</Button>
+            <Button variant="outline" onClick={() => base44.auth.logout()}>Sign out</Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-slate-50 overflow-x-hidden">
+    <div className="min-h-[100dvh] bg-slate-50 overflow-x-hidden pb-[calc(6rem+env(safe-area-inset-bottom))]">
       {/* Top bar */}
-      <div className="sticky top-0 z-20 bg-white border-b border-slate-200 px-4 md:px-8 h-14 flex items-center justify-between">
+      <div className="sticky top-0 z-20 flex min-h-16 items-center justify-between gap-3 border-b border-slate-200 bg-white px-3 py-2 md:px-8">
         <Link
           to={createPageUrl('PatientPortal')}
-          className="inline-flex items-center gap-2 text-purple-600 hover:text-purple-700 text-sm font-medium"
+          className="inline-flex min-w-0 items-center gap-1 rounded-xl px-2 text-sm font-medium text-purple-600 hover:text-purple-700"
         >
-          <ChevronLeft className="w-4 h-4" />
-          Back to Dashboard
+          <ChevronLeft className="h-4 w-4 shrink-0" />
+          <span>Dashboard</span>
         </Link>
-        <div className="flex items-center gap-2">
-          <TrendingUp className="w-5 h-5 text-purple-600" />
-          <span className="text-slate-800 font-semibold text-sm">Your Progress</span>
+        <div className="flex min-w-0 items-center gap-2 text-right">
+          <TrendingUp className="h-5 w-5 shrink-0 text-purple-600" />
+          <span className="truncate text-sm font-semibold text-slate-800">Your Progress</span>
         </div>
-        <div className="w-24" />
       </div>
 
       <div className="p-4 md:p-8 max-w-5xl mx-auto w-full">
@@ -136,7 +201,7 @@ export default function PatientInsights() {
 
         {/* Tabbed Interface */}
         <Tabs defaultValue="overview" className="w-full">
-          <TabsList className="bg-white border border-slate-200 rounded-xl p-1 mb-6 grid w-full grid-cols-2 md:grid-cols-4 h-auto shadow-sm">
+          <TabsList className="mb-6 grid h-auto w-full grid-cols-2 gap-1 rounded-2xl border border-slate-200 bg-white p-1.5 shadow-sm md:grid-cols-4">
             <TabsTrigger value="overview" className="rounded-lg text-xs md:text-sm py-2 text-slate-600 data-[state=active]:bg-purple-600 data-[state=active]:text-white">
               Overview
             </TabsTrigger>
