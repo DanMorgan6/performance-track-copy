@@ -13,6 +13,16 @@ describe('rehabilitation programming consistency', () => {
     expect(editPlan).toContain('className="performance-shell');
   });
 
+  it('uses the same dark scheduler and clinic resources for templates', () => {
+    const createTemplate = readFileSync('src/pages/CreateTemplate.jsx', 'utf8');
+
+    expect(createTemplate).toContain('className="performance-shell');
+    expect(createTemplate).toContain('<ProgrammeScheduleEditor');
+    expect(createTemplate).toContain('progressionBlocks={progressionBlocks}');
+    expect(createTemplate).toContain('{ clinic_id: currentUser.clinic_id }');
+    expect(createTemplate).toContain('{ id: templateId, clinic_id: currentUser.clinic_id }');
+  });
+
   it('rehydrates and saves the complete weekly programme structure', () => {
     const editPlan = readFileSync('src/pages/EditPlan.jsx', 'utf8');
 
