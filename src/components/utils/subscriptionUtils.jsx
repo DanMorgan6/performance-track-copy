@@ -6,6 +6,22 @@
 export const SMALL_CLINIC_MAX_PRACTITIONERS = 5;
 export const SELF_SERVICE_MAX_PRACTITIONERS = 10;
 
+/**
+ * Clinics granted permanent, unlimited access — no billing required.
+ * Matched case-insensitively against the clinic name (after trimming).
+ * Add more names to this list as needed.
+ */
+const PERMANENT_ACCESS_CLINIC_NAMES = [
+  'beaches health ltd',
+];
+
+export function isPermanentAccessClinic(clinic) {
+  if (!clinic) return false;
+  const name = String(clinic.name || '').trim().toLowerCase();
+  if (!name) return false;
+  return PERMANENT_ACCESS_CLINIC_NAMES.includes(name);
+}
+
 export function calculateMonthlyPrice(practitionerCount = 0) {
   const count = Math.max(0, Number(practitionerCount) || 0);
   if (count > SELF_SERVICE_MAX_PRACTITIONERS) return null;
@@ -23,6 +39,7 @@ export function isTrialValid(clinic) {
 
 export function isSubscriptionActive(clinic) {
   if (!clinic) return false;
+  if (isPermanentAccessClinic(clinic)) return true;
   if (clinic.subscription_status === 'active') return true;
   return isTrialValid(clinic);
 }
