@@ -38,6 +38,7 @@ import PatientBottomTabs from "@/components/mobile/PatientBottomTabs";
 import PullToRefresh from "@/components/ui/PullToRefresh";
 import { cn } from "@/lib/utils";
 import { isPractitioner } from '@/lib/roles';
+import { isMorningCheckInEnabled } from '@/lib/planModes';
 import { createBasicDeliveryPhase, getActivePhase } from "@/components/plan/PhaseProgressionEngine";
 import {
   Dialog,
@@ -658,7 +659,9 @@ export default function PatientPortal() {
             {/* DASHBOARD VIEW */}
             <TabsContent value="dashboard">
               <div className="space-y-5">
-                <MorningCheckInPrompt patient={patient} />
+                {isMorningCheckInEnabled(activePlan) && (
+                  <MorningCheckInPrompt patient={patient} />
+                )}
 
                 {/* Day Type Banner (phased only) */}
                 <DayTypeBannerCard
@@ -773,6 +776,7 @@ export default function PatientPortal() {
                         day={selectedDay}
                         dayIndex={selectedDayIndex}
                         currentPhase={currentPhase}
+                        plan={activePlan}
                         patient={patient}
                         onPrevious={() => moveSelectedPlanDay(-1)}
                         onNext={() => moveSelectedPlanDay(1)}
