@@ -468,7 +468,8 @@ For each exercise set tracking_mode to basic, standard or performance. Basic pla
           ...p,
           phase_number: i + 1,
           duration_weeks: duration,
-          exit_criteria: p.exit_criteria.map(c => ({ ...c, is_met: false })),
+          exercises,
+          exit_criteria: (p.exit_criteria || []).map(c => ({ ...c, is_met: false })),
           status: i === 0 ? 'active' : 'pending',
           video_url: '',
           weeks: weeks
