@@ -177,8 +177,12 @@ export default function PatientDetail() {
   });
 
   const { data: exerciseLogs = [] } = useQuery({
-    queryKey: ['patient-exercises', patientId],
-    queryFn: () => base44.entities.ExerciseLog.filter({ patient_id: patientId }, '-date')
+    queryKey: ['patient-exercises', patient?.clinic_id, patientId],
+    queryFn: () => base44.entities.ExerciseLog.filter({
+      clinic_id: patient.clinic_id,
+      patient_id: patientId,
+    }, '-date'),
+    enabled: Boolean(patient?.clinic_id && patientId),
   });
 
   const { data: assessments = [] } = useQuery({
