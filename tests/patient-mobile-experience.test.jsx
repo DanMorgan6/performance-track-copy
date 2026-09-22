@@ -62,6 +62,21 @@ describe('patient mobile experience', () => {
     expect(phaseStatus).not.toContain("bg: 'bg-emerald-50'");
   });
 
+  it('extends the graphite theme through iPhone safe areas and browser chrome', () => {
+    const html = readFileSync('index.html', 'utf8');
+    const css = readFileSync('src/index.css', 'utf8');
+    const manifest = readFileSync('public/manifest.json', 'utf8');
+
+    expect(html).toContain('viewport-fit=cover');
+    expect(html).toContain('<meta name="theme-color" content="#171719"');
+    expect(html).toContain('apple-mobile-web-app-status-bar-style');
+    expect(css).toContain('background-color: #171719');
+    expect(css).toContain('overscroll-behavior-y: none');
+    expect(css).toContain('min-height: 100dvh');
+    expect(manifest).toContain('"theme_color": "#171719"');
+    expect(manifest).toContain('"background_color": "#171719"');
+  });
+
   it('keeps the patient profile drawer independently scrollable on mobile', () => {
     const profile = readFileSync('src/components/patient/PatientProfilePanel.jsx', 'utf8');
     const portal = readFileSync('src/pages/PatientPortal.jsx', 'utf8');
