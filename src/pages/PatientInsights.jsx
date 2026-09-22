@@ -13,6 +13,7 @@ import InterventionsTimeline from '@/components/patient/InterventionsTimeline.js
 import { TrendingUp, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import PatientPortalSplash from '@/components/patient/PatientPortalSplash';
+import ResistanceTrainingDashboard from '@/components/analytics/ResistanceTrainingDashboard';
 
 function responseData(response) {
   return response?.data || response || {};
@@ -140,6 +141,15 @@ export default function PatientInsights() {
     enabled: !!patient?.id
   });
 
+  const { data: exerciseLogs = [] } = useQuery({
+    queryKey: ['my-exercise-performance', patient?.clinic_id, patient?.id],
+    queryFn: () => base44.entities.ExerciseLog.filter({
+      patient_id: patient.id,
+      clinic_id: patient.clinic_id,
+    }, '-date', 500),
+    enabled: Boolean(patient?.id && patient?.clinic_id),
+  });
+
   const { data: visibleReports = [] } = useQuery({
     queryKey: ['my-visible-reports', patient?.id],
     queryFn: () => base44.entities.Report.filter({ patient_id: patient?.id, clinic_id: patient?.clinic_id, visible_to_patient: true }, '-date'),
@@ -224,7 +234,9 @@ export default function PatientInsights() {
              outcomeMeasures={outcomeMeasures}
              assessments={assessments}
              dailyNotes={dailyNotes}
+             exerciseLogs={exerciseLogs}
            />
+           <ResistanceTrainingDashboard patient={patient} exerciseLogs={exerciseLogs} />
           </TabsContent>
 
           {/* Outcome Measures Tab */}
