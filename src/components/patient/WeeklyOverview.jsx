@@ -5,7 +5,7 @@ import { ChevronLeft, ChevronRight, Check } from 'lucide-react';
 import { cn } from "@/lib/utils";
 import { getWeekScheduleForDate } from '@/components/plan/PhaseProgressionEngine';
 
-export default function WeeklyOverview({ currentPhase, plan, onDayClick, exerciseLogs = [] }) {
+export default function WeeklyOverview({ currentPhase, plan, onDayClick, onWeekChange, selectedDayIndex = null, exerciseLogs = [] }) {
   const [weekOffset, setWeekOffset] = useState(0);
   
   if (!currentPhase?.weeks || currentPhase.weeks.length === 0) {
@@ -44,7 +44,10 @@ export default function WeeklyOverview({ currentPhase, plan, onDayClick, exercis
            <Button
              variant="outline"
              size="sm"
-             onClick={() => setWeekOffset(Math.max(0, weekOffset - 1))}
+             onClick={() => {
+               setWeekOffset(Math.max(0, weekOffset - 1));
+               onWeekChange?.();
+             }}
              disabled={weekOffset === 0}
              className="rounded-lg text-xs md:text-sm"
            >
@@ -57,7 +60,10 @@ export default function WeeklyOverview({ currentPhase, plan, onDayClick, exercis
            <Button
              variant="outline"
              size="sm"
-             onClick={() => setWeekOffset(Math.min(currentPhase.weeks.length - 1, weekOffset + 1))}
+             onClick={() => {
+               setWeekOffset(Math.min(currentPhase.weeks.length - 1, weekOffset + 1));
+               onWeekChange?.();
+             }}
              disabled={weekOffset === currentPhase.weeks.length - 1}
              className="rounded-lg text-xs md:text-sm"
            >
@@ -71,6 +77,7 @@ export default function WeeklyOverview({ currentPhase, plan, onDayClick, exercis
        <div className="hidden md:grid md:grid-cols-7 gap-3 lg:gap-4">
         {currentWeek.daily_schedule?.map((day, dayIndex) => {
           const isToday = day.day === today;
+          const isSelected = dayIndex === selectedDayIndex;
           const exerciseCount = day.exercises?.length || 0;
           
           // Check completion for this day
@@ -84,13 +91,15 @@ export default function WeeklyOverview({ currentPhase, plan, onDayClick, exercis
           return (
             <button
               key={dayIndex}
-              onClick={() => onDayClick(day, dayIndex)}
+              onClick={() => onDayClick(day, dayIndex, currentWeek.daily_schedule)}
+              aria-pressed={isSelected}
               className={cn(
                 "bg-white rounded-xl border-2 overflow-hidden transition-all hover:shadow-lg",
                 day.type === 'training' && "border-purple-200 hover:border-purple-400",
                 day.type === 'rest' && "border-slate-200 bg-slate-50",
                 day.type === 'conditioning' && "border-blue-200 hover:border-blue-400",
-                isToday && "ring-2 ring-purple-500 ring-offset-2"
+                isSelected && "!border-[#d8ff5f] shadow-[inset_0_0_0_1px_#d8ff5f]",
+                isToday && !isSelected && "shadow-[inset_0_0_0_1px_rgba(216,255,95,0.45)]"
               )}
             >
               {/* Day Header */}
@@ -151,6 +160,7 @@ export default function WeeklyOverview({ currentPhase, plan, onDayClick, exercis
           <div className="flex gap-2 pb-2">
           {currentWeek.daily_schedule?.map((day, dayIndex) => {
             const isToday = day.day === today;
+          const isSelected = dayIndex === selectedDayIndex;
             const exerciseCount = day.exercises?.length || 0;
 
             const dayLogs = recentLogs.filter(log => {
@@ -163,13 +173,15 @@ export default function WeeklyOverview({ currentPhase, plan, onDayClick, exercis
             return (
               <button
                 key={dayIndex}
-                onClick={() => onDayClick(day, dayIndex)}
+                onClick={() => onDayClick(day, dayIndex, currentWeek.daily_schedule)}
+              aria-pressed={isSelected}
                 className={cn(
                   "flex-shrink-0 w-20 bg-white rounded-lg border-2 overflow-hidden transition-all",
                   day.type === 'training' && "border-purple-200",
                   day.type === 'rest' && "border-slate-200 bg-slate-50",
                   day.type === 'conditioning' && "border-blue-200",
-                  isToday && "ring-2 ring-purple-500 ring-offset-2"
+                  isSelected && "!border-[#d8ff5f] shadow-[inset_0_0_0_1px_#d8ff5f]",
+                isToday && !isSelected && "shadow-[inset_0_0_0_1px_rgba(216,255,95,0.45)]"
                 )}
               >
                 {/* Day Header */}
