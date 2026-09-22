@@ -126,6 +126,8 @@ export default function ResistanceTrainingDashboard({ patient, exerciseLogs = []
         hardSets: sorted.reduce((sum, log) => sum + (Number(log.summary.hard_sets) || 0), 0),
         plannedSets: Number(recent?.planned_sets) || 0,
         completedSets: Number(recent?.sets_completed) || 0,
+        plannedReps: recent?.planned_reps || '—',
+        completedReps: recent?.reps_completed || '—',
         efficient,
       };
     }).sort((a, b) => b.latestWeek - a.latestWeek);
@@ -198,7 +200,11 @@ export default function ResistanceTrainingDashboard({ patient, exerciseLogs = []
                   </div>
                   <div><p className="text-xs text-zinc-500">Estimated Strength</p><p className="mt-1 font-bold text-white">{row.rollingStrength == null ? '—' : `${formatValue(row.rollingStrength, 1)} ${row.unit}`}</p><p className="text-[10px] text-zinc-600">3-exposure rolling · {row.confidence}</p></div>
                   <div><p className="text-xs text-zinc-500">Average RIR</p><p className="mt-1 font-bold text-white">{row.averageRir == null ? '—' : row.averageRir.toFixed(1)}</p></div>
-                  <div><p className="text-xs text-zinc-500">Latest planned / actual</p><p className="mt-1 font-bold text-white">{row.plannedSets || '—'} / {row.completedSets || '—'} sets</p></div>
+                  <div>
+                    <p className="text-xs text-zinc-500">Latest planned / actual</p>
+                    <p className="mt-1 font-bold text-white">{row.plannedSets || '—'} / {row.completedSets || '—'} sets</p>
+                    <p className="text-[10px] text-zinc-600">{row.plannedReps} / {row.completedReps} reps</p>
+                  </div>
                 </div>
               </div>
             ))}
