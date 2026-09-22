@@ -282,6 +282,7 @@ export default function DayDetail({ day, dayIndex, currentPhase, plan, onBack, o
         <div className="space-y-3">
           {day.exercises.map((exercise, index) => {
             const isCompleted = completedNames.has(exercise.name);
+            const trackingMode = resolveExerciseTrackingMode(exercise, plan);
             return (
             <div key={index} className={cn(
               "bg-white rounded-2xl border-2 overflow-hidden transition-all",
@@ -391,30 +392,59 @@ export default function DayDetail({ day, dayIndex, currentPhase, plan, onBack, o
                   </div>
                 )}
 
-                {/* Log Exercise Button */}
-                <Button
-                  onClick={() => handleLogExercise(exercise)}
-                  className={cn(
-                    "w-full rounded-xl mt-2",
-                    isCompleted
-                      ? "bg-emerald-600 hover:bg-emerald-700 text-white"
-                      : "bg-purple-600 hover:bg-purple-700 text-white"
-                  )}
-                >
-                  <CheckCircle className="w-4 h-4 mr-2" />
-                  {isCompleted ? "Completed — Log Again" : "Log Completion"}
-                </Button>
+                {/* Monitoring follows the plan default, with clinician overrides per exercise. */}
+                {trackingMode === 'basic' ? (
+                  <div className="space-y-2">
+                    <Button
+                      onClick={() => isCompleted ? openExerciseLog(exercise) : quickCompleteExercise(exercise)}
+                      disabled={createExerciseLogMutation.isPending}
+                      className={cn(
+                        "w-full rounded-xl mt-2",
+                        isCompleted
+                          ? "bg-emerald-600 hover:bg-emerald-700 text-white"
+                          : "bg-purple-600 hover:bg-purple-700 text-white"
+                      )}
+                    >
+                      <CheckCircle className="w-4 h-4 mr-2" />
+                      {isCompleted ? "Completed — adjust details" : "Mark complete"}
+                    </Button>
+                    {!isCompleted && (
+                      <button
+                        type="button"
+                        onClick={() => openExerciseLog(exercise)}
+                        className="w-full text-xs font-medium text-slate-500 underline-offset-4 hover:text-purple-700 hover:underline"
+                      >
+                        Change load, repetitions or report a problem
+                      </button>
+                    )}
+                  </div>
+                ) : (
+                  <Button
+                    onClick={() => openExerciseLog(exercise)}
+                    className={cn(
+                      "w-full rounded-xl mt-2",
+                      isCompleted
+                        ? "bg-emerald-600 hover:bg-emerald-700 text-white"
+                        : "bg-purple-600 hover:bg-purple-700 text-white"
+                    )}
+                  >
+                    <CheckCircle className="w-4 h-4 mr-2" />
+                    {isCompleted ? "Completed — Log Again" : trackingMode === 'performance' ? "Log Performance" : "Log Completion"}
+                  </Button>
+                )}
               </div>
             </div>
             );
           })}
 
-          <PatientSessionSummary
-            patient={patient}
-            planId={currentPhase?.plan_id}
-            phaseId={currentPhase?.is_basic ? undefined : currentPhase?.id}
-            date={dateStr}
-          />
+          {getMonitoringLevel(plan) === 'performance' && (
+            <PatientSessionSummary
+              patient={patient}
+              planId={currentPhase?.plan_id}
+              phaseId={currentPhase?.is_basic ? undefined : currentPhase?.id}
+              date={dateStr}
+            />
+          )}
 
           {/* Day Notes */}
           {showNotes ? (
@@ -480,7 +510,7 @@ export default function DayDetail({ day, dayIndex, currentPhase, plan, onBack, o
           <DialogHeader>
             <DialogTitle className="text-white">Log exercise performance</DialogTitle>
           </DialogHeader>
-          {selectedExercise && (
+          {selectedExercise && resolveExerciseTrackingMode(selectedExercise, plan) === 'performance' ? (
             <ExercisePerformanceForm
               key={selectedExercise.name}
               exercise={selectedExercise}
@@ -488,7 +518,15 @@ export default function DayDetail({ day, dayIndex, currentPhase, plan, onBack, o
               onSubmit={(data) => createExerciseLogMutation.mutate(data)}
               isSaving={createExerciseLogMutation.isPending}
             />
-          )}
+          ) : selectedExercise ? (
+            <StandardExerciseCompletionForm
+              key={selectedExercise.name}
+              exercise={selectedExercise}
+              patient={patient}
+              onSubmit={(data) => createExerciseLogMutation.mutate(data)}
+              isSaving={createExerciseLogMutation.isPending}
+            />
+          ) : null}
         </DialogContent>
       </Dialog>
     </div>
