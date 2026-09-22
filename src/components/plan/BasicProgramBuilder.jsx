@@ -101,7 +101,8 @@ export default function BasicProgramBuilder({
       description: libraryExercise.description,
       sets: libraryExercise.default_sets,
       reps: libraryExercise.default_reps,
-      video_url: libraryExercise.video_url
+      video_url: libraryExercise.video_url,
+      tracking_mode: 'inherit'
     };
     
     const bundle = planData.basic_config?.exercise_bundle || [];
@@ -326,6 +327,20 @@ export default function BasicProgramBuilder({
                     className="h-8 text-sm rounded-lg"
                   />
                 </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs text-slate-500">Patient logging</label>
+                <select
+                  value={exercise.tracking_mode || 'inherit'}
+                  onChange={(e) => updateExercise(idx, 'tracking_mode', e.target.value)}
+                  className="w-full rounded-lg border border-slate-200 bg-white px-2 py-2 text-sm text-slate-700"
+                >
+                  <option value="inherit">Use plan default (simple completion)</option>
+                  <option value="basic">Simple completion</option>
+                  <option value="standard">Record dosage, load and response</option>
+                  <option value="performance">Detailed load, RIR and strength monitoring</option>
+                </select>
               </div>
 
               <textarea
