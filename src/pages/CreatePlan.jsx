@@ -891,7 +891,7 @@ Performance Track+`
 
             <MonitoringSettingsCard
               planData={planData}
-              onChange={setPlanData}
+              setPlanData={setPlanData}
             />
 
             {/* Basic Program Builder */}
