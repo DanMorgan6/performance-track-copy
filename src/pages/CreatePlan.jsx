@@ -318,6 +318,23 @@ For each exercise set tracking_mode to basic, standard or performance. Basic pla
           properties: {
             title: { type: "string" },
             description: { type: "string" },
+            frequency_per_week: { type: "number" },
+            exercises: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  name: { type: "string" },
+                  description: { type: "string" },
+                  sets: { type: "number" },
+                  reps: { type: "string" },
+                  frequency: { type: "string" },
+                  weight: { type: "string" },
+                  rest: { type: "string" },
+                  tracking_mode: { type: "string", enum: ["basic", "standard", "performance"] }
+                }
+              }
+            },
             phases: {
               type: "array",
               items: {
@@ -346,7 +363,10 @@ For each exercise set tracking_mode to basic, standard or performance. Basic pla
                         description: { type: "string" },
                         sets: { type: "number" },
                         reps: { type: "string" },
-                        frequency: { type: "string" }
+                        frequency: { type: "string" },
+                        weight: { type: "string" },
+                        rest: { type: "string" },
+                        tracking_mode: { type: "string", enum: ["basic", "standard", "performance"] }
                       }
                     }
                   }
