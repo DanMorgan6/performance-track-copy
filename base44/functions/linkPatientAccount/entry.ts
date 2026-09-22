@@ -10,6 +10,60 @@ Deno.serve(async (req) => {
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
+    const email = normaliseEmail(user.email);
+    if (!email) return Response.json({ error: 'No email on account' }, { status: 400 });
+
+    const finishLinkedPatient = async (linkedPatient: Record<string, any>) => {
+      await base44.asServiceRole.entities.User.update(user.id, {
+        role: 'patient',
+        clinic_id: linkedPatient.clinic_id,
+        patient_id: linkedPatient.id,
+        onboarding_completed: true,
+      });
+
+      const activeInvites = await base44.asServiceRole.entities.InviteToken.filter({
+        patient_id: linkedPatient.id,
+        clinic_id: linkedPatient.clinic_id,
+        invite_type: 'patient',
+        status: 'active',
+      });
+      for (const invite of activeInvites) {
+        if (normaliseEmail(invite.email) === email) {
+          await base44.asServiceRole.entities.InviteToken.update(invite.id, {
+            status: 'used',
+            used_at: new Date().toISOString(),
+          });
+        }
+      }
+
+      return Response.json({
+        patient_id: linkedPatient.id,
+        patient: linkedPatient,
+        linked: false,
+        already_linked: true,
+        repaired: true,
+      });
+    };
+
+    // The authenticated user-to-patient relationship is authoritative. Checking it
+    // first repairs sessions whose JWT still contains an older or missing patient_id.
+    const patientsLinkedToUser = await base44.asServiceRole.entities.Patient.filter({
+      user_id: user.id,
+    });
+    const ownedPatientLinks = patientsLinkedToUser.filter(
+      (patient) => normaliseEmail(patient.email) === email,
+    );
+
+    if (ownedPatientLinks.length === 1) {
+      return await finishLinkedPatient(ownedPatientLinks[0]);
+    }
+    if (ownedPatientLinks.length > 1) {
+      return Response.json(
+        { error: 'Multiple patient records are linked to this account. Please contact the clinic.' },
+        { status: 409 },
+      );
+    }
+
     if (user.patient_id) {
       const linkedPatients = await base44.asServiceRole.entities.Patient.filter({ id: user.patient_id });
       const linkedPatient = linkedPatients[0];
@@ -17,44 +71,13 @@ Deno.serve(async (req) => {
       if (
         linkedPatient
         && linkedPatient.user_id === user.id
-        && normaliseEmail(linkedPatient.email) === normaliseEmail(user.email)
+        && normaliseEmail(linkedPatient.email) === email
       ) {
-        await base44.asServiceRole.entities.User.update(user.id, {
-          role: 'patient',
-          clinic_id: linkedPatient.clinic_id,
-          patient_id: linkedPatient.id,
-          onboarding_completed: true,
-        });
-
-        const activeInvites = await base44.asServiceRole.entities.InviteToken.filter({
-          patient_id: linkedPatient.id,
-          clinic_id: linkedPatient.clinic_id,
-          invite_type: 'patient',
-          status: 'active',
-        });
-        for (const invite of activeInvites) {
-          if (normaliseEmail(invite.email) === normaliseEmail(user.email)) {
-            await base44.asServiceRole.entities.InviteToken.update(invite.id, {
-              status: 'used',
-              used_at: new Date().toISOString(),
-            });
-          }
-        }
-
-        return Response.json({
-          patient_id: linkedPatient.id,
-          patient: linkedPatient,
-          linked: false,
-          already_linked: true,
-          repaired: true,
-        });
+        return await finishLinkedPatient(linkedPatient);
       }
 
       return Response.json({ error: 'The linked patient account could not be verified.' }, { status: 409 });
     }
-
-    const email = normaliseEmail(user.email);
-    if (!email) return Response.json({ error: 'No email on account' }, { status: 400 });
 
     const patients = await base44.asServiceRole.entities.Patient.filter({
       email: { $regex: email, $options: 'i' },
