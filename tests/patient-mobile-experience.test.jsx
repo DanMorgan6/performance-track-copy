@@ -38,6 +38,30 @@ describe('patient mobile experience', () => {
     expect(videoPreview).toContain("aria-label={`Watch ${exerciseName || 'exercise'} demonstration`}");
   });
 
+  it('keeps the weekly selector visible while patients move between days', () => {
+    const portal = readFileSync('src/pages/PatientPortal.jsx', 'utf8');
+    const weeklyOverview = readFileSync('src/components/patient/WeeklyOverview.jsx', 'utf8');
+    const dayDetail = readFileSync('src/components/patient/DayDetail.jsx', 'utf8');
+
+    expect(portal).toContain('selectedWeekDays');
+    expect(portal).toContain('onPrevious={() => moveSelectedPlanDay(-1)}');
+    expect(portal).toContain('onNext={() => moveSelectedPlanDay(1)}');
+    expect(weeklyOverview).toContain('selectedDayIndex={selectedDayIndex}');
+    expect(weeklyOverview).toContain('aria-pressed={isSelected}');
+    expect(weeklyOverview).toContain('shadow-[inset_0_0_0_1px_#d8ff5f]');
+    expect(weeklyOverview).not.toContain('ring-offset-2');
+    expect(dayDetail).toContain('aria-label="Previous day"');
+    expect(dayDetail).toContain('aria-label="Next day"');
+  });
+
+  it('uses dark status surfaces so phase text remains readable', () => {
+    const phaseStatus = readFileSync('src/components/patient/PhaseStatusCard.jsx', 'utf8');
+
+    expect(phaseStatus).toContain("bg: 'bg-emerald-500/10'");
+    expect(phaseStatus).toContain("bg: 'bg-amber-500/10'");
+    expect(phaseStatus).not.toContain("bg: 'bg-emerald-50'");
+  });
+
   it('keeps the patient profile drawer independently scrollable on mobile', () => {
     const profile = readFileSync('src/components/patient/PatientProfilePanel.jsx', 'utf8');
     const portal = readFileSync('src/pages/PatientPortal.jsx', 'utf8');
