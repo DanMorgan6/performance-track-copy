@@ -377,15 +377,61 @@ For each exercise set tracking_mode to basic, standard or performance. Basic pla
         }
       }));
 
-      // Load the generated plan
-      setPlanData({
-        ...planData,
+      const defaultTracking = planMode === 'performance'
+        ? 'performance'
+        : planMode === 'basic'
+          ? 'basic'
+          : 'standard';
+      const enrichExercise = (exercise) => {
+        const libraryMatch = libraryExercises.find(
+          (item) => item.name?.trim().toLowerCase() === exercise.name?.trim().toLowerCase()
+        );
+        return {
+          ...exercise,
+          tracking_mode: ['basic', 'standard', 'performance'].includes(exercise.tracking_mode)
+            ? exercise.tracking_mode
+            : defaultTracking,
+          video_url: libraryMatch?.video_url || exercise.video_url || '',
+          thumbnail_url: libraryMatch?.thumbnail_url || exercise.thumbnail_url || ''
+        };
+      };
+
+      setCreationMode('ai_assisted');
+
+      if (planMode === 'basic') {
+        const frequency = Math.min(7, Math.max(1, Number(result.frequency_per_week) || Number(aiInputs.sessions_per_week) || 3));
+        const dayPatterns = {
+          1: ['Monday'],
+          2: ['Monday', 'Thursday'],
+          3: ['Monday', 'Wednesday', 'Friday'],
+          4: ['Monday', 'Tuesday', 'Thursday', 'Friday'],
+          5: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'],
+          6: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
+          7: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+        };
+        setPlanData((current) => ({
+          ...current,
+          title: result.title,
+          description: result.description,
+          basic_config: {
+            ...current.basic_config,
+            frequency_per_week: frequency,
+            days_of_week_pattern: dayPatterns[frequency],
+            exercise_bundle: (result.exercises || []).map(enrichExercise)
+          }
+        }));
+        setShowAiGenerator(false);
+        return;
+      }
+
+      setPlanData((current) => ({
+        ...current,
         title: result.title,
         description: result.description
-      });
+      }));
 
-      setPhases(result.phases.map((p, i) => {
-        const exercises = p.exercises || [];
+      setPhases((result.phases || []).map((p, i) => {
+        const exercises = (p.exercises || []).map(enrichExercise);
         const duration = p.duration_weeks || 2;
         
         // Create weeks structure
