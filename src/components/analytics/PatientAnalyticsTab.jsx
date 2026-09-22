@@ -1,6 +1,5 @@
 import React from 'react';
-import SessionLoadChart from '@/components/analytics/SessionLoadChart';
-import LoadPerformanceInsights from '@/components/analytics/LoadPerformanceInsights';
+import ResistanceTrainingDashboard from '@/components/analytics/ResistanceTrainingDashboard';
 import CohortComparison from '@/components/analytics/CohortComparison';
 import AutoTaskSuggestions from '@/components/clinician/AutoTaskSuggestions';
 import TaskManager from '@/components/clinician/TaskManager';
@@ -22,14 +21,7 @@ export default function PatientAnalyticsTab({
 }) {
   return (
     <div className="space-y-4 lg:space-y-6 mx-3 lg:mx-0">
-      {/* Session Load Analytics */}
-      <div className="bg-white rounded-3xl shadow-sm border border-slate-100 p-6">
-        <h3 className="text-lg font-semibold text-slate-800 mb-6">Session Load Analysis</h3>
-        <SessionLoadChart exerciseLogs={exerciseLogs} />
-      </div>
-
-      {/* AI Load Insights */}
-      <LoadPerformanceInsights patient={patient} exerciseLogs={exerciseLogs} />
+      <ResistanceTrainingDashboard patient={patient} exerciseLogs={exerciseLogs} />
 
       {/* Cohort Comparison */}
       <CohortComparison
