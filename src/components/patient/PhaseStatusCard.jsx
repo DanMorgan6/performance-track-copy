@@ -12,35 +12,35 @@ export default function PhaseStatusCard({ phase, status, criteriaProgress }) {
     active: {
       icon: CheckCircle2,
       color: 'text-emerald-600',
-      bg: 'bg-emerald-50',
+      bg: 'bg-emerald-500/10',
       border: 'border-emerald-200',
       badgeClass: 'bg-emerald-100 text-emerald-700'
     },
     review_due: {
       icon: Clock3,
       color: 'text-amber-600',
-      bg: 'bg-amber-50',
+      bg: 'bg-amber-500/10',
       border: 'border-amber-200',
       badgeClass: 'bg-amber-100 text-amber-700'
     },
     review_ready: {
       icon: Target,
       color: 'text-lime-700',
-      bg: 'bg-lime-50',
+      bg: 'bg-lime-500/10',
       border: 'border-lime-200',
       badgeClass: 'bg-lime-100 text-lime-800'
     },
     completed: {
       icon: CheckCircle2,
       color: 'text-green-600',
-      bg: 'bg-green-50',
+      bg: 'bg-green-500/10',
       border: 'border-green-200',
       badgeClass: 'bg-green-100 text-green-700'
     },
     locked: {
       icon: Lock,
       color: 'text-slate-400',
-      bg: 'bg-slate-50',
+      bg: 'bg-slate-500/10',
       border: 'border-slate-200',
       badgeClass: 'bg-slate-100 text-slate-600'
     }
