@@ -33,6 +33,7 @@ import PullToRefresh from "@/components/ui/PullToRefresh";
 import MobileSelect from "@/components/ui/MobileSelect";
 import { useQueryClient } from '@tanstack/react-query';
 import { titleCaseName } from '@/lib/nameFormat';
+import { calculatePlanAdherence } from '@/lib/adherence';
 
 const DAY_IN_MS = 24 * 60 * 60 * 1000;
 
@@ -246,27 +247,26 @@ export default function CoachDashboard() {
       .map((log) => log.patient_id)
   ).size;
 
-  // Calculate adherence for each patient
+  // Calculate adherence for each patient from their plan start date through today,
+  // against the exercises actually prescribed (aligned with the patient detail page).
   const patientAdherence = patients.map(patient => {
     const patientLogs = exerciseLogs.filter(log => log.patient_id === patient.id);
-    
-    // Get last 7 days of logs
-    const last7Days = patientLogs.filter((log) => isWithinPastDays(log.date, 7));
-    
-    const completedCount = last7Days.filter(log => log.completed).length;
-    const totalCount = last7Days.length;
-    const adherenceRate = totalCount > 0 ? (completedCount / totalCount) * 100 : 0;
-    
+    const activePlan = plans.find(p => p.patient_id === patient.id && p.status === 'active');
+    const currentPhase = activePlan
+      ? phases.find(ph => ph.patient_id === patient.id && ph.status === 'active')
+      : null;
+    const adherence = calculatePlanAdherence(activePlan, currentPhase, patientLogs);
     return {
       ...patient,
-      adherenceRate: Math.round(adherenceRate),
-      recentLogs: last7Days.length
+      adherenceRate: adherence.rate,
+      recentLogs: adherence.completed,
+      expected: adherence.expected,
     };
   });
 
-  const patientsWithRecentLogs = patientAdherence.filter((patient) => patient.recentLogs > 0);
-  const avgAdherence = patientsWithRecentLogs.length > 0
-    ? Math.round(patientsWithRecentLogs.reduce((sum, p) => sum + p.adherenceRate, 0) / patientsWithRecentLogs.length)
+  const patientsWithPlans = patientAdherence.filter((patient) => patient.expected > 0);
+  const avgAdherence = patientsWithPlans.length > 0
+    ? Math.round(patientsWithPlans.reduce((sum, p) => sum + p.adherenceRate, 0) / patientsWithPlans.length)
     : 0;
 
   const handleLogout = () => {
@@ -409,7 +409,7 @@ export default function CoachDashboard() {
           <StatCard
             title="Avg Adherence"
             value={`${avgAdherence}%`}
-            subtitle="Last 7 days"
+            subtitle="Since plan start"
             icon={Activity}
             color={avgAdherence >= 80 ? "emerald" : avgAdherence >= 60 ? "amber" : "rose"}
           />
@@ -647,7 +647,7 @@ export default function CoachDashboard() {
                     </div>
 
                     <div className="hidden md:block text-right">
-                      {adherenceData && adherenceData.recentLogs > 0 ? (
+                      {adherenceData && adherenceData.expected > 0 ? (
                         <div className="flex items-center gap-2">
                           <span className="text-xs text-slate-400">Adherence:</span>
                           <span className={cn(

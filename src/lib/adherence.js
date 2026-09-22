@@ -43,6 +43,19 @@ export const calculatePlanAdherence = (activePlan, currentPhase, exerciseLogs = 
         expectedExercises += daySchedule.exercises?.length || 0;
       }
     }
+  } else if (activePlan.program_type === 'basic' && activePlan.basic_config) {
+    // Basic plan: prescribe the configured exercise bundle on each configured training day.
+    const cfg = activePlan.basic_config;
+    const exerciseCount = cfg.exercise_bundle?.length || 0;
+    const trainingDays = cfg.days_of_week_pattern || [];
+    for (let offset = 0; offset < daysElapsed; offset++) {
+      const dayDate = new Date(startDate);
+      dayDate.setDate(dayDate.getDate() + offset);
+      const dayName = DAY_NAMES[dayDate.getDay()];
+      if (trainingDays.includes(dayName)) {
+        expectedExercises += exerciseCount;
+      }
+    }
   } else {
     // Legacy phase without a weekly schedule: fall back to the flat exercise list per elapsed day.
     expectedExercises = (currentPhase?.exercises?.length || 0) * daysElapsed;
