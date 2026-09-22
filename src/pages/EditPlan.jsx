@@ -507,7 +507,7 @@ export default function EditPlan() {
 
             <MonitoringSettingsCard
               planData={planData}
-              onChange={setPlanData}
+              setPlanData={setPlanData}
             />
 
             {isBasic ? (
