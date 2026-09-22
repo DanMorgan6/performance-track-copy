@@ -12,6 +12,7 @@ import { Link } from 'react-router-dom';
 import InjuryCaptureForm from '@/components/injury/InjuryCaptureForm';
 import { titleCaseName } from '@/lib/nameFormat';
 import { createPatientInviteToken, getPatientInviteUrl } from '@/components/invite/InviteTokenUtils';
+import MobileSelect from '@/components/ui/MobileSelect';
 
 export default function CreatePatient() {
   const navigate = useNavigate();
@@ -194,16 +195,17 @@ export default function CreatePatient() {
                   <Users className="w-4 h-4" />
                   Gender
                 </Label>
-                <select
+                <MobileSelect
                   value={formData.gender}
                   onChange={(e) => handleChange('gender', e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                >
-                  <option value="">Select gender</option>
-                  <option value="male">Male</option>
-                  <option value="female">Female</option>
-                  <option value="other">Other</option>
-                </select>
+                  options={[
+                    { value: 'male', label: 'Male' },
+                    { value: 'female', label: 'Female' },
+                    { value: 'other', label: 'Other' },
+                  ]}
+                  placeholder="Select gender"
+                  className="rounded-xl"
+                />
               </div>
 
               <div className="space-y-2">

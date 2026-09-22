@@ -15,6 +15,7 @@ import { isSubscriptionActive, isPermanentAccessClinic, calculateMonthlyPrice, f
 import { isPractitioner } from '@/lib/roles';
 import { Mail, Send, Loader2, AlertCircle, CheckCircle2, CreditCard, Copy, QrCode } from 'lucide-react';
 import { getUnifiedInviteUrl, normaliseInviteEmail } from '@/components/invite/inviteFlow';
+import MobileSelect from '@/components/ui/MobileSelect';
 
 // Generate cryptographically secure random token
 function generateSecureToken() {
@@ -269,15 +270,17 @@ export default function ClinicianInviteManager({ clinicId, open, onOpenChange })
 
             <div className="space-y-2">
               <Label>Role</Label>
-              <select
+              <MobileSelect
                 value={role}
                 onChange={(e) => setRole(e.target.value)}
+                options={[
+                  { value: 'clinician', label: 'Clinician' },
+                  { value: 'clinic_admin', label: 'Clinic Admin' },
+                ]}
+                label="Role"
                 disabled={createInviteMutation.isPending}
-                className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
-              >
-                <option value="clinician">Clinician</option>
-                <option value="clinic_admin">Clinic Admin</option>
-              </select>
+                className="rounded-xl"
+              />
             </div>
 
             {error && (

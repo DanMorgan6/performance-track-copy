@@ -1,9 +1,49 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { base44 } from '@/api/base44Client';
 import { createPageUrl } from '@/utils';
-import { TrendingUp, CheckCircle, Clock, Calendar, X } from 'lucide-react';
+import { TrendingUp, CheckCircle, Clock, Calendar, X, Trash2, Loader2, AlertTriangle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
 
 export default function PatientProfilePanel({ patient, activePlan, user, clinic, clinician, exerciseLogs = [], patientOutcomeMeasures = [], onClose }) {
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  const handleDeleteAccount = async () => {
+    setDeleting(true);
+    try {
+      await base44.integrations.Core.SendEmail({
+        to: 'privacy@beachesperformance.com',
+        subject: 'GDPR Article 17 — Account Deletion Request',
+        body: [
+          'A patient has requested account deletion under GDPR Article 17 (Right to Erasure).',
+          '',
+          `Patient Name: ${patient?.full_name || 'N/A'}`,
+          `Patient Email: ${patient?.email || 'N/A'}`,
+          `Patient ID: ${patient?.id || 'N/A'}`,
+          `Clinic: ${clinic?.name || 'N/A'}`,
+          `User Email: ${user?.email || 'N/A'}`,
+          `User ID: ${user?.id || 'N/A'}`,
+          '',
+          'Please process this erasure request in accordance with GDPR Article 17.',
+        ].join('\n'),
+      });
+    } catch (err) {
+      console.error('Failed to send deletion request email:', err);
+    } finally {
+      setDeleting(false);
+      setDeleteConfirmOpen(false);
+      base44.auth.logout();
+    }
+  };
+
   const last7Days = [...Array(7)].map((_, i) => {
     const d = new Date();
     d.setDate(d.getDate() - i);
@@ -135,6 +175,63 @@ export default function PatientProfilePanel({ patient, activePlan, user, clinic,
           Privacy Policy & GDPR
         </Link>
       </div>
+
+      {/* Delete Account */}
+      <button
+        type="button"
+        onClick={() => setDeleteConfirmOpen(true)}
+        className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-600 transition-all hover:bg-rose-100"
+      >
+        <Trash2 className="w-4 h-4" />
+        Delete Account
+      </button>
+
+      <Dialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-rose-500" />
+              Delete Account
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            <p className="text-sm text-slate-600">
+              You are about to request permanent deletion of your account and personal data under GDPR Article 17 (Right to Erasure).
+            </p>
+            <p className="text-sm text-slate-600">
+              A secure email will be sent to our privacy team at <strong>privacy@beachesperformance.com</strong>, and you will be signed out immediately. Your data will be removed in accordance with our privacy policy.
+            </p>
+          </div>
+          <DialogFooter className="gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setDeleteConfirmOpen(false)}
+              disabled={deleting}
+              className="rounded-xl"
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDeleteAccount}
+              disabled={deleting}
+              className="rounded-xl"
+            >
+              {deleting ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Sending...
+                </>
+              ) : (
+                <>
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Confirm Deletion
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

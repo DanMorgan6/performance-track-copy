@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import MobileSelect from "@/components/ui/MobileSelect";
 import {
   Dialog,
   DialogContent,
@@ -42,32 +43,32 @@ export default function SendOutcomeMeasureDialog({ open, onOpenChange, outcomeMe
         <div className="space-y-4 py-4">
           <div className="space-y-2">
             <Label>Select Outcome Measure</Label>
-            <select
+            <MobileSelect
               value={selectedMeasure}
               onChange={(e) => setSelectedMeasure(e.target.value)}
-              className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm"
-            >
-              <option value="">Choose a measure...</option>
-              {outcomeMeasures.map((measure) => (
-                <option key={measure.id} value={measure.id}>
-                  {measure.name} - {measure.condition}
-                </option>
-              ))}
-            </select>
+              options={outcomeMeasures.map((measure) => ({
+                value: measure.id,
+                label: `${measure.name} - ${measure.condition}`,
+              }))}
+              placeholder="Choose a measure..."
+              className="text-sm"
+            />
           </div>
 
           <div className="space-y-2">
             <Label>Frequency</Label>
-            <select
+            <MobileSelect
               value={frequency}
               onChange={(e) => setFrequency(e.target.value)}
-              className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm"
-            >
-              <option value="one-time">One-time</option>
-              <option value="weekly">Weekly</option>
-              <option value="bi-weekly">Bi-weekly</option>
-              <option value="monthly">Monthly</option>
-            </select>
+              options={[
+                { value: 'one-time', label: 'One-time' },
+                { value: 'weekly', label: 'Weekly' },
+                { value: 'bi-weekly', label: 'Bi-weekly' },
+                { value: 'monthly', label: 'Monthly' },
+              ]}
+              label="Frequency"
+              className="text-sm"
+            />
             <p className="text-xs text-slate-500">
               {frequency === 'one-time' ? 'Patient will be notified once' : `Patient will receive this questionnaire ${frequency}`}
             </p>
