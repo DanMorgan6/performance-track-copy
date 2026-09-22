@@ -175,6 +175,16 @@ export default function PatientPortal() {
     setLoadAttempt((attempt) => attempt + 1);
   };
 
+  useEffect(() => {
+    if (!sidebarOpen) return undefined;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [sidebarOpen]);
+
   const { data: plans = [] } = useQuery({
     queryKey: ['my-plans', patient?.id],
     queryFn: async () => {
@@ -481,14 +491,14 @@ export default function PatientPortal() {
       {/* Mobile sidebar overlay */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 bg-black/40 z-30 md:hidden"
+          className="fixed inset-0 z-[55] bg-black/55 backdrop-blur-sm md:hidden"
           onClick={() => setSidebarOpen(false)}
         />
       )}
 
       {/* Profile Sidebar */}
       <aside className={cn(
-        "fixed md:relative left-0 top-0 h-screen md:h-auto md:self-stretch z-40 w-72 flex-shrink-0 transition-transform duration-300",
+        "fixed left-0 top-0 z-[60] h-[100dvh] min-h-0 w-[min(82vw,20rem)] flex-shrink-0 overflow-hidden transition-transform duration-300 md:relative md:z-40 md:h-auto md:w-72 md:self-stretch",
         sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
       )}>
         <PatientProfilePanel
@@ -499,6 +509,7 @@ export default function PatientPortal() {
           clinician={clinician}
           exerciseLogs={exerciseLogs}
           patientOutcomeMeasures={patientOutcomeMeasures}
+          onClose={() => setSidebarOpen(false)}
         />
       </aside>
 
