@@ -991,7 +991,7 @@ Performance Track+`
             </DialogHeader>
             <div className="space-y-4 py-4">
               <p className="text-sm text-slate-500">
-                The AI will create a personalized rehabilitation plan based on patient profile and condition.
+                AI will draft a {planData.plan_mode || 'phased'} plan using the clinic exercise library and your clinical context. Review and approve every prescription before publishing.
               </p>
 
               <div className="space-y-4">
@@ -1002,6 +1002,26 @@ Performance Track+`
                     value={aiInputs.condition}
                     onChange={(e) => setAiInputs({...aiInputs, condition: e.target.value})}
                     placeholder="e.g., ACL Tear, Rotator Cuff, Lower Back Pain"
+                    className="rounded-xl"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Rehabilitation Goal</Label>
+                  <Input
+                    value={aiInputs.rehab_goal}
+                    onChange={(e) => setAiInputs({...aiInputs, rehab_goal: e.target.value})}
+                    placeholder="e.g., Return to pain-free running"
+                    className="rounded-xl"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Precautions or Restrictions</Label>
+                  <Textarea
+                    value={aiInputs.precautions}
+                    onChange={(e) => setAiInputs({...aiInputs, precautions: e.target.value})}
+                    placeholder="Clinical restrictions the draft must respect"
                     className="rounded-xl"
                   />
                 </div>
@@ -1046,6 +1066,18 @@ Performance Track+`
                      ]}
                    />
                  </div>
+
+                <div className="space-y-2">
+                  <Label>Sessions per Week</Label>
+                  <Input
+                    type="number"
+                    min="1"
+                    max="7"
+                    value={aiInputs.sessions_per_week}
+                    onChange={(e) => setAiInputs({...aiInputs, sessions_per_week: Number(e.target.value)})}
+                    className="rounded-xl"
+                  />
+                </div>
               </div>
 
               <div className="flex justify-end gap-3 pt-4">
