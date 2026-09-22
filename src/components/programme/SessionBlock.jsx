@@ -66,6 +66,19 @@ function ExerciseRow({ exercise, index, blockType, blockLabel, onUpdate, onRemov
             </div>
           ))}
         </div>
+        <label className="flex items-center gap-2 text-[10px] text-slate-500">
+          Patient logging
+          <select
+            value={exercise.tracking_mode || 'inherit'}
+            onChange={(e) => onUpdate('tracking_mode', e.target.value)}
+            className="h-7 flex-1 rounded-lg border border-slate-200 bg-white px-2 text-[10px] text-slate-700"
+          >
+            <option value="inherit">Use plan default</option>
+            <option value="basic">Simple completion</option>
+            <option value="standard">Dosage, load and response</option>
+            <option value="performance">Detailed performance monitoring</option>
+          </select>
+        </label>
       </div>
 
       <div className="flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
@@ -97,7 +110,7 @@ export default function SessionBlock({ block, blockIndex, totalBlocks, onUpdate,
   const blockLabel = BLOCK_LETTERS[blockIndex] || String(blockIndex + 1);
 
   const addExercise = () => {
-    onUpdate({ ...block, exercises: [...(block.exercises || []), { name: '', sets: '3', reps: '10', hold: '', tempo: '', rest: '60s' }] });
+    onUpdate({ ...block, exercises: [...(block.exercises || []), { name: '', sets: '3', reps: '10', hold: '', tempo: '', rest: '60s', tracking_mode: 'inherit' }] });
   };
 
   const updateExercise = (exIdx, field, value) => {
