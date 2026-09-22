@@ -1,670 +1,574 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useEffect, useRef, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { ArrowLeft, Download, Mail, Save } from 'lucide-react';
+
 import { base44 } from '@/api/base44Client';
 import { createPageUrl } from '@/utils';
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { 
-  ArrowLeft, 
-  Save, 
-  Plus, 
-  Trash2, 
-  Target,
-  Copy
-} from 'lucide-react';
-import { Link } from 'react-router-dom';
-import { cn } from "@/lib/utils";
 import { isPractitioner } from '@/lib/roles';
-import MobileSelect from "@/components/ui/MobileSelect";
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import MobileSelect from '@/components/ui/MobileSelect';
+import BasicProgramBuilder from '@/components/plan/BasicProgramBuilder';
+import ProgrammeScheduleEditor from '@/components/programme/ProgrammeScheduleEditor.jsx';
+import { generatePlanPDF, uploadAndEmailPDF } from '@/components/reports/PlanPDFGenerator';
+
+const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+
+function createDefaultWeek() {
+  return DAYS.map((day) => ({
+    day,
+    type: day === 'Wednesday' || day === 'Sunday' ? 'rest' : day === 'Saturday' ? 'conditioning' : 'training',
+    exercises: [],
+  }));
+}
+
+function cloneSchedule(schedule) {
+  return JSON.parse(JSON.stringify(schedule || createDefaultWeek()));
+}
+
+function normalizePhase(phase, index) {
+  const savedWeeks = Array.isArray(phase.weeks) ? phase.weeks : [];
+  const legacySchedule = phase.daily_schedule || createDefaultWeek();
+  const duration = Math.max(1, Number(phase.duration_weeks) || savedWeeks.length || 1);
+  const lastSavedSchedule = savedWeeks.at(-1)?.daily_schedule || legacySchedule;
+
+  const weeks = Array.from({ length: duration }, (_, weekIndex) => ({
+    ...(savedWeeks[weekIndex] || {}),
+    week_number: weekIndex + 1,
+    daily_schedule: cloneSchedule(savedWeeks[weekIndex]?.daily_schedule || lastSavedSchedule),
+  }));
+
+  return {
+    ...phase,
+    phase_number: index + 1,
+    duration_weeks: duration,
+    exit_criteria: phase.exit_criteria?.length
+      ? phase.exit_criteria
+      : [{ criterion: '', target_value: '', is_met: false }],
+    exercises: phase.exercises || [],
+    status: phase.status || (index === 0 ? 'active' : 'pending'),
+    use_daily_schedule: true,
+    weeks,
+  };
+}
 
 export default function EditPlan() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const urlParams = new URLSearchParams(window.location.search);
-  const planId = urlParams.get('id');
+  const planId = new URLSearchParams(window.location.search).get('id');
+  const hydratedPlanRef = useRef(null);
 
-  const [saving, setSaving] = useState(false);
-  const [selectedPhaseIndex, setSelectedPhaseIndex] = useState(0);
+  const [currentUser, setCurrentUser] = useState(null);
   const [planData, setPlanData] = useState(null);
   const [phases, setPhases] = useState([]);
-  const [editingExercise, setEditingExercise] = useState(null);
-  const [showCopyDialog, setShowCopyDialog] = useState(false);
-  const [copySource, setCopySource] = useState(null);
-  const [copyPhase, setCopyPhase] = useState(null);
+  const [removedPhaseIds, setRemovedPhaseIds] = useState([]);
+  const [selectedPhaseIndex, setSelectedPhaseIndex] = useState(0);
+  const [selectedWeekIndex, setSelectedWeekIndex] = useState(0);
+  const [saving, setSaving] = useState(false);
+  const [exportingPDF, setExportingPDF] = useState(false);
+  const [saveError, setSaveError] = useState('');
 
-  // Security: Only clinic staff can edit plans
-  React.useEffect(() => {
+  useEffect(() => {
     const checkAccess = async () => {
-      const currentUser = await base44.auth.me();
-      if (!isPractitioner(currentUser)) {
-        window.location.href = createPageUrl('PatientPortal');
+      const user = await base44.auth.me();
+      if (!isPractitioner(user)) {
+        window.location.assign(createPageUrl('PatientPortal'));
+        return;
       }
+      setCurrentUser(user);
     };
     checkAccess();
   }, []);
 
   const { data: plan, isLoading: planLoading } = useQuery({
-    queryKey: ['plan', planId],
-    queryFn: () => base44.entities.RehabPlan.filter({ id: planId }).then(res => res[0])
+    queryKey: ['plan', planId, currentUser?.clinic_id],
+    queryFn: () => base44.entities.RehabPlan
+      .filter({ id: planId, clinic_id: currentUser.clinic_id })
+      .then((results) => results[0]),
+    enabled: !!planId && !!currentUser?.clinic_id,
   });
 
   const { data: existingPhases = [], isLoading: phasesLoading } = useQuery({
-    queryKey: ['plan-phases', planId],
-    queryFn: async () => {
-      if (!planId) return [];
-      const user = await base44.auth.me();
-      // Multi-clinic isolation: verify plan belongs to user's clinic
-      const plan = await base44.entities.RehabPlan.filter({ id: planId }).then(res => res[0]);
-      if (!plan || plan.clinic_id !== user.clinic_id) {
-        throw new Error('Unauthorized');
-      }
-      return base44.entities.RehabPhase.filter({ plan_id: planId });
-    },
-    enabled: !!planId
+    queryKey: ['plan-phases', planId, currentUser?.clinic_id],
+    queryFn: () => base44.entities.RehabPhase.filter({
+      plan_id: planId,
+      clinic_id: currentUser.clinic_id,
+    }),
+    enabled: !!planId && !!currentUser?.clinic_id,
+  });
+
+  const { data: patient } = useQuery({
+    queryKey: ['patient', plan?.patient_id, currentUser?.clinic_id],
+    queryFn: () => base44.entities.Patient
+      .filter({ id: plan.patient_id, clinic_id: currentUser.clinic_id })
+      .then((results) => results[0]),
+    enabled: !!plan?.patient_id && !!currentUser?.clinic_id,
+  });
+
+  const { data: libraryExercises = [] } = useQuery({
+    queryKey: ['exercise-library', currentUser?.clinic_id],
+    queryFn: () => base44.entities.ExerciseLibrary.filter(
+      { clinic_id: currentUser.clinic_id },
+      '-created_date'
+    ),
+    enabled: !!currentUser?.clinic_id,
+  });
+
+  const { data: progressionBlocks = [] } = useQuery({
+    queryKey: ['progression-blocks', currentUser?.clinic_id],
+    queryFn: () => base44.entities.ProgressionBlock.filter(
+      { clinic_id: currentUser.clinic_id, is_active: true },
+      'name'
+    ),
+    enabled: !!currentUser?.clinic_id,
   });
 
   useEffect(() => {
-    if (plan) {
-      setPlanData(plan);
-    }
+    if (!plan || hydratedPlanRef.current === plan.id) return;
+    setPlanData({
+      ...plan,
+      program_type: plan.program_type || 'phased',
+      basic_config: plan.basic_config || {
+        frequency_per_week: 3,
+        weekend_rest_days: true,
+        days_of_week_pattern: ['Monday', 'Wednesday', 'Friday'],
+        exercise_bundle: [],
+      },
+    });
+    hydratedPlanRef.current = plan.id;
   }, [plan]);
 
   useEffect(() => {
-    if (existingPhases.length > 0) {
-      const sortedPhases = existingPhases.sort((a, b) => a.phase_number - b.phase_number);
-      // Add daily schedule if not present
-      const phasesWithSchedule = sortedPhases.map(p => ({
-        ...p,
-        use_daily_schedule: p.use_daily_schedule !== false,
-        daily_schedule: p.daily_schedule || [
-          { day: 'Monday', type: 'training', exercises: p.exercises || [] },
-          { day: 'Tuesday', type: 'training', exercises: [] },
-          { day: 'Wednesday', type: 'rest', exercises: [] },
-          { day: 'Thursday', type: 'training', exercises: [] },
-          { day: 'Friday', type: 'training', exercises: [] },
-          { day: 'Saturday', type: 'conditioning', exercises: [] },
-          { day: 'Sunday', type: 'rest', exercises: [] }
-        ]
-      }));
-      setPhases(phasesWithSchedule);
-    }
-  }, [existingPhases]);
+    if (!plan || plan.program_type === 'basic' || phasesLoading) return;
+    if (hydratedPlanRef.current !== plan.id || phases.length > 0) return;
+
+    const normalized = [...existingPhases]
+      .sort((a, b) => a.phase_number - b.phase_number)
+      .map(normalizePhase);
+
+    setPhases(normalized.length ? normalized : [normalizePhase({
+      name: 'Phase 1: Initial Recovery',
+      description: '',
+      duration_weeks: 2,
+      status: 'active',
+    }, 0)]);
+  }, [existingPhases, phases.length, phasesLoading, plan]);
 
   const addPhase = () => {
-    setPhases([...phases, {
-      phase_number: phases.length + 1,
-      name: `Phase ${phases.length + 1}`,
+    const nextIndex = phases.length;
+    const newPhase = normalizePhase({
+      name: `Phase ${nextIndex + 1}`,
       description: '',
       duration_weeks: 2,
       exit_criteria: [{ criterion: '', target_value: '', is_met: false }],
-      exercises: [{ name: '', description: '', sets: 3, reps: '10', frequency: 'Daily', video_url: '' }],
+      exercises: [],
       status: 'pending',
-      isNew: true,
-      use_daily_schedule: true,
-      daily_schedule: [
-        { day: 'Monday', type: 'training', exercises: [] },
-        { day: 'Tuesday', type: 'training', exercises: [] },
-        { day: 'Wednesday', type: 'rest', exercises: [] },
-        { day: 'Thursday', type: 'training', exercises: [] },
-        { day: 'Friday', type: 'training', exercises: [] },
-        { day: 'Saturday', type: 'conditioning', exercises: [] },
-        { day: 'Sunday', type: 'rest', exercises: [] }
-      ]
-    }]);
-    setSelectedPhaseIndex(phases.length);
+    }, nextIndex);
+
+    setPhases((current) => [...current, newPhase]);
+    setSelectedPhaseIndex(nextIndex);
+    setSelectedWeekIndex(0);
   };
 
-  const removePhase = async (index) => {
+  const removePhase = (index) => {
+    if (phases.length <= 1) return;
     const phase = phases[index];
-    if (phase.id) {
-      await base44.entities.RehabPhase.delete(phase.id);
+    if (phase?.id) {
+      setRemovedPhaseIds((current) => [...new Set([...current, phase.id])]);
     }
-    const newPhases = phases.filter((_, i) => i !== index);
-    setPhases(newPhases.map((p, i) => ({ ...p, phase_number: i + 1 })));
+
+    setPhases((current) => current
+      .filter((_, phaseIndex) => phaseIndex !== index)
+      .map((item, phaseIndex) => ({ ...item, phase_number: phaseIndex + 1 })));
+    setSelectedPhaseIndex((current) => Math.max(0, Math.min(current - 1, phases.length - 2)));
+    setSelectedWeekIndex(0);
   };
 
   const updatePhase = (index, field, value) => {
-    const newPhases = [...phases];
-    newPhases[index] = { ...newPhases[index], [field]: value };
-    setPhases(newPhases);
-  };
+    setPhases((current) => current.map((phase, phaseIndex) => {
+      if (phaseIndex !== index) return phase;
 
-  const toggleCriteriaMet = (phaseIndex, criteriaIndex) => {
-    const newPhases = [...phases];
-    const criteria = newPhases[phaseIndex].exit_criteria[criteriaIndex];
-    criteria.is_met = !criteria.is_met;
-    setPhases(newPhases);
+      const updated = {
+        ...phase,
+        weeks: [...(phase.weeks || [])],
+        [field]: value,
+      };
+
+      if (field === 'duration_weeks') {
+        const duration = Math.max(1, Number(value) || 1);
+        const existingWeeks = phase.weeks || [];
+        const fallbackSchedule = existingWeeks.at(-1)?.daily_schedule || createDefaultWeek();
+        updated.duration_weeks = duration;
+        updated.weeks = Array.from({ length: duration }, (_, weekIndex) => ({
+          ...(existingWeeks[weekIndex] || {}),
+          week_number: weekIndex + 1,
+          daily_schedule: cloneSchedule(existingWeeks[weekIndex]?.daily_schedule || fallbackSchedule),
+        }));
+        setSelectedWeekIndex(0);
+      }
+
+      return updated;
+    }));
   };
 
   const addExitCriterion = (phaseIndex) => {
-    const newPhases = [...phases];
-    newPhases[phaseIndex].exit_criteria.push({ criterion: '', target_value: '', is_met: false });
-    setPhases(newPhases);
+    setPhases((current) => current.map((phase, index) => index === phaseIndex
+      ? {
+          ...phase,
+          exit_criteria: [
+            ...(phase.exit_criteria || []),
+            { criterion: '', target_value: '', is_met: false },
+          ],
+        }
+      : phase));
   };
 
-  const updateExitCriterion = (phaseIndex, criteriaIndex, field, value) => {
-    const newPhases = [...phases];
-    newPhases[phaseIndex].exit_criteria[criteriaIndex][field] = value;
-    setPhases(newPhases);
+  const updateExitCriterion = (phaseIndex, criterionIndex, field, value) => {
+    setPhases((current) => current.map((phase, index) => index === phaseIndex
+      ? {
+          ...phase,
+          exit_criteria: (phase.exit_criteria || []).map((criterion, itemIndex) => itemIndex === criterionIndex
+            ? { ...criterion, [field]: value }
+            : criterion),
+        }
+      : phase));
   };
 
-  const removeExitCriterion = (phaseIndex, criteriaIndex) => {
-    const newPhases = [...phases];
-    newPhases[phaseIndex].exit_criteria = newPhases[phaseIndex].exit_criteria.filter((_, i) => i !== criteriaIndex);
-    setPhases(newPhases);
+  const removeExitCriterion = (phaseIndex, criterionIndex) => {
+    setPhases((current) => current.map((phase, index) => index === phaseIndex
+      ? {
+          ...phase,
+          exit_criteria: (phase.exit_criteria || []).filter((_, itemIndex) => itemIndex !== criterionIndex),
+        }
+      : phase));
   };
 
-  const addExercise = (phaseIndex) => {
-    const newPhases = [...phases];
-    newPhases[phaseIndex].exercises.push({ name: '', description: '', sets: 3, reps: '10', frequency: 'Daily', video_url: '' });
-    setPhases(newPhases);
-  };
+  const addNewExercisesToLibrary = async () => {
+    const allExercises = phases.flatMap((phase) => [
+      ...(phase.exercises || []),
+      ...(phase.weeks || []).flatMap((week) => (week.daily_schedule || [])
+        .flatMap((day) => day.exercises || [])),
+    ]);
+    const existingNames = new Set(libraryExercises.map((exercise) => exercise.name?.trim().toLowerCase()));
+    const newByName = new Map();
 
-  const updateExercise = (phaseIndex, exerciseIndex, field, value) => {
-    const newPhases = [...phases];
-    newPhases[phaseIndex].exercises[exerciseIndex][field] = value;
-    setPhases(newPhases);
-  };
-
-  const removeExercise = (phaseIndex, exerciseIndex) => {
-    const newPhases = [...phases];
-    newPhases[phaseIndex].exercises = newPhases[phaseIndex].exercises.filter((_, i) => i !== exerciseIndex);
-    setPhases(newPhases);
-  };
-
-  const updateDaySchedule = (phaseIndex, dayIndex, field, value) => {
-    const newPhases = [...phases];
-    newPhases[phaseIndex].daily_schedule[dayIndex][field] = value;
-    setPhases(newPhases);
-  };
-
-  const updateDayExercise = (phaseIndex, dayIndex, exerciseIndex, field, value) => {
-    const newPhases = [...phases];
-    newPhases[phaseIndex].daily_schedule[dayIndex].exercises[exerciseIndex][field] = value;
-    setPhases(newPhases);
-  };
-
-  const removeDayExercise = (phaseIndex, dayIndex, exerciseIndex) => {
-    const newPhases = [...phases];
-    newPhases[phaseIndex].daily_schedule[dayIndex].exercises = 
-      newPhases[phaseIndex].daily_schedule[dayIndex].exercises.filter((_, i) => i !== exerciseIndex);
-    setPhases(newPhases);
-  };
-
-  const addDayExercise = (phaseIndex, dayIndex) => {
-    const newPhases = [...phases];
-    newPhases[phaseIndex].daily_schedule[dayIndex].exercises.push({ 
-      name: '', 
-      description: '', 
-      sets: 3, 
-      reps: '10', 
-      frequency: 'Daily', 
-      video_url: ''
+    allExercises.forEach((exercise) => {
+      const key = exercise.name?.trim().toLowerCase();
+      if (key && !existingNames.has(key) && !newByName.has(key)) {
+        newByName.set(key, exercise);
+      }
     });
-    setPhases(newPhases);
+
+    if (newByName.size === 0) return;
+
+    await base44.entities.ExerciseLibrary.bulkCreate(
+      [...newByName.values()].map((exercise) => ({
+        clinic_id: currentUser.clinic_id,
+        name: exercise.name,
+        description: exercise.description || exercise.notes || '',
+        category: 'functional',
+        body_part: 'full_body',
+        difficulty_level: 'intermediate',
+        default_sets: Number(exercise.sets) || 3,
+        default_reps: exercise.reps || '10',
+        default_frequency: exercise.frequency || 'Daily',
+        video_url: exercise.video_url || '',
+      }))
+    );
   };
 
-  const copyDayToAnotherDay = (targetDayIndex) => {
-    if (!copySource) return;
-    
-    const newPhases = [...phases];
-    const sourceExercises = newPhases[copySource.phaseIndex].daily_schedule[copySource.dayIndex].exercises;
-    
-    newPhases[copySource.phaseIndex].daily_schedule[targetDayIndex].exercises = 
-      sourceExercises.map(ex => ({ ...ex }));
-    
-    setPhases(newPhases);
-    setShowCopyDialog(false);
-    setCopySource(null);
-  };
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    if (!planData || !currentUser?.clinic_id || saving) return;
 
-  const advancePhase = async (currentPhaseIndex) => {
-    if (currentPhaseIndex < phases.length - 1) {
-      // Mark current phase as completed
-      const currentPhase = phases[currentPhaseIndex];
-      if (currentPhase.id) {
-        await base44.entities.RehabPhase.update(currentPhase.id, { status: 'completed' });
-      }
-      
-      // Activate next phase
-      const nextPhase = phases[currentPhaseIndex + 1];
-      if (nextPhase.id) {
-        await base44.entities.RehabPhase.update(nextPhase.id, { status: 'active' });
-      }
-
-      // Update plan current phase
-      await base44.entities.RehabPlan.update(planId, { current_phase: currentPhaseIndex + 2 });
-      
-      queryClient.invalidateQueries({ queryKey: ['plan-phases'] });
-      queryClient.invalidateQueries({ queryKey: ['plan'] });
-    }
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
     setSaving(true);
+    setSaveError('');
 
-    // Update plan
-    await base44.entities.RehabPlan.update(planId, {
-      ...planData,
-      total_phases: phases.length
-    });
+    try {
+      await base44.entities.RehabPlan.update(planId, {
+        title: planData.title,
+        description: planData.description || '',
+        start_date: planData.start_date || null,
+        target_end_date: planData.target_end_date || null,
+        status: planData.status,
+        program_type: planData.program_type,
+        basic_config: planData.program_type === 'basic' ? planData.basic_config : null,
+        total_phases: planData.program_type === 'phased' ? phases.length : null,
+        current_phase: planData.program_type === 'phased' ? (planData.current_phase || 1) : null,
+        publication_state: planData.publication_state || 'published',
+        version: (planData.version || 1) + 1,
+        last_updated_at: new Date().toISOString(),
+      });
 
-    // Update/create phases
-    for (const phase of phases) {
-      const phaseData = {
-        clinic_id: planData.clinic_id,
-        patient_id: planData.patient_id,
-        plan_id: planId,
-        phase_number: phase.phase_number,
-        name: phase.name,
-        description: phase.description,
-        duration_weeks: phase.duration_weeks,
-        exit_criteria: phase.exit_criteria,
-        exercises: phase.exercises,
-        status: phase.status
-      };
+      if (planData.program_type === 'phased') {
+        await addNewExercisesToLibrary();
 
-      if (phase.id) {
-        await base44.entities.RehabPhase.update(phase.id, phaseData);
-      } else {
-        await base44.entities.RehabPhase.create(phaseData);
+        for (const [index, phase] of phases.entries()) {
+          const payload = {
+            clinic_id: currentUser.clinic_id,
+            patient_id: planData.patient_id,
+            plan_id: planId,
+            phase_number: index + 1,
+            name: phase.name,
+            description: phase.description || '',
+            duration_weeks: phase.duration_weeks,
+            exit_criteria: phase.exit_criteria || [],
+            exercises: phase.exercises || [],
+            status: phase.status || (index === 0 ? 'active' : 'pending'),
+            use_daily_schedule: true,
+            weeks: phase.weeks || [],
+            daily_schedule: phase.weeks?.[0]?.daily_schedule || phase.daily_schedule || createDefaultWeek(),
+          };
+
+          if (phase.id) {
+            await base44.entities.RehabPhase.update(phase.id, payload);
+          } else {
+            await base44.entities.RehabPhase.create(payload);
+          }
+        }
+
+        for (const removedId of removedPhaseIds) {
+          await base44.entities.RehabPhase.delete(removedId);
+        }
       }
-    }
 
-    queryClient.invalidateQueries();
-    navigate(createPageUrl(`PatientDetail?id=${planData.patient_id}`));
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['plan', planId] }),
+        queryClient.invalidateQueries({ queryKey: ['plan-phases', planId] }),
+        queryClient.invalidateQueries({ queryKey: ['patient-plans', planData.patient_id] }),
+        queryClient.invalidateQueries({ queryKey: ['exercise-library', currentUser.clinic_id] }),
+      ]);
+
+      navigate(createPageUrl(`PatientDetail?id=${planData.patient_id}`));
+    } catch (error) {
+      console.error('Failed to update rehabilitation plan:', error);
+      setSaveError('The plan could not be saved. Your changes remain on this page—please try again.');
+    } finally {
+      setSaving(false);
+    }
   };
 
-  if (planLoading || phasesLoading || !planData) {
+  const handleExportPDF = async () => {
+    if (!planData) return;
+    setExportingPDF(true);
+    try {
+      const pdf = await generatePlanPDF(planData, phases, patient);
+      pdf.save(`${planData.title || 'Rehabilitation-Plan'}.pdf`);
+    } catch (error) {
+      console.error(error);
+      setSaveError('The PDF could not be generated. Please try again.');
+    } finally {
+      setExportingPDF(false);
+    }
+  };
+
+  const handleEmailPDF = async () => {
+    if (!patient?.email || !planData) return;
+    setExportingPDF(true);
+    try {
+      const pdf = await generatePlanPDF(planData, phases, patient);
+      await uploadAndEmailPDF(pdf, planData, patient.email, patient.full_name);
+    } catch (error) {
+      console.error(error);
+      setSaveError('The PDF could not be emailed. Please try again.');
+    } finally {
+      setExportingPDF(false);
+    }
+  };
+
+  const isLoading = !currentUser || planLoading || phasesLoading || (plan && !planData);
+
+  if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-teal-50/30 flex items-center justify-center">
-        <div className="animate-spin w-8 h-8 border-2 border-teal-500 border-t-transparent rounded-full" />
+      <div className="performance-shell min-h-screen flex items-center justify-center">
+        <div className="h-9 w-9 animate-spin rounded-full border-2 border-[#d8ff5f] border-t-transparent" />
       </div>
     );
   }
 
+  if (!planData) {
+    return (
+      <div className="performance-shell min-h-screen flex items-center justify-center p-6">
+        <div className="max-w-md rounded-2xl border border-white/10 bg-[#242427] p-6 text-center">
+          <h1 className="text-xl font-bold text-white">Plan not found</h1>
+          <p className="mt-2 text-sm text-zinc-400">This plan is unavailable or does not belong to your clinic.</p>
+          <Link to={createPageUrl('CoachDashboard')}>
+            <Button className="mt-5 rounded-xl">Return to dashboard</Button>
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  const isBasic = planData.program_type === 'basic';
+  const patientRoute = createPageUrl(`PatientDetail?id=${planData.patient_id}`);
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-teal-50/30 p-6 lg:p-10">
-      <div className="max-w-4xl mx-auto">
-        <Link 
-          to={createPageUrl(`PatientDetail?id=${planData.patient_id}`)}
-          className="inline-flex items-center gap-2 text-slate-500 hover:text-slate-700 mb-8"
+    <div className="performance-shell min-h-screen overflow-x-hidden bg-slate-50 p-4 lg:p-6">
+      <div className="mx-auto w-full max-w-[1600px]">
+        <Link
+          to={patientRoute}
+          className="mb-8 inline-flex items-center gap-2 text-slate-500 hover:text-slate-700"
         >
-          <ArrowLeft className="w-4 h-4" />
+          <ArrowLeft className="h-4 w-4" />
           Back to Patient
         </Link>
 
-        <div className="bg-white rounded-3xl shadow-sm border border-slate-100 p-8 mb-8">
-          <div className="mb-8">
-            <h1 className="text-2xl font-bold text-slate-800">Edit Rehabilitation Plan</h1>
-            <p className="text-slate-500 mt-1">Update plan details and phase progression</p>
+        <div className="mb-6 rounded-2xl border border-slate-100 bg-white p-5 shadow-sm lg:p-8">
+          <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <p className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-purple-500">Rehabilitation programming</p>
+              <h1 className="text-2xl font-bold text-slate-800">Edit Rehabilitation Plan</h1>
+              <p className="mt-1 text-slate-500">
+                {patient?.full_name ? `For ${patient.full_name}` : 'Update the patient programme without losing its weekly structure.'}
+              </p>
+            </div>
+            <span className="w-fit rounded-full border border-purple-200 bg-purple-50 px-3 py-1.5 text-xs font-semibold text-purple-600">
+              {isBasic ? 'Quick Plan' : 'Phased Rehab'}
+            </span>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-8">
-            {/* Plan Details */}
-            <div className="space-y-6">
+          <form
+            onSubmit={handleSubmit}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter' && !(event.target instanceof HTMLTextAreaElement)) {
+                event.preventDefault();
+              }
+            }}
+            className="space-y-8"
+          >
+            <section className="space-y-6">
               <h2 className="text-lg font-semibold text-slate-700">Plan Details</h2>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                 <div className="space-y-2 md:col-span-2">
                   <Label>Plan Title *</Label>
                   <Input
                     required
-                    value={planData.title}
-                    onChange={(e) => setPlanData({...planData, title: e.target.value})}
+                    value={planData.title || ''}
+                    onChange={(event) => setPlanData((current) => ({ ...current, title: event.target.value }))}
                     className="rounded-xl"
                   />
                 </div>
-
                 <div className="space-y-2 md:col-span-2">
                   <Label>Description</Label>
                   <Textarea
                     value={planData.description || ''}
-                    onChange={(e) => setPlanData({...planData, description: e.target.value})}
+                    onChange={(event) => setPlanData((current) => ({ ...current, description: event.target.value }))}
+                    className="rounded-xl"
+                    rows={3}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Start Date</Label>
+                  <Input
+                    type="date"
+                    value={planData.start_date || ''}
+                    onChange={(event) => setPlanData((current) => ({ ...current, start_date: event.target.value }))}
                     className="rounded-xl"
                   />
                 </div>
-
-                <div className="space-y-2">
-                   <Label>Status</Label>
-                   <MobileSelect
-                     label="Status"
-                     value={planData.status}
-                     onChange={(e) => setPlanData({...planData, status: e.target.value})}
-                     options={[
-                       { value: 'draft', label: 'Draft' },
-                       { value: 'active', label: 'Active' },
-                       { value: 'paused', label: 'Paused' },
-                       { value: 'completed', label: 'Completed' },
-                     ]}
-                   />
-                 </div>
-
                 <div className="space-y-2">
                   <Label>Target End Date</Label>
                   <Input
                     type="date"
                     value={planData.target_end_date || ''}
-                    onChange={(e) => setPlanData({...planData, target_end_date: e.target.value})}
+                    onChange={(event) => setPlanData((current) => ({ ...current, target_end_date: event.target.value }))}
                     className="rounded-xl"
                   />
                 </div>
-              </div>
-            </div>
-
-            {/* Phase Selector */}
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h2 className="text-lg font-semibold text-slate-700">Weekly Schedule</h2>
-                <Button type="button" onClick={addPhase} variant="outline" className="rounded-xl">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add Phase
-                </Button>
-              </div>
-
-              {/* Phase Navigation */}
-              <div className="flex items-center gap-3 overflow-x-auto pb-2">
-                {phases.map((phase, phaseIndex) => (
-                  <button
-                    key={phaseIndex}
-                    type="button"
-                    onClick={() => setSelectedPhaseIndex(phaseIndex)}
-                    className={cn(
-                      "px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all",
-                      selectedPhaseIndex === phaseIndex
-                        ? "bg-purple-600 text-white shadow-lg"
-                        : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-50"
-                    )}
-                  >
-                    Phase {phase.phase_number}
-                  </button>
-                ))}
-              </div>
-
-              {/* Selected Phase */}
-              {phases.map((phase, phaseIndex) => phaseIndex === selectedPhaseIndex && (
-                <div key={phaseIndex} className="space-y-4">
-                  {/* Phase Info Bar */}
-                  <div className="bg-white rounded-xl p-4 border border-slate-200 flex items-center justify-between">
-                    <div className="flex-1">
-                      <Input
-                        value={phase.name}
-                        onChange={(e) => updatePhase(phaseIndex, 'name', e.target.value)}
-                        placeholder="Phase name"
-                        className="border-0 bg-transparent font-semibold text-lg p-0 h-auto focus-visible:ring-0"
-                      />
-                      <p className="text-sm text-slate-500 mt-1">{phase.duration_weeks} weeks duration</p>
-                    </div>
-                    {phases.length > 1 && (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => removePhase(phaseIndex)}
-                        className="text-slate-400 hover:text-rose-500"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    )}
-                  </div>
-
-                  {/* Weekly Calendar View */}
-                  <div className="grid grid-cols-7 gap-4 lg:gap-6">
-                    {phase.daily_schedule?.map((day, dayIndex) => (
-                      <div 
-                        key={dayIndex}
-                        className={cn(
-                          "bg-white rounded-xl border-2 overflow-hidden",
-                          day.type === 'training' && "border-purple-200",
-                          day.type === 'rest' && "border-slate-200 bg-slate-50",
-                          day.type === 'conditioning' && "border-blue-200"
-                        )}
-                      >
-                        {/* Day Header */}
-                        <div className={cn(
-                          "p-3 border-b-2",
-                          day.type === 'training' && "bg-purple-50 border-purple-200",
-                          day.type === 'rest' && "bg-slate-100 border-slate-200",
-                          day.type === 'conditioning' && "bg-blue-50 border-blue-200"
-                        )}>
-                          <div className="flex items-center justify-between mb-1">
-                            <div className="text-xs font-bold text-slate-600">
-                              {day.day.substring(0, 3).toUpperCase()}
-                            </div>
-                            {day.type !== 'rest' && day.exercises?.length > 0 && (
-                              <button
-                                type="button"
-                                onClick={() => {
-                                   setCopySource({ phaseIndex, dayIndex });
-                                   setCopyPhase(phase);
-                                   setShowCopyDialog(true);
-                                 }}
-                                className="text-slate-400 hover:text-purple-600 transition-colors"
-                                title="Copy to another day"
-                              >
-                                <Copy className="w-3 h-3" />
-                              </button>
-                            )}
-                          </div>
-                          <MobileSelect
-                            label="Day Type"
-                            value={day.type}
-                            onChange={(e) => updateDaySchedule(phaseIndex, dayIndex, 'type', e.target.value)}
-                            options={[
-                              { value: 'training', label: 'Training' },
-                              { value: 'rest', label: 'Rest' },
-                              { value: 'conditioning', label: 'Conditioning' },
-                            ]}
-                            className="text-xs"
-                          />
-                        </div>
-
-                        {/* Exercises */}
-                        <div className="p-3 space-y-3 min-h-[280px] text-[12px]">
-                          {day.type !== 'rest' ? (
-                            <>
-                              {day.exercises?.map((exercise, exerciseIndex) => (
-                                <div key={exerciseIndex} className="p-2 rounded-lg bg-slate-50 group relative transition-colors">
-                                  <div className="flex gap-1 absolute -top-1 -right-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <button
-                                      type="button"
-                                      onClick={() => removeDayExercise(phaseIndex, dayIndex, exerciseIndex)}
-                                      className="w-5 h-5 bg-rose-500 text-white rounded-full flex items-center justify-center"
-                                    >
-                                      <span className="text-xs">×</span>
-                                    </button>
-                                  </div>
-                                  <div className="font-medium text-slate-700 mb-1">
-                                    {exercise.name || 'Unnamed'}
-                                  </div>
-                                  <div className="text-[9px] text-slate-500 space-y-0.5">
-                                    <div>{exercise.sets}×{exercise.reps}</div>
-                                  </div>
-                                  {exercise.description && (
-                                    <div className="text-[9px] text-slate-400 mb-1 line-clamp-1">
-                                      {exercise.description}
-                                    </div>
-                                  )}
-                                </div>
-                              ))}
-                              <button
-                                type="button"
-                                onClick={() => addDayExercise(phaseIndex, dayIndex)}
-                                className="w-full py-1.5 border-2 border-dashed border-slate-200 rounded-lg text-slate-400 hover:border-purple-300 hover:text-purple-600 transition-colors text-[10px] font-medium"
-                              >
-                                + Add Exercise
-                              </button>
-                            </>
-                          ) : (
-                            <div className="text-center py-8 text-slate-400 text-[10px]">
-                              Rest Day
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Phase Details Section */}
-                  <div className="bg-white rounded-xl p-6 border border-slate-200 space-y-6">
-                    <div className="space-y-2">
-                      <Label>Duration (weeks)</Label>
-                      <Input
-                        type="number"
-                        min="1"
-                        value={phase.duration_weeks}
-                        onChange={(e) => updatePhase(phaseIndex, 'duration_weeks', parseInt(e.target.value))}
-                        className="rounded-xl"
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label>Description</Label>
-                      <Textarea
-                        value={phase.description || ''}
-                        onChange={(e) => updatePhase(phaseIndex, 'description', e.target.value)}
-                        className="rounded-xl"
-                      />
-                    </div>
-
-                    {/* Exit Criteria */}
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between">
-                        <Label className="flex items-center gap-2">
-                          <Target className="w-4 h-4 text-teal-500" />
-                          Exit Criteria
-                        </Label>
-                        <Button 
-                          type="button" 
-                          variant="ghost" 
-                          size="sm"
-                          onClick={() => addExitCriterion(phaseIndex)}
-                        >
-                          <Plus className="w-4 h-4 mr-1" />
-                          Add
-                        </Button>
-                      </div>
-
-                      {phase.exit_criteria?.map((criteria, criteriaIndex) => (
-                        <div key={criteriaIndex} className="flex gap-3 items-start bg-slate-50 p-3 rounded-xl">
-                          <div className="flex-1 space-y-2">
-                            <Input
-                              value={criteria.criterion}
-                              onChange={(e) => updateExitCriterion(phaseIndex, criteriaIndex, 'criterion', e.target.value)}
-                              placeholder="Criterion"
-                              className="rounded-lg"
-                            />
-                            <Input
-                              value={criteria.target_value}
-                              onChange={(e) => updateExitCriterion(phaseIndex, criteriaIndex, 'target_value', e.target.value)}
-                              placeholder="Target value"
-                              className="rounded-lg"
-                            />
-                          </div>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => removeExitCriterion(phaseIndex, criteriaIndex)}
-                            className="text-slate-400 hover:text-rose-500"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
+                <div className="space-y-2">
+                  <Label>Status</Label>
+                  <MobileSelect
+                    label="Status"
+                    value={planData.status || 'active'}
+                    onChange={(event) => setPlanData((current) => ({ ...current, status: event.target.value }))}
+                    options={[
+                      { value: 'draft', label: 'Draft' },
+                      { value: 'active', label: 'Active' },
+                      { value: 'paused', label: 'Paused' },
+                      { value: 'completed', label: 'Completed' },
+                      { value: 'archived', label: 'Archived' },
+                    ]}
+                  />
                 </div>
-              ))}
-            </div>
+              </div>
+            </section>
 
-            <div className="flex justify-end gap-3 pt-4">
-              <Link to={createPageUrl(`PatientDetail?id=${planData.patient_id}`)}>
-                <Button type="button" variant="outline" className="rounded-xl">
+            {isBasic ? (
+              <BasicProgramBuilder
+                planData={planData}
+                setPlanData={setPlanData}
+                libraryExercises={libraryExercises}
+              />
+            ) : (
+              <section className="space-y-4">
+                <h2 className="text-lg font-semibold text-slate-700">Weekly Schedule</h2>
+                <ProgrammeScheduleEditor
+                  phases={phases}
+                  setPhases={setPhases}
+                  libraryExercises={libraryExercises}
+                  progressionBlocks={progressionBlocks}
+                  selectedPhaseIndex={selectedPhaseIndex}
+                  setSelectedPhaseIndex={setSelectedPhaseIndex}
+                  selectedWeekIndex={selectedWeekIndex}
+                  setSelectedWeekIndex={setSelectedWeekIndex}
+                  onAddPhase={addPhase}
+                  onRemovePhase={removePhase}
+                  onUpdatePhase={updatePhase}
+                  onAddExitCriterion={addExitCriterion}
+                  onUpdateExitCriterion={updateExitCriterion}
+                  onRemoveExitCriterion={removeExitCriterion}
+                />
+              </section>
+            )}
+
+            {saveError && (
+              <div role="alert" className="rounded-xl border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-300">
+                {saveError}
+              </div>
+            )}
+
+            <div className="flex flex-col-reverse gap-3 border-t border-slate-200 pt-6 sm:flex-row sm:justify-end">
+              <Link to={patientRoute}>
+                <Button type="button" variant="outline" className="w-full rounded-xl sm:w-auto">
                   Cancel
                 </Button>
               </Link>
-              <Button 
-                type="submit" 
-                disabled={saving}
-                className="bg-purple-600 hover:bg-purple-700 text-white rounded-xl"
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleExportPDF}
+                disabled={exportingPDF || !planData.title}
+                className="rounded-xl"
               >
-                {saving ? (
-                  <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full mr-2" />
-                ) : (
-                  <Save className="w-4 h-4 mr-2" />
-                )}
+                {exportingPDF
+                  ? <span className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-slate-500 border-t-transparent" />
+                  : <Download className="mr-2 h-4 w-4" />}
+                Export PDF
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleEmailPDF}
+                disabled={exportingPDF || !planData.title || !patient?.email}
+                className="rounded-xl"
+                title={!patient?.email ? 'Patient email not available' : ''}
+              >
+                <Mail className="mr-2 h-4 w-4" />
+                Email PDF
+              </Button>
+              <Button type="submit" disabled={saving} className="rounded-xl bg-purple-600 text-white hover:bg-purple-700">
+                {saving
+                  ? <span className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-slate-900 border-t-transparent" />
+                  : <Save className="mr-2 h-4 w-4" />}
                 Save Changes
               </Button>
             </div>
           </form>
         </div>
-
-        {/* Copy Day Dialog */}
-        {showCopyDialog && copySource && copyPhase && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-2xl p-6 max-w-md w-full">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold">Copy Exercises</h3>
-                <button
-                  onClick={() => {
-                    setShowCopyDialog(false);
-                    setCopySource(null);
-                    setCopyPhase(null);
-                  }}
-                  className="text-slate-400 hover:text-slate-600"
-                >
-                  ✕
-                </button>
-              </div>
-              <p className="text-sm text-slate-500 mb-4">
-                Copy exercises from <strong>{copyPhase.daily_schedule[copySource.dayIndex].day}</strong> to:
-              </p>
-              <div className="grid grid-cols-2 gap-3 max-h-96 overflow-y-auto">
-                {copyPhase.daily_schedule.map((day, dayIndex) => (
-                  <button
-                    key={dayIndex}
-                    type="button"
-                    onClick={() => {
-                      copyDayToAnotherDay(dayIndex);
-                      setShowCopyDialog(false);
-                      setCopySource(null);
-                      setCopyPhase(null);
-                    }}
-                    disabled={dayIndex === copySource.dayIndex || day.type === 'rest'}
-                    className={cn(
-                      "p-4 rounded-xl border-2 text-left transition-all font-medium",
-                      dayIndex === copySource.dayIndex
-                        ? "bg-slate-100 border-slate-200 cursor-not-allowed opacity-50 text-slate-500"
-                        : day.type === 'rest'
-                        ? "bg-slate-50 border-slate-200 cursor-not-allowed opacity-50 text-slate-500"
-                        : "border-slate-200 text-slate-700 hover:border-purple-400 hover:bg-purple-50 cursor-pointer"
-                    )}
-                  >
-                    <div>{day.day.substring(0, 3)}</div>
-                    <div className="text-xs text-slate-400 capitalize mt-1">{day.type}</div>
-                  </button>
-                ))}
-              </div>
-              <Button 
-                type="button"
-                variant="outline" 
-                onClick={() => {
-                  setShowCopyDialog(false);
-                  setCopySource(null);
-                  setCopyPhase(null);
-                }}
-                className="w-full mt-4 rounded-xl"
-              >
-                Cancel
-              </Button>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );
