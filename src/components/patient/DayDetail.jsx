@@ -425,6 +425,7 @@ export default function DayDetail({ day, dayIndex, currentPhase, onBack, onPrevi
             <ExercisePerformanceForm
               key={selectedExercise.name}
               exercise={selectedExercise}
+              patient={patient}
               onSubmit={(data) => createExerciseLogMutation.mutate(data)}
               isSaving={createExerciseLogMutation.isPending}
             />
