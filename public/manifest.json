@@ -1,0 +1,9 @@
+{
+  "name": "Performance Track+",
+  "short_name": "Performance Track+",
+  "description": "Rehabilitation planning and progress tracking.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#171719",
+  "theme_color": "#171719"
+}
