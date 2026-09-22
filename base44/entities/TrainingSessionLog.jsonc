@@ -1,0 +1,238 @@
+{
+  "name": "TrainingSessionLog",
+  "type": "object",
+  "properties": {
+    "clinic_id": {
+      "type": "string",
+      "description": "Owning clinic for tenant isolation"
+    },
+    "patient_id": {
+      "type": "string",
+      "description": "Patient completing the session"
+    },
+    "plan_id": {
+      "type": "string"
+    },
+    "phase_id": {
+      "type": "string"
+    },
+    "date": {
+      "type": "string",
+      "format": "date"
+    },
+    "duration_minutes": {
+      "type": "number",
+      "minimum": 0
+    },
+    "session_rpe": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 10
+    },
+    "internal_session_load": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Session RPE multiplied by duration in minutes"
+    },
+    "completed": {
+      "type": "boolean",
+      "default": true
+    },
+    "fatigue": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 10
+    },
+    "recovery": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 10
+    },
+    "immediate_pain": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 10
+    },
+    "next_morning_symptoms": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 10
+    },
+    "next_morning_recorded_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "modified": {
+      "type": "boolean",
+      "default": false
+    },
+    "modification_reason": {
+      "type": "string"
+    },
+    "completion_status": {
+      "type": "string",
+      "enum": [
+        "completed",
+        "part_completed",
+        "stopped"
+      ],
+      "default": "completed"
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "clinic_id",
+    "patient_id",
+    "date"
+  ],
+  "rls": {
+    "create": {
+      "$or": [
+        {
+          "$and": [
+            {
+              "$or": [
+                {
+                  "user_condition": {
+                    "role": "admin"
+                  }
+                },
+                {
+                  "user_condition": {
+                    "role": "clinic_admin"
+                  }
+                },
+                {
+                  "user_condition": {
+                    "role": "clinician"
+                  }
+                }
+              ]
+            },
+            {
+              "data.clinic_id": "{{user.data.clinic_id}}"
+            }
+          ]
+        },
+        {
+          "$and": [
+            {
+              "data.patient_id": "{{user.data.patient_id}}"
+            },
+            {
+              "data.clinic_id": "{{user.data.clinic_id}}"
+            }
+          ]
+        }
+      ]
+    },
+    "read": {
+      "$or": [
+        {
+          "$and": [
+            {
+              "$or": [
+                {
+                  "user_condition": {
+                    "role": "admin"
+                  }
+                },
+                {
+                  "user_condition": {
+                    "role": "clinic_admin"
+                  }
+                },
+                {
+                  "user_condition": {
+                    "role": "clinician"
+                  }
+                }
+              ]
+            },
+            {
+              "data.clinic_id": "{{user.data.clinic_id}}"
+            }
+          ]
+        },
+        {
+          "$and": [
+            {
+              "data.patient_id": "{{user.data.patient_id}}"
+            },
+            {
+              "data.clinic_id": "{{user.data.clinic_id}}"
+            }
+          ]
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "$and": [
+            {
+              "$or": [
+                {
+                  "user_condition": {
+                    "role": "admin"
+                  }
+                },
+                {
+                  "user_condition": {
+                    "role": "clinic_admin"
+                  }
+                },
+                {
+                  "user_condition": {
+                    "role": "clinician"
+                  }
+                }
+              ]
+            },
+            {
+              "data.clinic_id": "{{user.data.clinic_id}}"
+            }
+          ]
+        },
+        {
+          "$and": [
+            {
+              "data.patient_id": "{{user.data.patient_id}}"
+            },
+            {
+              "data.clinic_id": "{{user.data.clinic_id}}"
+            }
+          ]
+        }
+      ]
+    },
+    "delete": {
+      "$and": [
+        {
+          "$or": [
+            {
+              "user_condition": {
+                "role": "admin"
+              }
+            },
+            {
+              "user_condition": {
+                "role": "clinic_admin"
+              }
+            },
+            {
+              "user_condition": {
+                "role": "clinician"
+              }
+            }
+          ]
+        },
+        {
+          "data.clinic_id": "{{user.data.clinic_id}}"
+        }
+      ]
+    }
+  }
+}
