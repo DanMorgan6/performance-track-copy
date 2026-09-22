@@ -102,18 +102,36 @@ export const buildInternalLoadSeries = (sessionLogs = [], view = 'daily') => {
     .map((row) => ({ ...row, value: row.rolling28 }));
 };
 
-export const buildResponseSeries = (sessionLogs = []) => [...sessionLogs]
-  .filter((session) => session.date)
-  .sort((a, b) => String(a.date).localeCompare(String(b.date)))
-  .slice(-14)
-  .map((session) => ({
-    date: session.date,
-    label: formatShortDate(session.date),
-    immediatePain: session.immediate_pain == null ? null : Number(session.immediate_pain),
-    nextMorning: session.next_morning_symptoms == null ? null : Number(session.next_morning_symptoms),
-    fatigue: session.fatigue == null ? null : Number(session.fatigue),
-    recovery: session.recovery == null ? null : Number(session.recovery),
-  }));
+export const buildResponseSeries = (sessionLogs = [], morningCheckIns = []) => {
+  const sessionsByDate = new Map();
+  sessionLogs.filter((session) => session.date).forEach((session) => {
+    const rows = sessionsByDate.get(session.date) || [];
+    rows.push(session);
+    sessionsByDate.set(session.date, rows);
+  });
+  const morningsByDate = new Map(
+    morningCheckIns.filter((entry) => entry.date).map((entry) => [entry.date, entry]),
+  );
+  const dates = [...new Set([...sessionsByDate.keys(), ...morningsByDate.keys()])]
+    .sort((a, b) => String(a).localeCompare(String(b)))
+    .slice(-14);
+
+  return dates.map((date) => {
+    const sessions = sessionsByDate.get(date) || [];
+    const morning = morningsByDate.get(date);
+    return {
+      date,
+      label: formatShortDate(date),
+      immediatePain: meanOrNull(sessions.map((session) => session.immediate_pain)),
+      nextMorning: morning?.morning_symptoms == null
+        ? meanOrNull(sessions.map((session) => session.next_morning_symptoms))
+        : Number(morning.morning_symptoms),
+      fatigue: morning?.fatigue == null ? null : Number(morning.fatigue),
+      recovery: morning?.recovery == null ? null : Number(morning.recovery),
+      sleepQuality: morning?.sleep_quality == null ? null : Number(morning.sleep_quality),
+    };
+  });
+};
 
 export const buildExerciseTrendGroups = (exerciseLogs = []) => {
   const groups = new Map();
@@ -168,30 +186,36 @@ export const buildExerciseTrendGroups = (exerciseLogs = []) => {
   }).sort((a, b) => String(b.latestDate).localeCompare(String(a.latestDate)));
 };
 
-export const buildReadinessSummary = (sessionLogs = []) => {
-  const recent = [...sessionLogs]
+export const buildReadinessSummary = (sessionLogs = [], morningCheckIns = []) => {
+  const recentMornings = [...morningCheckIns]
+    .filter((entry) => entry.date)
+    .sort((a, b) => String(b.date).localeCompare(String(a.date)))
+    .slice(0, 3);
+  const recentSessions = [...sessionLogs]
     .filter((session) => session.date)
     .sort((a, b) => String(b.date).localeCompare(String(a.date)))
     .slice(0, 3);
 
-  if (recent.length < 2) {
+  if (recentMornings.length < 2) {
     return {
       status: 'insufficient',
-      label: 'Insufficient information',
-      detail: 'At least two recent session responses are needed before interpreting readiness.',
+      label: 'Building your baseline',
+      detail: 'Complete at least two morning check-ins before interpreting recovery patterns.',
       contributors: [],
     };
   }
 
   const contributors = [];
-  const avgPain = meanOrNull(recent.flatMap((session) => [session.immediate_pain, session.next_morning_symptoms]).filter((value) => value != null));
-  const avgFatigue = meanOrNull(recent.map((session) => session.fatigue).filter((value) => value != null));
-  const avgRecovery = meanOrNull(recent.map((session) => session.recovery).filter((value) => value != null));
-  const modified = recent.some((session) => session.modified || session.completion_status === 'stopped');
+  const avgSymptoms = meanOrNull(recentMornings.map((entry) => entry.morning_symptoms));
+  const avgFatigue = meanOrNull(recentMornings.map((entry) => entry.fatigue));
+  const avgRecovery = meanOrNull(recentMornings.map((entry) => entry.recovery));
+  const avgSleep = meanOrNull(recentMornings.map((entry) => entry.sleep_quality));
+  const modified = recentSessions.some((session) => session.modified || session.completion_status === 'stopped');
 
-  if (avgPain != null && avgPain > 3) contributors.push(`Pain response ${avgPain.toFixed(1)}/10`);
+  if (avgSymptoms != null && avgSymptoms > 3) contributors.push(`Morning symptoms ${avgSymptoms.toFixed(1)}/10`);
   if (avgFatigue != null && avgFatigue >= 8) contributors.push(`Fatigue ${avgFatigue.toFixed(1)}/10`);
   if (avgRecovery != null && avgRecovery < 5) contributors.push(`Recovery ${avgRecovery.toFixed(1)}/10`);
+  if (avgSleep != null && avgSleep < 4) contributors.push(`Sleep quality ${avgSleep.toFixed(1)}/10`);
   if (modified) contributors.push('Recent session modified or stopped');
 
   if (contributors.length) {
@@ -206,7 +230,7 @@ export const buildReadinessSummary = (sessionLogs = []) => {
   return {
     status: 'responding',
     label: 'Responding well',
-    detail: 'Recent recorded responses are stable. This does not confirm phase readiness.',
+    detail: 'Recent morning responses are stable. This does not confirm phase readiness.',
     contributors: ['No recent response threshold exceeded'],
   };
 };
