@@ -53,6 +53,17 @@
               },
               "weight": {
                 "type": "string"
+              },
+              "tracking_mode": {
+                "type": "string",
+                "enum": [
+                  "inherit",
+                  "basic",
+                  "standard",
+                  "performance"
+                ],
+                "default": "inherit",
+                "description": "Optional exercise-level override of the plan monitoring level."
               }
             },
             "type": "object"
@@ -83,6 +94,7 @@
       "enum": [
         "basic",
         "phased",
+        "performance",
         "ai_assisted"
       ],
       "type": "string"
@@ -172,6 +184,31 @@
     },
     "total_phases": {
       "type": "number"
+    },
+    "plan_mode": {
+      "type": "string",
+      "enum": [
+        "basic",
+        "phased",
+        "performance"
+      ],
+      "default": "phased",
+      "description": "Clinician-facing plan option. Performance uses phased structure with advanced monitoring."
+    },
+    "monitoring_level": {
+      "type": "string",
+      "enum": [
+        "basic",
+        "standard",
+        "performance"
+      ],
+      "default": "standard",
+      "description": "Controls the patient data-capture burden independently of plan structure."
+    },
+    "morning_check_in_enabled": {
+      "type": "boolean",
+      "default": false,
+      "description": "Shows the once-daily patient morning response prompt."
     }
   },
   "required": [
