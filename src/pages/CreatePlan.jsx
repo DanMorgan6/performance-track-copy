@@ -272,33 +272,44 @@ export default function CreatePlan() {
         }))
       }));
 
-      const prompt = `You are an expert physical therapist creating a detailed rehabilitation plan.
+      const planMode = planData.plan_mode || programType || 'phased';
+      const libraryContext = libraryExercises.slice(0, 80).map((exercise) => ({
+        name: exercise.name,
+        category: exercise.category,
+        body_part: exercise.body_part,
+        description: exercise.description,
+        default_sets: exercise.default_sets,
+        default_reps: exercise.default_reps
+      }));
 
-Patient Profile:
-- Condition/Injury: ${aiInputs.condition}
-- Injury Severity: ${aiInputs.injury_severity}
+      const prompt = `You are a clinical rehabilitation drafting assistant. Produce a clinician-reviewable ${planMode} plan; do not diagnose, invent examination findings, or override stated precautions.
+
+Patient context:
+- Condition/injury: ${aiInputs.condition}
+- Severity: ${aiInputs.injury_severity}
+- Goal: ${aiInputs.rehab_goal || 'Restore function safely'}
+- Precautions or restrictions: ${aiInputs.precautions || 'None supplied — do not invent any'}
 - Age: ${aiInputs.age || (patient?.date_of_birth ? new Date().getFullYear() - new Date(patient.date_of_birth).getFullYear() : 'Adult')}
-- Activity Level: ${aiInputs.activity_level}
-- Patient Name: ${patient?.full_name || 'Patient'}
+- Activity level: ${aiInputs.activity_level}
+- Sessions per week: ${aiInputs.sessions_per_week}
+- Patient: ${patient?.full_name || 'Patient'}
 
-${templatesContext.length > 0 ? `IMPORTANT: Learn from these existing rehabilitation templates. Use similar exercise selections, progression patterns, and phase structures:
+Plan rules:
+1. This is a ${planMode} plan. ${planMode === 'basic' ? 'Return a concise exercise list with no phases or exit criteria.' : 'Return 3-5 progressive, criteria-led phases.'}
+2. Time is a planning guide only. Never use elapsed time alone to progress a phase.
+3. Exit criteria must be objective, observable and assessable. Progression remains clinician-controlled.
+4. Prefer exact exercise names from the clinic library below. Use a clear standard name only when no appropriate library exercise exists.
+5. Keep patient burden proportionate. For Performance plans, use performance tracking only for measurable loaded strength exercises; use standard or basic tracking for mobility, balance, control and symptom-led work.
+6. Specify realistic sets, repetitions, rest and weekly scheduling. Do not prescribe through pain or contradict the supplied precautions.
+7. The output is a draft for practitioner review, not autonomous clinical advice.
 
+Clinic exercise library:
+${JSON.stringify(libraryContext, null, 2)}
+
+Relevant clinic templates:
 ${JSON.stringify(templatesContext, null, 2)}
 
-Key patterns to follow:
-1. Use similar exercises from the templates for comparable phases
-2. Follow the progression style (e.g., starting with mobility, then strength, then functional)
-3. Match the phase duration patterns
-4. Use similar exit criteria formats
-5. Apply comparable sets/reps/frequency patterns` : ''}
-
-Create a comprehensive rehabilitation plan with 3-5 phases. Each phase should include:
-- Phase name and description (follow template naming conventions)
-- Duration in weeks (consider template durations)
-- 3-5 specific exit criteria with target values (similar to template format)
-- 4-8 exercises with detailed parameters (select exercises similar to those in templates for comparable phases)
-
-Make the plan progressive, evidence-based, and tailored to the patient's profile while learning from the template patterns above.`;
+For each exercise set tracking_mode to basic, standard or performance. Basic plans should normally use basic. Phased plans should normally use standard. Performance plans may mix all three according to clinical value.`;
 
       const result = /** @type {any} */ (await base44.integrations.Core.InvokeLLM({
         prompt: prompt,
