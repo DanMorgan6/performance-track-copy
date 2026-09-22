@@ -81,10 +81,13 @@ describe('rehabilitation training monitoring', () => {
   });
 
   it('uses transparent readiness contributors rather than an automatic score', () => {
-    const summary = buildReadinessSummary([
-      { date: '2026-09-22', immediate_pain: 5, fatigue: 8, recovery: 4 },
-      { date: '2026-09-21', next_morning_symptoms: 4, fatigue: 8, recovery: 4 },
-    ]);
+    const summary = buildReadinessSummary(
+      [{ date: '2026-09-22', immediate_pain: 5, modified: true }],
+      [
+        { date: '2026-09-22', morning_symptoms: 5, fatigue: 8, recovery: 4, sleep_quality: 3 },
+        { date: '2026-09-21', morning_symptoms: 4, fatigue: 8, recovery: 4, sleep_quality: 4 },
+      ],
+    );
 
     expect(summary.status).toBe('review');
     expect(summary.contributors).toContain('Fatigue 8.0/10');
@@ -95,6 +98,8 @@ describe('rehabilitation training monitoring', () => {
     const dayDetail = readFileSync('src/components/patient/DayDetail.jsx', 'utf8');
     const exerciseForm = readFileSync('src/components/patient/ExercisePerformanceForm.jsx', 'utf8');
     const sessionForm = readFileSync('src/components/patient/PatientSessionSummary.jsx', 'utf8');
+    const morningPrompt = readFileSync('src/components/patient/MorningCheckInPrompt.jsx', 'utf8');
+    const portal = readFileSync('src/pages/PatientPortal.jsx', 'utf8');
     const dashboard = readFileSync('src/components/analytics/ResistanceTrainingDashboard.jsx', 'utf8');
     const charts = readFileSync('src/components/analytics/TrainingMonitoringCharts.jsx', 'utf8');
     const clinicianAnalytics = readFileSync('src/components/analytics/PatientAnalyticsTab.jsx', 'utf8');
@@ -102,10 +107,15 @@ describe('rehabilitation training monitoring', () => {
 
     expect(dayDetail).toContain('<ExercisePerformanceForm');
     expect(dayDetail).toContain('<PatientSessionSummary');
-    expect(exerciseForm).toContain('How many more good-quality repetitions');
+    expect(exerciseForm).toContain('Last time:');
+    expect(exerciseForm).toContain('0 kg is recorded as bodyweight.');
+    expect(exerciseForm).not.toContain('Equipment');
     expect(exerciseForm).toContain('Estimated Strength');
     expect(sessionForm).toContain('Internal Session Load');
-    expect(sessionForm).toContain('next_morning_symptoms');
+    expect(sessionForm).not.toContain('next_morning_symptoms');
+    expect(morningPrompt).toContain('Good morning — how are you today?');
+    expect(morningPrompt).toContain('MorningCheckIn.create');
+    expect(portal).toContain('<MorningCheckInPrompt patient={patient} />');
     expect(dashboard).toContain('Loads are never added across different exercises');
     expect(dashboard).toContain('exit criteria and clinician approval still control progression');
     expect(dashboard).toContain('<TrainingMonitoringCharts');
