@@ -138,6 +138,27 @@
           },
           "notes": {
             "type": "string"
+          },
+          "peak_force": {
+            "type": "number",
+            "description": "Optional instrumented peak force for an isometric set"
+          },
+          "average_force": {
+            "type": "number",
+            "description": "Optional instrumented average force for an isometric set"
+          },
+          "force_unit": {
+            "type": "string",
+            "enum": [
+              "N",
+              "kgf",
+              "lb"
+            ],
+            "description": "Unit reported by the force device"
+          },
+          "force_duration": {
+            "type": "number",
+            "description": "Optional average force multiplied by hold duration"
           }
         }
       }
