@@ -29,6 +29,7 @@ import PatientProfilePanel from "@/components/patient/PatientProfilePanel";
 import PatientPortalSplash from "@/components/patient/PatientPortalSplash";
 import DayTypeBannerCard from "@/components/patient/DayTypeBannerCard";
 import PatientDashboardGrid from "@/components/patient/PatientDashboardGrid";
+import MorningCheckInPrompt from "@/components/patient/MorningCheckInPrompt";
 
 import PatientReportView from "@/components/report/PatientReportView";
 import MotivationalBanner from "@/components/ai/MotivationalBanner";
@@ -657,6 +658,8 @@ export default function PatientPortal() {
             {/* DASHBOARD VIEW */}
             <TabsContent value="dashboard">
               <div className="space-y-5">
+                <MorningCheckInPrompt patient={patient} />
+
                 {/* Day Type Banner (phased only) */}
                 <DayTypeBannerCard
                   activePlan={activePlan}
