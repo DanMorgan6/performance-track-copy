@@ -2,8 +2,9 @@ import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import DayNotesEditor from '@/components/patient/DayNotesEditor';
+import ExerciseVideoPreview from '@/components/exercise/ExerciseVideoPreview';
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Play, CheckCircle, Info, TestTube, XCircle, AlertCircle, Calendar } from 'lucide-react';
+import { ArrowLeft, CheckCircle, Info, TestTube, XCircle, AlertCircle, Calendar } from 'lucide-react';
 import { cn } from "@/lib/utils";
 import {
   Dialog,
@@ -214,15 +215,12 @@ export default function DayDetail({ day, dayIndex, currentPhase, onBack, patient
                     )}
                   </div>
                   {exercise.video_url && (
-                    <a 
-                      href={exercise.video_url} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-1 text-sm text-purple-600 hover:text-purple-700"
-                    >
-                      <Play className="w-4 h-4" />
-                      Video
-                    </a>
+                    <ExerciseVideoPreview
+                      videoUrl={exercise.video_url}
+                      thumbnailUrl={exercise.thumbnail_url}
+                      exerciseName={exercise.name}
+                      variant="button"
+                    />
                   )}
                 </div>
               </div>
