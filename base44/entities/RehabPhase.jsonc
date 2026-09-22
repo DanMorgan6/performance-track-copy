@@ -86,6 +86,16 @@
               "number",
               "null"
             ]
+          },
+          "tracking_mode": {
+            "type": "string",
+            "enum": [
+              "inherit",
+              "basic",
+              "standard",
+              "performance"
+            ],
+            "default": "inherit"
           }
         },
         "type": "object"
@@ -246,6 +256,16 @@
                       },
                       "weight": {
                         "type": "string"
+                      },
+                      "tracking_mode": {
+                        "type": "string",
+                        "enum": [
+                          "inherit",
+                          "basic",
+                          "standard",
+                          "performance"
+                        ],
+                        "default": "inherit"
                       }
                     },
                     "type": "object"
