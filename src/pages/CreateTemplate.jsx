@@ -33,6 +33,7 @@ export default function CreateTemplate() {
   const templateId = urlParams.get('id');
 
   const [saving, setSaving] = useState(false);
+  const [currentUser, setCurrentUser] = useState(null);
   const [selectedPhaseIndex, setSelectedPhaseIndex] = useState(0);
   const [selectedWeekIndex, setSelectedWeekIndex] = useState(0);
   const [showAiGenerator, setShowAiGenerator] = useState(false);
@@ -47,10 +48,12 @@ export default function CreateTemplate() {
 
   React.useEffect(() => {
     const checkAccess = async () => {
-      const currentUser = await base44.auth.me();
-      if (!isPractitioner(currentUser)) {
+      const user = await base44.auth.me();
+      if (!isPractitioner(user)) {
         window.location.href = createPageUrl('PatientPortal');
+        return;
       }
+      setCurrentUser(user);
     };
     checkAccess();
   }, []);
@@ -89,14 +92,29 @@ export default function CreateTemplate() {
 
 
   const { data: libraryExercises = [] } = useQuery({
-    queryKey: ['exercise-library'],
-    queryFn: () => base44.entities.ExerciseLibrary.list('-created_date')
+    queryKey: ['exercise-library', currentUser?.clinic_id],
+    queryFn: () => base44.entities.ExerciseLibrary.filter(
+      { clinic_id: currentUser.clinic_id },
+      '-created_date'
+    ),
+    enabled: !!currentUser?.clinic_id
+  });
+
+  const { data: progressionBlocks = [] } = useQuery({
+    queryKey: ['progression-blocks', currentUser?.clinic_id],
+    queryFn: () => base44.entities.ProgressionBlock.filter(
+      { clinic_id: currentUser.clinic_id, is_active: true },
+      'name'
+    ),
+    enabled: !!currentUser?.clinic_id
   });
 
   const { data: existingTemplate } = useQuery({
-    queryKey: ['template', templateId],
-    queryFn: () => base44.entities.RehabTemplate.filter({ id: templateId }).then(res => res[0]),
-    enabled: !!templateId
+    queryKey: ['template', templateId, currentUser?.clinic_id],
+    queryFn: () => base44.entities.RehabTemplate
+      .filter({ id: templateId, clinic_id: currentUser.clinic_id })
+      .then(res => res[0]),
+    enabled: !!templateId && !!currentUser?.clinic_id
   });
 
   // Track which templateId we've already loaded so we don't re-init on re-renders
@@ -492,7 +510,7 @@ Create a comprehensive rehabilitation template with 3-5 phases. Each phase shoul
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 p-4 lg:p-6 overflow-x-hidden">
+    <div className="performance-shell min-h-screen bg-slate-50 p-4 lg:p-6 overflow-x-hidden">
       <div className="max-w-[1600px] mx-auto w-full">
         <Link
           to={createPageUrl('Templates')}
@@ -595,6 +613,7 @@ Create a comprehensive rehabilitation template with 3-5 phases. Each phase shoul
                 phases={phases}
                 setPhases={setPhases}
                 libraryExercises={libraryExercises}
+                progressionBlocks={progressionBlocks}
                 selectedPhaseIndex={selectedPhaseIndex}
                 setSelectedPhaseIndex={setSelectedPhaseIndex}
                 selectedWeekIndex={selectedWeekIndex}
