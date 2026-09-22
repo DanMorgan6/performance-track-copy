@@ -26,6 +26,14 @@ export default function WeeklyOverview({ currentPhase, plan, onDayClick, onWeekC
   
   const hasMultipleWeeks = currentPhase.weeks.length > 1;
 
+  // Attach a concrete date to each weekday so exercise logs anchor to the
+  // correct day of the selected week (the schedule only stores weekday names).
+  const weekMonday = startOfWeek(addDays(new Date(), weekOffset * 7), { weekStartsOn: 1 });
+  const enrichedSchedule = (currentWeek.daily_schedule || []).map((day, i) => ({
+    ...day,
+    date: format(addDays(weekMonday, i), 'yyyy-MM-dd')
+  }));
+
   // Get today's day name
   const today = format(new Date(), 'EEEE');
   
@@ -75,7 +83,7 @@ export default function WeeklyOverview({ currentPhase, plan, onDayClick, onWeekC
 
        {/* Weekly Grid - Desktop, Horizontal Scroll - Mobile */}
        <div className="hidden md:grid md:grid-cols-7 gap-3 lg:gap-4">
-        {currentWeek.daily_schedule?.map((day, dayIndex) => {
+        {enrichedSchedule?.map((day, dayIndex) => {
           const isToday = day.day === today;
           const isSelected = dayIndex === selectedDayIndex;
           const exerciseCount = day.exercises?.length || 0;
@@ -91,7 +99,7 @@ export default function WeeklyOverview({ currentPhase, plan, onDayClick, onWeekC
           return (
             <button
               key={dayIndex}
-              onClick={() => onDayClick(day, dayIndex, currentWeek.daily_schedule)}
+              onClick={() => onDayClick(day, dayIndex, enrichedSchedule)}
               aria-pressed={isSelected}
               className={cn(
                 "bg-white rounded-xl border-2 overflow-hidden transition-all hover:shadow-lg",
@@ -158,7 +166,7 @@ export default function WeeklyOverview({ currentPhase, plan, onDayClick, onWeekC
           {/* Mobile Horizontal Scroll */}
           <div className="md:hidden -mx-3 px-3 overflow-x-auto">
           <div className="flex gap-2 pb-2">
-          {currentWeek.daily_schedule?.map((day, dayIndex) => {
+          {enrichedSchedule?.map((day, dayIndex) => {
             const isToday = day.day === today;
           const isSelected = dayIndex === selectedDayIndex;
             const exerciseCount = day.exercises?.length || 0;
@@ -173,7 +181,7 @@ export default function WeeklyOverview({ currentPhase, plan, onDayClick, onWeekC
             return (
               <button
                 key={dayIndex}
-                onClick={() => onDayClick(day, dayIndex, currentWeek.daily_schedule)}
+                onClick={() => onDayClick(day, dayIndex, enrichedSchedule)}
               aria-pressed={isSelected}
                 className={cn(
                   "flex-shrink-0 w-20 bg-white rounded-lg border-2 overflow-hidden transition-all",

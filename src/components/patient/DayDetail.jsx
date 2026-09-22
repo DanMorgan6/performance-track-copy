@@ -20,7 +20,7 @@ import { toast } from "@/components/ui/use-toast";
 
 export default function DayDetail({ day, dayIndex, currentPhase, onBack, onPrevious, onNext, hasPrevious = false, hasNext = false, patient, selectedDate = null, milestones = [] }) {
   const queryClient = useQueryClient();
-  const dateStr = day ? day.date : new Date().toISOString().split('T')[0];
+  const dateStr = day?.date || new Date().toISOString().split('T')[0];
 
   const { data: dayNote } = useQuery({
     queryKey: ['day-notes', dateStr],
