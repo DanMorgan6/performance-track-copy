@@ -58,6 +58,7 @@ import { injuryDiagnosisLibrary } from "@/components/injury/injuryDiagnosisLibra
 import { cn } from "@/lib/utils";
 import { isPractitioner } from '@/lib/roles';
 import { titleCaseName } from '@/lib/nameFormat';
+import { calculatePlanAdherence } from '@/lib/adherence';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -536,15 +537,10 @@ Your Rehabilitation Team`;
     fullDate: log.date
   }));
 
-  // Calculate metrics for auto-suggestions and status updates
-  const last30DaysLogs = exerciseLogs.filter(log => {
-    const daysDiff = (Date.now() - new Date(log.date).getTime()) / (1000 * 60 * 60 * 24);
-    return daysDiff <= 30;
-  });
-  
-  const expectedExercises = currentPhase?.exercises?.length * 30 || 1;
-  const completedExercises = last30DaysLogs.filter(l => l.completed).length;
-  const adherenceRate = (completedExercises / expectedExercises) * 100;
+  // Adherence is measured from the plan start date through today, against the
+  // exercises actually prescribed in the phase weekly schedule (not a fixed 30-day window).
+  const adherence = calculatePlanAdherence(activePlan, currentPhase, exerciseLogs);
+  const adherenceRate = adherence.rate;
 
   const recentPainLogs = painLogs.slice(0, 7);
   const avgPainLevel = recentPainLogs.length > 0 
@@ -762,8 +758,8 @@ Your Rehabilitation Team`;
             {/* Adherence */}
             <div className="bg-white rounded-2xl p-4 border border-slate-100">
               <p className="text-xs font-medium text-slate-600 mb-1">Adherence</p>
-              <p className="text-2xl font-bold text-purple-600">{Math.round(adherenceRate)}%</p>
-              <p className="text-xs text-slate-500 mt-1">{last30DaysLogs.length} ex / 30d</p>
+              <p className="text-2xl font-bold text-purple-600">{adherenceRate}%</p>
+              <p className="text-xs text-slate-500 mt-1">{adherence.completed}/{adherence.expected} ex · {adherence.daysElapsed}d</p>
             </div>
 
             {/* Current Phase */}
