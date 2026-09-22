@@ -30,7 +30,9 @@ import { isPractitioner } from '@/lib/roles';
 import { generatePlanPDF, uploadAndEmailPDF } from "@/components/reports/PlanPDFGenerator";
 import ProgramTypeSelector from "@/components/plan/ProgramTypeSelector";
 import BasicProgramBuilder from "@/components/plan/BasicProgramBuilder";
+import MonitoringSettingsCard from "@/components/plan/MonitoringSettingsCard";
 import MobileSelect from "@/components/ui/MobileSelect";
+import { applyPlanMode } from "@/lib/planModes";
 import ProgrammeScheduleEditor from "@/components/programme/ProgrammeScheduleEditor.jsx";
 
 export default function CreatePlan() {
@@ -54,7 +56,10 @@ export default function CreatePlan() {
     condition: '',
     injury_severity: 'moderate',
     age: '',
-    activity_level: 'moderate'
+    activity_level: 'moderate',
+    rehab_goal: '',
+    precautions: '',
+    sessions_per_week: 3
   });
 
   // Security: Only clinic staff can create plans
@@ -78,6 +83,9 @@ export default function CreatePlan() {
     target_end_date: '',
     status: 'active',
     program_type: 'phased',
+    plan_mode: 'phased',
+    monitoring_level: 'standard',
+    morning_check_in_enabled: false,
     basic_config: {
       frequency_per_week: 3,
       weekend_rest_days: true,
@@ -615,11 +623,14 @@ Make the plan progressive, evidence-based, and tailored to the patient's profile
         patient_id: finalPatientId,
         clinic_id: currentUser?.clinic_id,
         program_type: currentPlanData.program_type,
+        plan_mode: currentPlanData.plan_mode,
+        monitoring_level: currentPlanData.monitoring_level,
+        morning_check_in_enabled: currentPlanData.morning_check_in_enabled,
         current_phase: currentPlanData.program_type === 'basic' ? null : 1,
         total_phases: currentPlanData.program_type === 'basic' ? null : currentPhases.length,
         basic_config: currentPlanData.program_type === 'basic' ? currentPlanData.basic_config : null,
         created_by_clinician: currentUser?.email,
-        creation_mode: creationMode || currentPlanData.program_type,
+        creation_mode: creationMode || currentPlanData.plan_mode || currentPlanData.program_type,
         publication_state: 'published',
         version: 1,
         published_at: new Date().toISOString(),
@@ -655,7 +666,7 @@ To access your plan and start your recovery journey:
 2. Sign in with your email: ${patient.email}
 3. View your exercises, track your progress, and log your pain levels
 
-Your clinician has created a ${currentPhases.length}-phase program designed specifically for your recovery with a detailed daily schedule and video demonstrations for each exercise.
+Your clinician has created ${currentPlanData.program_type === 'basic' ? 'a focused exercise plan' : `a ${currentPhases.length}-phase, criteria-led rehabilitation programme`} designed specifically for your recovery, with clear exercise instructions and progress tracking.
 
 If you have any questions, please contact your clinician.
 
@@ -704,13 +715,9 @@ Performance Track+`
              {!programType && (
                <ProgramTypeSelector 
                  onSelect={(type) => {
-                   const selectedProgramType = type === 'ai_assisted' ? 'phased' : type;
                    setCreationMode(type);
-                   setProgramType(selectedProgramType);
-                   setPlanData((current) => ({ ...current, program_type: selectedProgramType }));
-                   if (type === 'ai_assisted') {
-                     setShowAiGenerator(true);
-                   }
+                   setProgramType(type);
+                   setPlanData((current) => applyPlanMode(current, type));
                  }}
                />
              )}
@@ -804,6 +811,11 @@ Performance Track+`
               </div>
             </div>
 
+            <MonitoringSettingsCard
+              planData={planData}
+              onChange={setPlanData}
+            />
+
             {/* Basic Program Builder */}
             {programType === 'basic' && (
              <BasicProgramBuilder
@@ -814,7 +826,7 @@ Performance Track+`
             )}
 
             {/* Phase Selector (Phased Only) */}
-            {programType === 'phased' && (
+            {programType !== 'basic' && (
             <div className="space-y-4">
               <h2 className="text-lg font-semibold text-slate-700">Weekly Schedule</h2>
 
