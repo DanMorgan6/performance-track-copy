@@ -43,6 +43,7 @@ Deno.serve(async (req) => {
 
         return Response.json({
           patient_id: linkedPatient.id,
+          patient: linkedPatient,
           linked: false,
           already_linked: true,
           repaired: true,
