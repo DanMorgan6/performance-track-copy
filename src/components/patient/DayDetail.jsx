@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/dialog";
 import { format } from 'date-fns';
 import { Badge } from "@/components/ui/badge";
+import { toast } from "@/components/ui/use-toast";
 
 export default function DayDetail({ day, dayIndex, currentPhase, onBack, onPrevious, onNext, hasPrevious = false, hasNext = false, patient, selectedDate = null, milestones = [] }) {
   const queryClient = useQueryClient();
@@ -68,6 +69,14 @@ export default function DayDetail({ day, dayIndex, currentPhase, onBack, onPrevi
       queryClient.invalidateQueries({ queryKey: ['day-exercise-logs'] });
       setShowLogDialog(false);
       setSelectedExercise(null);
+      toast({ title: 'Exercise logged', description: 'Your performance has been saved.' });
+    },
+    onError: (error) => {
+      toast({
+        title: 'Could not save exercise log',
+        description: String(error?.message || error || 'Please try again.'),
+        variant: 'destructive',
+      });
     }
   });
 
