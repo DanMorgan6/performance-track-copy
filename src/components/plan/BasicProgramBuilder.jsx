@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,12 +18,22 @@ export default function BasicProgramBuilder({
   libraryExercises = [],
   onComplete = null
 }) {
-  const [selectedDays, setSelectedDays] = useState(FREQUENCY_PATTERNS[3].days);
+  const [selectedDays, setSelectedDays] = useState(() => {
+    const savedDays = planData.basic_config?.days_of_week_pattern;
+    return savedDays?.length ? savedDays : FREQUENCY_PATTERNS[3].days;
+  });
   const [exerciseSearch, setExerciseSearch] = useState('');
   const [showExercisePicker, setShowExercisePicker] = useState(false);
 
   const allDays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
   const weekendDays = ['Saturday', 'Sunday'];
+
+  useEffect(() => {
+    const savedDays = planData.basic_config?.days_of_week_pattern;
+    if (savedDays?.length) {
+      setSelectedDays(savedDays);
+    }
+  }, [planData.basic_config?.days_of_week_pattern]);
 
   const handleFrequencyChange = (freq) => {
     const pattern = FREQUENCY_PATTERNS[freq];
