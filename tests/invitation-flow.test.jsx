@@ -48,4 +48,15 @@ describe('unified invitation flow', () => {
     expect(acceptancePage).toContain("functions.invoke('acceptClinicianInvite'");
     expect(acceptancePage).not.toContain('entities.InviteToken.filter');
   });
+
+  it('repairs a stale session from the authenticated patient ownership link first', () => {
+    const repairFunction = readFileSync('base44/functions/linkPatientAccount/entry.ts', 'utf8');
+    const ownershipLookup = repairFunction.indexOf('user_id: user.id');
+    const staleSessionLookup = repairFunction.indexOf('if (user.patient_id)');
+
+    expect(ownershipLookup).toBeGreaterThan(-1);
+    expect(staleSessionLookup).toBeGreaterThan(ownershipLookup);
+    expect(repairFunction).toContain('patient: linkedPatient');
+    expect(repairFunction).toContain('normaliseEmail(patient.email) === email');
+  });
 });
