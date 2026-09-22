@@ -11,14 +11,10 @@ import { calculateInternalSessionLoad } from '@/lib/trainingMetrics';
 const initialState = {
   duration_minutes: '',
   session_rpe: '',
-  fatigue: '',
-  recovery: '',
   immediate_pain: '',
-  next_morning_symptoms: '',
   modified: false,
   modification_reason: '',
   completion_status: 'completed',
-  notes: '',
 };
 
 export default function PatientSessionSummary({ patient, planId, phaseId, date }) {
@@ -47,14 +43,10 @@ export default function PatientSessionSummary({ patient, planId, phaseId, date }
     setForm({
       duration_minutes: existing.duration_minutes ?? '',
       session_rpe: existing.session_rpe ?? '',
-      fatigue: existing.fatigue ?? '',
-      recovery: existing.recovery ?? '',
       immediate_pain: existing.immediate_pain ?? '',
-      next_morning_symptoms: existing.next_morning_symptoms ?? '',
       modified: existing.modified === true,
       modification_reason: existing.modification_reason || '',
       completion_status: existing.completion_status || 'completed',
-      notes: existing.notes || '',
     });
   }, [existing]);
 
@@ -68,16 +60,11 @@ export default function PatientSessionSummary({ patient, planId, phaseId, date }
         duration_minutes: Number(form.duration_minutes) || 0,
         session_rpe: Number(form.session_rpe) || 0,
         internal_session_load: internalLoad,
-        fatigue: form.fatigue === '' ? undefined : Number(form.fatigue),
-        recovery: form.recovery === '' ? undefined : Number(form.recovery),
         immediate_pain: form.immediate_pain === '' ? undefined : Number(form.immediate_pain),
-        next_morning_symptoms: form.next_morning_symptoms === '' ? undefined : Number(form.next_morning_symptoms),
-        next_morning_recorded_at: form.next_morning_symptoms === '' ? undefined : new Date().toISOString(),
         modified: form.modified,
         modification_reason: form.modified ? form.modification_reason : '',
         completion_status: form.completion_status,
         completed: form.completion_status === 'completed',
-        notes: form.notes,
       };
       return existing
         ? base44.entities.TrainingSessionLog.update(existing.id, payload)
@@ -115,7 +102,7 @@ export default function PatientSessionSummary({ patient, planId, phaseId, date }
           </div>
           <div className="flex-1">
             <h3 className="font-bold text-white">Session complete</h3>
-            <p className="text-xs text-zinc-400">This session response has been recorded and locked for clinician review.</p>
+            <p className="text-xs text-zinc-400">Your session response has been recorded.</p>
           </div>
         </div>
         <div className="mt-3 grid grid-cols-4 gap-2 text-center">
@@ -148,36 +135,30 @@ export default function PatientSessionSummary({ patient, planId, phaseId, date }
         </div>
         <div>
           <h3 className="font-bold text-white">Finish session</h3>
-          <p className="mt-1 text-sm leading-relaxed text-zinc-400">
-            Record overall demand and response. This supports clinician review and never progresses a phase automatically.
-          </p>
+          <p className="mt-1 text-sm text-zinc-400">Three quick details. Tomorrow's response is recorded separately in your morning check-in.</p>
         </div>
       </div>
 
       <div className="mt-5 grid grid-cols-2 gap-3">
         <label className="space-y-1 text-xs text-zinc-400">
           Duration (minutes)
-          <Input type="number" min="0" value={form.duration_minutes} onChange={(event) => update('duration_minutes', event.target.value)} />
+          <Input type="number" min="0" inputMode="numeric" value={form.duration_minutes} onChange={(event) => update('duration_minutes', event.target.value)} />
         </label>
         <label className="space-y-1 text-xs text-zinc-400">
-          Whole-session RPE (0–10)
-          <Input type="number" min="0" max="10" value={form.session_rpe} onChange={(event) => update('session_rpe', event.target.value)} />
+          Session effort (0–10)
+          <Input type="number" min="0" max="10" inputMode="numeric" value={form.session_rpe} onChange={(event) => update('session_rpe', event.target.value)} />
+        </label>
+        <label className="col-span-2 space-y-1 text-xs text-zinc-400">
+          Pain immediately after (0–10)
+          <Input type="number" min="0" max="10" inputMode="numeric" value={form.immediate_pain} onChange={(event) => update('immediate_pain', event.target.value)} />
         </label>
       </div>
 
       <div className="mt-3 rounded-xl border border-[#d8ff5f]/20 bg-[#d8ff5f]/[0.06] p-3">
         <p className="text-xs text-zinc-400">Internal Session Load</p>
         <p className="mt-1 text-2xl font-black text-[#d8ff5f]">{internalLoad} <span className="text-sm font-semibold">AU</span></p>
-        <p className="mt-1 text-xs text-zinc-500">Session RPE × duration. This is perceived demand, not mechanical workload.</p>
+        <p className="mt-1 text-xs text-zinc-500">Session effort × duration. This is perceived demand, not mechanical workload.</p>
       </div>
-
-      <div className="mt-4 grid grid-cols-2 gap-3">
-        <label className="space-y-1 text-xs text-zinc-400">Pain immediately after (0–10)<Input type="number" min="0" max="10" value={form.immediate_pain} onChange={(event) => update('immediate_pain', event.target.value)} /></label>
-        <label className="space-y-1 text-xs text-zinc-400">Fatigue (0–10)<Input type="number" min="0" max="10" value={form.fatigue} onChange={(event) => update('fatigue', event.target.value)} /></label>
-        <label className="space-y-1 text-xs text-zinc-400">Recovery/readiness (0–10)<Input type="number" min="0" max="10" value={form.recovery} onChange={(event) => update('recovery', event.target.value)} /></label>
-        <label className="space-y-1 text-xs text-zinc-400">Next-morning symptoms (0–10)<Input type="number" min="0" max="10" value={form.next_morning_symptoms} onChange={(event) => update('next_morning_symptoms', event.target.value)} placeholder="Add tomorrow" /></label>
-      </div>
-      <p className="mt-2 text-xs text-zinc-500">You can return tomorrow to add the next-morning response.</p>
 
       <select value={form.completion_status} onChange={(event) => update('completion_status', event.target.value)} className="mt-4 w-full rounded-xl border border-white/10 bg-[#171719] px-3 py-3 text-white">
         <option value="completed">Session completed</option>
@@ -187,12 +168,11 @@ export default function PatientSessionSummary({ patient, planId, phaseId, date }
 
       <label className="mt-3 flex items-center gap-3 rounded-xl border border-white/10 bg-[#171719] p-3 text-sm text-zinc-200">
         <Checkbox checked={form.modified} onCheckedChange={(checked) => update('modified', checked === true)} />
-        I modified the planned session
+        I changed or stopped part of the session
       </label>
       {form.modified && (
-        <Textarea className="mt-3" value={form.modification_reason} onChange={(event) => update('modification_reason', event.target.value)} placeholder="What changed, and why?" />
+        <Textarea className="mt-3" value={form.modification_reason} onChange={(event) => update('modification_reason', event.target.value)} placeholder="Briefly tell your clinician what changed" />
       )}
-      <Textarea className="mt-3" value={form.notes} onChange={(event) => update('notes', event.target.value)} placeholder="Optional session notes" />
 
       <Button
         onClick={() => mutation.mutate()}
@@ -200,7 +180,7 @@ export default function PatientSessionSummary({ patient, planId, phaseId, date }
         className="mt-4 w-full rounded-xl bg-[#d8ff5f] py-6 font-bold text-[#171719] hover:bg-[#c8ef50]"
       >
         {saved ? <CheckCircle2 className="mr-2 h-5 w-5" /> : <HeartPulse className="mr-2 h-5 w-5" />}
-        {mutation.isPending ? 'Saving…' : saved ? 'Session response saved' : existing ? 'Update session response' : 'Save session response'}
+        {mutation.isPending ? 'Saving…' : saved ? 'Session saved' : existing ? 'Update session' : 'Finish session'}
       </Button>
     </section>
   );
