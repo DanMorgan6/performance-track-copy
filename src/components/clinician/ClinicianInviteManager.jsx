@@ -11,7 +11,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { isSubscriptionActive, calculateMonthlyPrice, formatPrice, SELF_SERVICE_MAX_PRACTITIONERS } from '@/components/utils/subscriptionUtils';
+import { isSubscriptionActive, isPermanentAccessClinic, calculateMonthlyPrice, formatPrice, SELF_SERVICE_MAX_PRACTITIONERS } from '@/components/utils/subscriptionUtils';
 import { isPractitioner } from '@/lib/roles';
 import { Mail, Send, Loader2, AlertCircle, CheckCircle2, CreditCard, Copy, QrCode } from 'lucide-react';
 import { getUnifiedInviteUrl, normaliseInviteEmail } from '@/components/invite/inviteFlow';
@@ -177,6 +177,12 @@ export default function ClinicianInviteManager({ clinicId, open, onOpenChange })
     // Check subscription
     if (!isSubscriptionActive(clinic)) {
       window.location.href = createPageUrl('Checkout');
+      return;
+    }
+
+    // Permanent-access clinics have unlimited seats and no billing
+    if (isPermanentAccessClinic(clinic)) {
+      createInviteMutation.mutate();
       return;
     }
 

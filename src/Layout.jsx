@@ -23,7 +23,7 @@ import PatientBottomTabs from '@/components/mobile/PatientBottomTabs';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { isClinicAdmin, isPractitioner } from '@/lib/roles';
-import { isTrialStatus } from '@/components/utils/subscriptionUtils';
+import { isTrialStatus, isPermanentAccessClinic } from '@/components/utils/subscriptionUtils';
 import { createPageUrl } from '@/utils';
 import { titleCaseName } from '@/lib/nameFormat';
 
@@ -140,7 +140,7 @@ export default function Layout({ children, currentPageName }) {
     .toUpperCase() || 'PT';
 
   const showTrialWarning = Boolean(
-    isTrialStatus(clinic?.subscription_status) && clinic?.trial_end_date
+    isTrialStatus(clinic?.subscription_status) && clinic?.trial_end_date && !isPermanentAccessClinic(clinic)
   );
   const trialDaysRemaining = showTrialWarning
     ? Math.ceil((new Date(clinic.trial_end_date) - new Date()) / 86400000)
