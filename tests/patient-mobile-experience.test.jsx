@@ -26,6 +26,18 @@ describe('patient mobile experience', () => {
     expect(splash).toContain('role="status"');
   });
 
+  it('keeps exercise demonstrations inside the patient plan', () => {
+    const dayDetail = readFileSync('src/components/patient/DayDetail.jsx', 'utf8');
+    const videoPreview = readFileSync('src/components/exercise/ExerciseVideoPreview.jsx', 'utf8');
+
+    expect(dayDetail).toContain('<ExerciseVideoPreview');
+    expect(dayDetail).toContain('variant="button"');
+    expect(dayDetail).not.toContain('target="_blank"');
+    expect(videoPreview).toContain('<Dialog open={showModal}');
+    expect(videoPreview).toContain('Close this window to return to your plan.');
+    expect(videoPreview).toContain("aria-label={`Watch ${exerciseName || 'exercise'} demonstration`}");
+  });
+
   it('keeps the patient profile drawer independently scrollable on mobile', () => {
     const profile = readFileSync('src/components/patient/PatientProfilePanel.jsx', 'utf8');
     const portal = readFileSync('src/pages/PatientPortal.jsx', 'utf8');
