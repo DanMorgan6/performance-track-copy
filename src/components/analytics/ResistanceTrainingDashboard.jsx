@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import { Activity, AlertTriangle, BarChart3, Dumbbell, Gauge, HeartPulse, TrendingDown, TrendingUp } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import TrainingMonitoringCharts from '@/components/analytics/TrainingMonitoringCharts';
 import {
   average,
   exerciseComparisonKey,
@@ -169,6 +170,8 @@ export default function ResistanceTrainingDashboard({ patient, exerciseLogs = []
         <MetricCard icon={Activity} label="Session Load" value={`${formatValue(metrics.sessionLoad)} AU`} detail={`Internal load across ${metrics.recentSessionCount} recent sessions`} tone="amber" />
         <MetricCard icon={HeartPulse} label="Load Response" value={metrics.flaggedResponses} detail="Latest 7-day pain, fatigue, modification or symptom flags" tone="rose" />
       </div>
+
+      <TrainingMonitoringCharts exerciseLogs={exerciseLogs} sessionLogs={sessionLogs} />
 
       <div className="overflow-hidden rounded-[24px] border border-white/[0.08] bg-[#242427]">
         <div className="border-b border-white/[0.08] p-5">
