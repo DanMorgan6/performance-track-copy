@@ -46,6 +46,10 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 
+function responseData(response) {
+  return response?.data || response || {};
+}
+
 export default function PatientPortal() {
   const queryClient = useQueryClient();
   const [user, setUser] = useState(null);
@@ -108,7 +112,7 @@ export default function PatientPortal() {
         let resolvedPatient = null;
         try {
           const linkResult = await base44.functions.invoke('linkPatientAccount', {});
-          resolvedPatient = linkResult?.data?.patient || null;
+          resolvedPatient = responseData(linkResult).patient || null;
         } catch (repairError) {
           console.warn('Patient account reconciliation failed', repairError);
         }
@@ -432,7 +436,7 @@ export default function PatientPortal() {
         // email alone in a multi-clinic system.
         try {
           const linkResult = await base44.functions.invoke('linkPatientAccount', {});
-          const linkedPatient = linkResult?.data?.patient;
+          const linkedPatient = responseData(linkResult).patient;
           if (linkedPatient) {
             setPatient(linkedPatient);
             setShowOnboarding(false);
