@@ -3,6 +3,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import DayNotesEditor from '@/components/patient/DayNotesEditor';
 import ExerciseVideoPreview from '@/components/exercise/ExerciseVideoPreview';
+import ExercisePerformanceForm from '@/components/patient/ExercisePerformanceForm';
+import PatientSessionSummary from '@/components/patient/PatientSessionSummary';
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, ChevronLeft, ChevronRight, CheckCircle, Info, TestTube, XCircle, AlertCircle, Calendar } from 'lucide-react';
 import { cn } from "@/lib/utils";
@@ -38,17 +40,6 @@ export default function DayDetail({ day, dayIndex, currentPhase, onBack, onPrevi
   const [selectedExercise, setSelectedExercise] = useState(null);
   const [showLogDialog, setShowLogDialog] = useState(false);
   const [showNotes, setShowNotes] = useState(false);
-  const [logData, setLogData] = useState({
-    sets_completed: 0,
-    reps_completed: '',
-    weight: 0,
-    pain_during: 0,
-    pain_after: 0,
-    difficulty: 'appropriate',
-    notes: '',
-    completed: false
-  });
-
   const createExerciseLogMutation = useMutation({
     mutationFn: (data) => base44.entities.ExerciseLog.create({
       ...data,
@@ -56,33 +47,17 @@ export default function DayDetail({ day, dayIndex, currentPhase, onBack, onPrevi
       patient_id: patient.id,
       plan_id: currentPhase?.plan_id,
       phase_id: currentPhase?.is_basic ? undefined : currentPhase?.id,
-      date: new Date().toISOString().split('T')[0]
+      date: dateStr
     }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['my-exercises'] });
       setShowLogDialog(false);
       setSelectedExercise(null);
-      setLogData({
-        sets_completed: 0,
-        reps_completed: '',
-        weight: 0,
-        pain_during: 0,
-        pain_after: 0,
-        difficulty: 'appropriate',
-        notes: '',
-        completed: false
-      });
     }
   });
 
   const handleLogExercise = (exercise) => {
     setSelectedExercise(exercise);
-    setLogData({
-      ...logData,
-      sets_completed: exercise.sets || 0,
-      reps_completed: exercise.reps || '',
-      exercise_name: exercise.name
-    });
     setShowLogDialog(true);
   };
 
