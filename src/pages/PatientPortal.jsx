@@ -807,8 +807,8 @@ export default function PatientPortal() {
                   />
                   {selectedDay && (
                     <Dialog open={!!selectedDay} onOpenChange={() => setSelectedDay(null)}>
-                      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-                        <DialogHeader><DialogTitle>Day Details</DialogTitle></DialogHeader>
+                      <DialogContent className="performance-shell max-w-3xl max-h-[90vh] overflow-y-auto border-white/10 bg-[#171719] text-white">
+                        <DialogHeader><DialogTitle className="text-white">Day Details</DialogTitle></DialogHeader>
                         <DayDetail
                           day={selectedDay}
                           dayIndex={selectedDayIndex}
