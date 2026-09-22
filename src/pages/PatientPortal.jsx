@@ -59,6 +59,9 @@ export default function PatientPortal() {
   const [showCheckInDialog, setShowCheckInDialog] = useState(false);
   const [showQuickLogDialog, setShowQuickLogDialog] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [portalLoading, setPortalLoading] = useState(true);
+  const [portalError, setPortalError] = useState(null);
+  const [loadAttempt, setLoadAttempt] = useState(0);
   const [activeTab, setActiveTab] = useState(() => {
     try {
       const restore = sessionStorage.getItem('portal_restore_tab');
@@ -77,84 +80,96 @@ export default function PatientPortal() {
     notes: ''
   });
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const loadedRef = React.useRef(false);
 
   useEffect(() => {
-      const loadUser = async () => {
-        if (loadedRef.current) return;
-        loadedRef.current = true;
+    let active = true;
+
+    const loadUser = async () => {
+      setPortalLoading(true);
+      setPortalError(null);
+      setShowOnboarding(false);
+
+      try {
         const currentUser = await base44.auth.me();
+        if (!active) return;
         setUser(currentUser);
 
-        // Clinic staff should not access patient portal
+        // Clinic staff should not access patient portal.
         if (isPractitioner(currentUser)) {
-          window.location.href = createPageUrl('CoachDashboard');
+          window.location.assign(createPageUrl('CoachDashboard'));
           return;
         }
 
-        // Ensure user is patient
         setIsPatient(true);
 
-      // Reconcile older accounts that were linked before patient-role and invite
-      // consumption were enforced server-side.
-      try {
-        await base44.functions.invoke('linkPatientAccount', {});
-      } catch (repairError) {
-        console.warn('Patient account reconciliation failed', repairError);
-      }
+        // The backend verifies user ID, email, clinic and patient ownership using
+        // service-role reads. Prefer its verified patient payload so a newly repaired
+        // account does not depend on stale browser-side role/tenant claims.
+        let resolvedPatient = null;
+        try {
+          const linkResult = await base44.functions.invoke('linkPatientAccount', {});
+          resolvedPatient = linkResult?.data?.patient || null;
+        } catch (repairError) {
+          console.warn('Patient account reconciliation failed', repairError);
+        }
 
-      // Resolve the patient through the authenticated tenant link, never by email alone.
-      let patients = currentUser.patient_id && currentUser.clinic_id
-        ? await base44.entities.Patient.filter({
+        // Compatibility fallback for sessions that were already correctly linked
+        // before linkPatientAccount began returning the verified patient payload.
+        if (!resolvedPatient && currentUser.patient_id && currentUser.clinic_id) {
+          const linkedPatients = await base44.entities.Patient.filter({
             id: currentUser.patient_id,
             clinic_id: currentUser.clinic_id
-          })
-        : [];
-
-      // Auto-link patients whose session token predates their patient link, or who
-      // signed up independently (e.g. invite email never arrived).
-      if (patients.length === 0) {
-        try {
-          const linkRes = await base44.functions.invoke('linkPatientAccount', {});
-          if (linkRes?.data?.patient) {
-            setPatient(linkRes.data.patient);
-            patients = [linkRes.data.patient];
-          }
-        } catch {
-          // linking failed; fall through to onboarding below
+          });
+          resolvedPatient = linkedPatients[0] || null;
         }
-      }
 
-      if (patients.length > 0) {
-        setPatient(patients[0]);
+        if (!active) return;
 
-        // Clinician data not loaded (patients lack User list permission)
-        // booking_url falls back to clinic.booking_url below
-      } else {
-        // No linked patient record — show onboarding instead of hanging on the loader
-        setShowOnboarding(true);
-      }
-
-      // Load clinic branding from patient's clinic_id (preferred) or user's clinic_id
-      const clinicId = patients[0]?.clinic_id || currentUser.clinic_id;
-      if (clinicId) {
-        const clinicData = await base44.entities.Clinic.filter({ id: clinicId });
-        if (clinicData.length > 0) {
-          setClinic(clinicData[0]);
-
-          // Check if subscription is valid
-          if (!isSubscriptionActive(clinicData[0])) {
-            setShowPaywall(true);
-          }
-
-          // Apply brand colors dynamically
-          document.documentElement.style.setProperty('--brand-primary', clinicData[0].brand_color_primary || '#9333ea');
-          document.documentElement.style.setProperty('--brand-secondary', clinicData[0].brand_color_secondary || '#06b6d4');
+        if (resolvedPatient) {
+          setPatient(resolvedPatient);
+        } else {
+          // A signed invite is still required to establish a patient/clinic link.
+          setShowOnboarding(true);
         }
+
+        // Clinic branding is useful but must never prevent the clinical portal from
+        // opening if a non-critical branding request fails.
+        const clinicId = resolvedPatient?.clinic_id || currentUser.clinic_id;
+        if (clinicId) {
+          try {
+            const clinicData = await base44.entities.Clinic.filter({ id: clinicId });
+            if (active && clinicData.length > 0) {
+              setClinic(clinicData[0]);
+              setShowPaywall(!isSubscriptionActive(clinicData[0]));
+              document.documentElement.style.setProperty('--brand-primary', clinicData[0].brand_color_primary || '#9333ea');
+              document.documentElement.style.setProperty('--brand-secondary', clinicData[0].brand_color_secondary || '#06b6d4');
+            }
+          } catch (clinicError) {
+            console.warn('Clinic branding could not be loaded', clinicError);
+          }
+        }
+      } catch (error) {
+        console.error('Patient portal startup failed', error);
+        if (active) {
+          setPortalError('We could not load your patient record. Please try again.');
+        }
+      } finally {
+        if (active) setPortalLoading(false);
       }
     };
+
     loadUser();
-  }, []);
+    return () => {
+      active = false;
+    };
+  }, [loadAttempt]);
+
+  const retryPortalLoad = () => {
+    setPatient(null);
+    setClinic(null);
+    setShowPaywall(false);
+    setLoadAttempt((attempt) => attempt + 1);
+  };
 
   const { data: plans = [] } = useQuery({
     queryKey: ['my-plans', patient?.id],
@@ -368,13 +383,37 @@ export default function PatientPortal() {
 
   const pendingOutcomes = patientOutcomeMeasures.filter(o => o.status === 'pending');
 
-  // Show loading while checking authentication
-  if (!user) {
+  // Show loading only while startup work is actually in progress.
+  if (portalLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-teal-50/30 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin w-8 h-8 border-2 border-teal-500 border-t-transparent rounded-full mx-auto mb-4" />
           <p className="text-slate-500">Loading your portal...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (portalError || !user) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-teal-50/30 flex items-center justify-center p-6">
+        <div className="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-7 text-center shadow-xl shadow-slate-200/50">
+          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-50 text-amber-600">
+            <AlertCircle className="h-6 w-6" />
+          </div>
+          <h1 className="text-xl font-bold text-slate-900">Portal could not load</h1>
+          <p className="mt-2 text-sm text-slate-600">
+            {portalError || 'Your session could not be verified. Please sign in again.'}
+          </p>
+          <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-center">
+            <Button onClick={retryPortalLoad} className="bg-teal-600 text-white hover:bg-teal-700">
+              Try again
+            </Button>
+            <Button variant="outline" onClick={() => base44.auth.logout()}>
+              Sign out
+            </Button>
+          </div>
         </div>
       </div>
     );
@@ -389,24 +428,45 @@ export default function PatientPortal() {
   if (showOnboarding) {
     return (
       <PatientOnboarding onComplete={async () => {
-        // Reload patient data after onboarding
-        const currentUser = await base44.auth.me();
-        const patients = await base44.entities.Patient.filter({ email: currentUser.email });
-        if (patients.length > 0) {
-          setPatient(patients[0]);
+        // Resolve through the protected linkage function; never select a patient by
+        // email alone in a multi-clinic system.
+        try {
+          const linkResult = await base44.functions.invoke('linkPatientAccount', {});
+          const linkedPatient = linkResult?.data?.patient;
+          if (linkedPatient) {
+            setPatient(linkedPatient);
+            setShowOnboarding(false);
+            return;
+          }
+          setPortalError('Your patient invitation must be accepted before the portal can open.');
+          setShowOnboarding(false);
+        } catch (error) {
+          console.error('Patient onboarding linkage failed', error);
+          setPortalError('We could not verify your patient invitation. Please try again.');
+          setShowOnboarding(false);
         }
-        setShowOnboarding(false);
       }} />
     );
   }
 
-  // Show loading if no patient record yet
+  // Defensive terminal state: startup must never fall back to an endless spinner.
   if (!patient) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-teal-50/30 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin w-8 h-8 border-2 border-teal-500 border-t-transparent rounded-full mx-auto mb-4" />
-          <p className="text-slate-500">Loading your portal...</p>
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-teal-50/30 flex items-center justify-center p-6">
+        <div className="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-7 text-center shadow-xl shadow-slate-200/50">
+          <AlertCircle className="mx-auto mb-4 h-8 w-8 text-amber-600" />
+          <h1 className="text-xl font-bold text-slate-900">Patient record not linked</h1>
+          <p className="mt-2 text-sm text-slate-600">
+            Open the latest invitation from your clinic, or ask the clinic to resend it.
+          </p>
+          <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-center">
+            <Button onClick={retryPortalLoad} className="bg-teal-600 text-white hover:bg-teal-700">
+              Check again
+            </Button>
+            <Button variant="outline" onClick={() => base44.auth.logout()}>
+              Sign out
+            </Button>
+          </div>
         </div>
       </div>
     );
