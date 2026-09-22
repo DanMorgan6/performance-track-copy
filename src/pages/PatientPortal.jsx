@@ -76,6 +76,7 @@ export default function PatientPortal() {
   });
   const [selectedDay, setSelectedDay] = useState(null);
   const [selectedDayIndex, setSelectedDayIndex] = useState(null);
+  const [selectedWeekDays, setSelectedWeekDays] = useState([]);
   const [painData, setPainData] = useState({
     pain_level: 3,
     pain_location: '',
@@ -398,6 +399,26 @@ export default function PatientPortal() {
 
   const pendingOutcomes = patientOutcomeMeasures.filter(o => o.status === 'pending');
 
+  const clearSelectedPlanDay = () => {
+    setSelectedDay(null);
+    setSelectedDayIndex(null);
+    setSelectedWeekDays([]);
+  };
+
+  const selectPlanDay = (day, dayIndex, weekDays = []) => {
+    setSelectedDay(day);
+    setSelectedDayIndex(dayIndex);
+    setSelectedWeekDays(weekDays);
+  };
+
+  const moveSelectedPlanDay = (direction) => {
+    if (selectedDayIndex === null || selectedWeekDays.length === 0) return;
+    const nextIndex = selectedDayIndex + direction;
+    if (nextIndex < 0 || nextIndex >= selectedWeekDays.length) return;
+    setSelectedDay(selectedWeekDays[nextIndex]);
+    setSelectedDayIndex(nextIndex);
+  };
+
   // Show loading only while startup work is actually in progress.
   if (portalLoading) {
     return <PatientPortalSplash status="Preparing your rehabilitation plan" />;
@@ -713,22 +734,28 @@ export default function PatientPortal() {
                   />
                 )}
                 {currentPhase && (
-                  selectedDay ? (
-                    <DayDetail 
-                      day={selectedDay}
-                      dayIndex={selectedDayIndex}
-                      currentPhase={currentPhase}
-                      patient={patient}
-                      onBack={() => { setSelectedDay(null); setSelectedDayIndex(null); }}
-                    />
-                  ) : (
-                    <WeeklyOverview 
+                  <>
+                    <WeeklyOverview
                       currentPhase={currentPhase}
                       plan={activePlan}
                       exerciseLogs={exerciseLogs}
-                      onDayClick={(day, dayIndex) => { setSelectedDay(day); setSelectedDayIndex(dayIndex); }}
+                      selectedDayIndex={selectedDayIndex}
+                      onWeekChange={clearSelectedPlanDay}
+                      onDayClick={selectPlanDay}
                     />
-                  )
+                    {selectedDay && (
+                      <DayDetail
+                        day={selectedDay}
+                        dayIndex={selectedDayIndex}
+                        currentPhase={currentPhase}
+                        patient={patient}
+                        onPrevious={() => moveSelectedPlanDay(-1)}
+                        onNext={() => moveSelectedPlanDay(1)}
+                        hasPrevious={selectedDayIndex > 0}
+                        hasNext={selectedDayIndex !== null && selectedDayIndex < selectedWeekDays.length - 1}
+                      />
+                    )}
+                  </>
                 )}
                 {!activePlan && (
                   <div className="bg-white rounded-2xl p-10 border border-slate-200 text-center shadow-sm">
