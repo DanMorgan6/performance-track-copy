@@ -25,6 +25,9 @@ const makeSet = (setNumber, exercise) => ({
   rir: 3,
   set_rpe: 7,
   hold_seconds: Number.parseFloat(exercise?.hold || exercise?.duration) || 0,
+  peak_force: '',
+  average_force: '',
+  force_unit: 'N',
   technique_acceptable: true,
   rom_acceptable: true,
   pain_limited: false,
@@ -39,6 +42,8 @@ export default function ExercisePerformanceForm({ exercise, onSubmit, isSaving =
   const [loadUnit, setLoadUnit] = useState('kg');
   const [equipment, setEquipment] = useState('');
   const [variation, setVariation] = useState('');
+  const [assistanceLevel, setAssistanceLevel] = useState('');
+  const [rangePosition, setRangePosition] = useState('');
   const [side, setSide] = useState('not_applicable');
   const [workingSets, setWorkingSets] = useState(
     Array.from({ length: plannedSetCount }, (_, index) => makeSet(index + 1, exercise)),
@@ -87,6 +92,8 @@ export default function ExercisePerformanceForm({ exercise, onSubmit, isSaving =
       exercise_key: [exercise?.name, variation, equipment, side, loadUnit].filter(Boolean).join(' | '),
       equipment,
       exercise_variation: variation,
+      assistance_level: assistanceLevel,
+      range_position: rangePosition,
       movement_type: movementType,
       side,
       load_unit: isMeasurable ? loadUnit : movementType === 'bodyweight' ? 'bodyweight' : 'none',
@@ -97,6 +104,10 @@ export default function ExercisePerformanceForm({ exercise, onSubmit, isSaving =
         rir: Math.min(4, Math.max(0, Number(set.rir) || 0)),
         set_rpe: Math.min(10, Math.max(0, Number(set.set_rpe) || 0)),
         hold_seconds: movementType === 'isometric' ? Number(set.hold_seconds) || 0 : undefined,
+        peak_force: movementType === 'isometric' && set.peak_force !== '' ? Number(set.peak_force) : undefined,
+        average_force: movementType === 'isometric' && set.average_force !== '' ? Number(set.average_force) : undefined,
+        force_unit: movementType === 'isometric' && (set.peak_force !== '' || set.average_force !== '') ? set.force_unit : undefined,
+        force_duration: movementType === 'isometric' && set.average_force !== '' ? Number(set.average_force) * (Number(set.hold_seconds) || 0) : undefined,
       })),
       sets_completed: completedSets.length,
       reps_completed: String(totalReps),
@@ -139,6 +150,8 @@ export default function ExercisePerformanceForm({ exercise, onSubmit, isSaving =
         <div className="grid grid-cols-2 gap-3">
           <Input value={equipment} onChange={(event) => setEquipment(event.target.value)} placeholder="Equipment / machine" />
           <Input value={variation} onChange={(event) => setVariation(event.target.value)} placeholder="Variation / setup" />
+          <Input value={assistanceLevel} onChange={(event) => setAssistanceLevel(event.target.value)} placeholder="Assistance level" />
+          <Input value={rangePosition} onChange={(event) => setRangePosition(event.target.value)} placeholder="Range / position" />
         </div>
         <select
           value={side}
@@ -207,10 +220,28 @@ export default function ExercisePerformanceForm({ exercise, onSubmit, isSaving =
             </div>
 
             {movementType === 'isometric' && (
-              <label className="block space-y-1 text-xs text-zinc-400">
-                Hold duration (seconds)
-                <Input type="number" min="0" value={set.hold_seconds} onChange={(event) => updateSet(index, 'hold_seconds', event.target.value)} />
-              </label>
+              <div className="grid grid-cols-2 gap-3">
+                <label className="space-y-1 text-xs text-zinc-400">
+                  Hold duration (seconds)
+                  <Input type="number" min="0" value={set.hold_seconds} onChange={(event) => updateSet(index, 'hold_seconds', event.target.value)} />
+                </label>
+                <label className="space-y-1 text-xs text-zinc-400">
+                  Force unit
+                  <select value={set.force_unit} onChange={(event) => updateSet(index, 'force_unit', event.target.value)} className="h-10 w-full rounded-lg border border-white/10 bg-[#171719] px-2 text-white">
+                    <option value="N">N</option>
+                    <option value="kgf">kgf</option>
+                    <option value="lb">lb</option>
+                  </select>
+                </label>
+                <label className="space-y-1 text-xs text-zinc-400">
+                  Peak force (optional)
+                  <Input type="number" min="0" value={set.peak_force} onChange={(event) => updateSet(index, 'peak_force', event.target.value)} />
+                </label>
+                <label className="space-y-1 text-xs text-zinc-400">
+                  Average force (optional)
+                  <Input type="number" min="0" value={set.average_force} onChange={(event) => updateSet(index, 'average_force', event.target.value)} />
+                </label>
+              </div>
             )}
 
             <div className="grid gap-2 sm:grid-cols-3">
