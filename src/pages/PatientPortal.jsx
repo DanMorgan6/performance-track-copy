@@ -820,6 +820,7 @@ export default function PatientPortal() {
                           day={selectedDay}
                           dayIndex={selectedDayIndex}
                           currentPhase={currentPhase}
+                          plan={activePlan}
                           patient={patient}
                           milestones={milestones.filter(m => m.outcomes_published || m.tests?.every(t => t.outcome_status === 'pending'))}
                           onBack={() => setSelectedDay(null)}
