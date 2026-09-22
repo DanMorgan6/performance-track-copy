@@ -356,18 +356,27 @@ export default function PatientPortal() {
     onSettled: () => queryClient.invalidateQueries({ queryKey: ['my-exercises', patient?.id] })
   });
 
-  const createDailyNoteMutation = useMutation({
-    mutationFn: (data) => base44.entities.DailyNote.create({
-      ...data,
-      clinic_id: patient.clinic_id,
-      patient_id: patient.id,
-      date: new Date().toISOString().split('T')[0]
-    }),
-    onMutate: async (data) => {
+  const saveDailyNoteMutation = useMutation({
+    mutationFn: ({ data, existingId }) =>
+      existingId
+        ? base44.entities.DailyNote.update(existingId, { ...data })
+        : base44.entities.DailyNote.create({
+            ...data,
+            clinic_id: patient.clinic_id,
+            patient_id: patient.id,
+            date: new Date().toISOString().split('T')[0]
+          }),
+    onMutate: async ({ data, existingId }) => {
       await queryClient.cancelQueries({ queryKey: ['my-daily-notes', patient?.id] });
       const previous = queryClient.getQueryData(['my-daily-notes', patient?.id]);
-      const optimistic = { ...data, id: 'temp-' + Date.now(), patient_id: patient.id, date: new Date().toISOString().split('T')[0] };
-      queryClient.setQueryData(['my-daily-notes', patient?.id], (old = []) => [optimistic, ...old]);
+      if (existingId) {
+        queryClient.setQueryData(['my-daily-notes', patient?.id], (old = []) =>
+          (old || []).map((n) => (n.id === existingId ? { ...n, ...data } : n))
+        );
+      } else {
+        const optimistic = { ...data, id: 'temp-' + Date.now(), patient_id: patient.id, date: new Date().toISOString().split('T')[0] };
+        queryClient.setQueryData(['my-daily-notes', patient?.id], (old = []) => [optimistic, ...old]);
+      }
       setShowCheckInDialog(false);
       return { previous };
     },
@@ -390,7 +399,20 @@ export default function PatientPortal() {
   const todayStr = new Date().toISOString().split('T')[0];
   const todayLogs = exerciseLogs.filter(l => l.date === todayStr);
   const completedExercises = todayLogs.map(l => l.exercise_name);
-  const todayNote = dailyNotes.find(n => n.date === todayStr);
+  // Weekly check-in: one record per week, anchored to Wednesday.
+  const getCheckInWeekStart = (d) => {
+    const date = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
+    const day = date.getUTCDay(); // 0=Sun, 3=Wed
+    const diff = (day - 3 + 7) % 7;
+    date.setUTCDate(date.getUTCDate() - diff);
+    return date;
+  };
+  const checkInWeekStart = getCheckInWeekStart(new Date());
+  const checkInWeekStartStr = checkInWeekStart.toISOString().split('T')[0];
+  const checkInWeekEnd = new Date(checkInWeekStart);
+  checkInWeekEnd.setUTCDate(checkInWeekEnd.getUTCDate() + 7);
+  const checkInWeekEndStr = checkInWeekEnd.toISOString().split('T')[0];
+  const weekNote = dailyNotes.find((n) => n.date >= checkInWeekStartStr && n.date < checkInWeekEndStr);
 
   // Calculate progress
   const totalExercises = currentPhase?.exercises?.length || 0;
@@ -915,8 +937,8 @@ export default function PatientPortal() {
             </DialogHeader>
             <div className="py-4 overflow-y-auto flex-1">
               <DailyCheckIn
-                existingNote={todayNote}
-                onSubmit={(data) => createDailyNoteMutation.mutate(data)}
+                existingNote={weekNote}
+                onSubmit={(data) => saveDailyNoteMutation.mutate({ data, existingId: weekNote?.id })}
                 onCancel={() => setShowCheckInDialog(false)}
               />
             </div>

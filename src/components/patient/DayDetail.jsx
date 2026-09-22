@@ -37,6 +37,23 @@ export default function DayDetail({ day, dayIndex, currentPhase, onBack, onPrevi
   const [selectedExercise, setSelectedExercise] = useState(null);
   const [showLogDialog, setShowLogDialog] = useState(false);
   const [showNotes, setShowNotes] = useState(false);
+
+  const { data: dayExerciseLogs = [] } = useQuery({
+    queryKey: ['day-exercise-logs', patient?.id, dateStr],
+    queryFn: async () => {
+      if (!patient?.id || !dateStr) return [];
+      return base44.entities.ExerciseLog.filter({
+        patient_id: patient.id,
+        clinic_id: patient.clinic_id,
+        date: dateStr
+      });
+    },
+    enabled: !!patient?.id && !!dateStr
+  });
+  const completedNames = new Set(
+    (dayExerciseLogs || []).map((l) => l.exercise_name).filter(Boolean)
+  );
+
   const createExerciseLogMutation = useMutation({
     mutationFn: (data) => base44.entities.ExerciseLog.create({
       ...data,
@@ -48,6 +65,7 @@ export default function DayDetail({ day, dayIndex, currentPhase, onBack, onPrevi
     }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['my-exercises'] });
+      queryClient.invalidateQueries({ queryKey: ['day-exercise-logs'] });
       setShowLogDialog(false);
       setSelectedExercise(null);
     }
@@ -194,10 +212,12 @@ export default function DayDetail({ day, dayIndex, currentPhase, onBack, onPrevi
       {/* Exercises List */}
       {day && day.type !== 'rest' && day.exercises && day.exercises.length > 0 ? (
         <div className="space-y-3">
-          {day.exercises.map((exercise, index) => (
+          {day.exercises.map((exercise, index) => {
+            const isCompleted = completedNames.has(exercise.name);
+            return (
             <div key={index} className={cn(
               "bg-white rounded-2xl border-2 overflow-hidden transition-all",
-              exercise.superset_group ? "border-amber-200" : "border-slate-100"
+              isCompleted ? "border-emerald-200" : exercise.superset_group ? "border-amber-200" : "border-slate-100"
             )}>
               {/* Exercise Header */}
               <div className={cn(
@@ -211,7 +231,14 @@ export default function DayDetail({ day, dayIndex, currentPhase, onBack, onPrevi
                         Superset {exercise.superset_group}{exercise.superset_position}
                       </div>
                     )}
-                    <h3 className="text-lg font-semibold text-slate-800">{exercise.name}</h3>
+                    <h3 className="text-lg font-semibold text-slate-800 flex items-center gap-2 flex-wrap">
+                      {exercise.name}
+                      {isCompleted && (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-700">
+                          <CheckCircle className="w-3 h-3" /> Completed
+                        </span>
+                      )}
+                    </h3>
                     {exercise.description && (
                       <p className="text-sm text-slate-600 mt-1">{exercise.description}</p>
                     )}
@@ -299,14 +326,20 @@ export default function DayDetail({ day, dayIndex, currentPhase, onBack, onPrevi
                 {/* Log Exercise Button */}
                 <Button
                   onClick={() => handleLogExercise(exercise)}
-                  className="w-full bg-purple-600 hover:bg-purple-700 text-white rounded-xl mt-2"
+                  className={cn(
+                    "w-full rounded-xl mt-2",
+                    isCompleted
+                      ? "bg-emerald-600 hover:bg-emerald-700 text-white"
+                      : "bg-purple-600 hover:bg-purple-700 text-white"
+                  )}
                 >
                   <CheckCircle className="w-4 h-4 mr-2" />
-                  Log Completion
+                  {isCompleted ? "Completed — Log Again" : "Log Completion"}
                 </Button>
               </div>
             </div>
-          ))}
+            );
+          })}
 
           <PatientSessionSummary
             patient={patient}
