@@ -69,29 +69,29 @@ export default function AutoTaskSuggestions({ patient, adherenceRate, avgPainLev
   if (suggestions.length === 0) return null;
 
   return (
-    <div className="bg-gradient-to-br from-purple-50 to-blue-50 rounded-2xl p-5 border border-purple-100">
+    <div className="rounded-2xl p-5 border border-white/10 bg-white/[0.04]">
       <div className="flex items-center gap-2 mb-4">
-        <Sparkles className="w-5 h-5 text-purple-600" />
-        <h4 className="font-semibold text-slate-800">Suggested Actions</h4>
-        <Badge variant="outline" className="ml-auto">AI-Powered</Badge>
+        <Sparkles className="w-5 h-5 text-[#d8ff5f]" />
+        <h4 className="font-semibold text-white">Suggested Actions</h4>
+        <Badge variant="outline" className="ml-auto border-white/15 text-zinc-300">AI-Powered</Badge>
       </div>
 
       <div className="space-y-3">
         {suggestions.map((suggestion, index) => (
-          <div key={index} className="bg-white rounded-xl p-4 border border-slate-100">
+          <div key={index} className="rounded-xl p-4 border border-white/10 bg-white/5">
             <div className="flex items-start justify-between gap-3">
               <div className="flex-1">
-                <h5 className="font-medium text-slate-800 text-sm mb-1">{suggestion.title}</h5>
-                <p className="text-xs text-slate-600 mb-2">{suggestion.description}</p>
+                <h5 className="font-medium text-white text-sm mb-1">{suggestion.title}</h5>
+                <p className="text-xs text-zinc-400 mb-2">{suggestion.description}</p>
                 <div className="flex items-center gap-2">
                   <Badge className={
-                    suggestion.priority === 'urgent' ? 'bg-rose-100 text-rose-700' :
-                    suggestion.priority === 'high' ? 'bg-orange-100 text-orange-700' :
-                    'bg-amber-100 text-amber-700'
+                    suggestion.priority === 'urgent' ? 'bg-rose-500/20 text-rose-300 border-rose-500/30' :
+                    suggestion.priority === 'high' ? 'bg-orange-500/20 text-orange-300 border-orange-500/30' :
+                    'bg-amber-500/20 text-amber-300 border-amber-500/30'
                   }>
                     {suggestion.priority}
                   </Badge>
-                  <span className="text-xs text-slate-500">{suggestion.trigger_reason}</span>
+                  <span className="text-xs text-zinc-500">{suggestion.trigger_reason}</span>
                 </div>
               </div>
               <Button
