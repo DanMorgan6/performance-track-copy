@@ -1,9 +1,9 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
-import { TrendingUp, CheckCircle, Clock, Calendar } from 'lucide-react';
+import { TrendingUp, CheckCircle, Clock, Calendar, X } from 'lucide-react';
 
-export default function PatientProfilePanel({ patient, activePlan, user, clinic, clinician, exerciseLogs = [], patientOutcomeMeasures = [] }) {
+export default function PatientProfilePanel({ patient, activePlan, user, clinic, clinician, exerciseLogs = [], patientOutcomeMeasures = [], onClose }) {
   const last7Days = [...Array(7)].map((_, i) => {
     const d = new Date();
     d.setDate(d.getDate() - i);
@@ -17,7 +17,21 @@ export default function PatientProfilePanel({ patient, activePlan, user, clinic,
   const initials = patient?.full_name?.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() || '?';
 
   return (
-    <div className="h-full bg-white border-r border-slate-200 flex flex-col p-6 overflow-y-auto">
+    <div
+      className="relative flex h-full min-h-0 flex-col overflow-y-auto overscroll-contain border-r border-slate-200 bg-white p-4 pb-[calc(6rem+env(safe-area-inset-bottom))] md:p-6 md:pb-6"
+      style={{ WebkitOverflowScrolling: 'touch', touchAction: 'pan-y' }}
+    >
+      {onClose && (
+        <button
+          type="button"
+          onClick={onClose}
+          className="absolute right-3 top-3 z-10 flex h-11 w-11 items-center justify-center rounded-xl border border-slate-200 bg-slate-100 text-slate-500 md:hidden"
+          aria-label="Close profile menu"
+        >
+          <X className="h-5 w-5" />
+        </button>
+      )}
+
       {/* Clinic Logo / Name */}
       <div className="mb-6 pb-5 border-b border-slate-100 flex items-center justify-center min-h-[64px]">
         {clinic?.logo_url ? (
@@ -109,7 +123,7 @@ export default function PatientProfilePanel({ patient, activePlan, user, clinic,
       {/* Insights Link */}
       <Link
         to={createPageUrl('PatientInsights')}
-        className="flex items-center gap-2 px-4 py-3 bg-purple-50 hover:bg-purple-100 border border-purple-200 rounded-2xl text-purple-700 text-sm font-medium transition-all mt-auto"
+        className="mt-2 flex min-h-12 items-center gap-2 rounded-2xl border border-purple-200 bg-purple-50 px-4 py-3 text-sm font-medium text-purple-700 transition-all hover:bg-purple-100"
       >
         <TrendingUp className="w-4 h-4" />
         View Progress Insights
