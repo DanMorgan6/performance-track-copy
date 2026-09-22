@@ -1,60 +1,221 @@
 {
   "name": "ExerciseLog",
+  "type": "object",
   "properties": {
     "clinic_id": {
-      "description": "Reference to Clinic for tenant isolation",
-      "type": "string"
-    },
-    "completed": {
-      "default": false,
-      "type": "boolean"
-    },
-    "date": {
-      "format": "date",
-      "type": "string"
-    },
-    "difficulty": {
-      "enum": [
-        "too_easy",
-        "appropriate",
-        "challenging",
-        "too_hard"
-      ],
-      "type": "string"
-    },
-    "exercise_name": {
-      "type": "string"
-    },
-    "notes": {
-      "type": "string"
-    },
-    "pain_after": {
-      "description": "Pain level after exercise 0-10",
-      "type": "number"
-    },
-    "pain_during": {
-      "description": "Pain level during exercise 0-10",
-      "type": "number"
+      "type": "string",
+      "description": "Reference to Clinic for tenant isolation"
     },
     "patient_id": {
       "type": "string"
     },
+    "plan_id": {
+      "type": "string",
+      "description": "Reference to RehabPlan (used by both phased and Quick Plans)"
+    },
     "phase_id": {
       "type": "string"
     },
-    "plan_id": {
-      "description": "Reference to RehabPlan (used by both phased and Quick Plans)",
+    "session_id": {
+      "type": "string",
+      "description": "Optional reference to TrainingSessionLog"
+    },
+    "date": {
+      "type": "string",
+      "format": "date"
+    },
+    "exercise_name": {
       "type": "string"
     },
-    "reps_completed": {
+    "exercise_key": {
+      "type": "string",
+      "description": "Stable comparison key for the exact exercise, equipment and setup"
+    },
+    "equipment": {
+      "type": "string"
+    },
+    "setup": {
+      "type": "string"
+    },
+    "exercise_variation": {
+      "type": "string"
+    },
+    "movement_type": {
+      "type": "string",
+      "enum": [
+        "dynamic_external_load",
+        "bodyweight",
+        "banded",
+        "assisted",
+        "isometric",
+        "balance_control",
+        "other"
+      ],
+      "default": "dynamic_external_load"
+    },
+    "side": {
+      "type": "string",
+      "enum": [
+        "left",
+        "right",
+        "bilateral",
+        "not_applicable"
+      ],
+      "default": "not_applicable"
+    },
+    "load_unit": {
+      "type": "string",
+      "enum": [
+        "kg",
+        "lb",
+        "bodyweight",
+        "band",
+        "assisted",
+        "none"
+      ],
+      "default": "kg"
+    },
+    "assistance_level": {
+      "type": "string"
+    },
+    "range_position": {
       "type": "string"
     },
     "sets_completed": {
       "type": "number"
     },
+    "reps_completed": {
+      "type": "string"
+    },
     "weight": {
-      "description": "Weight used in kg or lbs",
+      "type": "number",
+      "description": "Legacy aggregate external load"
+    },
+    "working_sets": {
+      "type": "array",
+      "description": "Actual set-level performance used for workload and Estimated Strength calculations",
+      "items": {
+        "type": "object",
+        "properties": {
+          "set_number": {
+            "type": "integer"
+          },
+          "completed": {
+            "type": "boolean",
+            "default": true
+          },
+          "reps": {
+            "type": "number"
+          },
+          "external_load": {
+            "type": "number"
+          },
+          "rir": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 4,
+            "description": "Repetitions in reserve; 4 represents four or more"
+          },
+          "set_rpe": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 10
+          },
+          "hold_seconds": {
+            "type": "number"
+          },
+          "technique_acceptable": {
+            "type": "boolean",
+            "default": true
+          },
+          "rom_acceptable": {
+            "type": "boolean",
+            "default": true
+          },
+          "pain_limited": {
+            "type": "boolean",
+            "default": false
+          },
+          "notes": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "planned_sets": {
       "type": "number"
+    },
+    "planned_reps": {
+      "type": "string"
+    },
+    "planned_weight": {
+      "type": "string"
+    },
+    "volume_load": {
+      "type": "number",
+      "description": "Exercise-specific sum of reps x external load for completed sets"
+    },
+    "hard_sets": {
+      "type": "number",
+      "description": "Completed working sets performed at set RPE 7+ or RIR 3 or less"
+    },
+    "estimated_strength": {
+      "type": "number",
+      "description": "Median of the best two or three valid RIR-adjusted Epley estimates"
+    },
+    "estimated_strength_confidence": {
+      "type": "string",
+      "enum": [
+        "high",
+        "moderate",
+        "low",
+        "not_eligible"
+      ],
+      "default": "not_eligible"
+    },
+    "hold_duration_seconds": {
+      "type": "number"
+    },
+    "pain_during": {
+      "type": "number"
+    },
+    "pain_after": {
+      "type": "number"
+    },
+    "difficulty": {
+      "type": "string",
+      "enum": [
+        "too_easy",
+        "appropriate",
+        "challenging",
+        "too_hard"
+      ]
+    },
+    "technique_acceptable": {
+      "type": "boolean",
+      "default": true
+    },
+    "rom_acceptable": {
+      "type": "boolean",
+      "default": true
+    },
+    "pain_limited": {
+      "type": "boolean",
+      "default": false
+    },
+    "modified": {
+      "type": "boolean",
+      "default": false
+    },
+    "modification_reason": {
+      "type": "string"
+    },
+    "notes": {
+      "type": "string"
+    },
+    "completed": {
+      "type": "boolean",
+      "default": false
     }
   },
   "required": [
@@ -210,6 +371,5 @@
         }
       ]
     }
-  },
-  "type": "object"
+  }
 }
