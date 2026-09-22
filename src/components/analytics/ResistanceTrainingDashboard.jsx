@@ -57,16 +57,28 @@ const responseFlagged = (log) => Number(log.pain_during) > 3
   || log.modified === true
   || log.difficulty === 'too_hard';
 
-const sessionFlagged = (session) => Number(session.next_morning_symptoms) > 3
-  || Number(session.immediate_pain) > 3
-  || Number(session.fatigue) >= 8
+const sessionFlagged = (session) => Number(session.immediate_pain) > 3
   || session.modified === true
   || session.completion_status === 'stopped';
+
+const morningFlagged = (entry) => Number(entry.morning_symptoms) > 3
+  || Number(entry.fatigue) >= 8
+  || Number(entry.recovery) < 5
+  || Number(entry.sleep_quality) < 4;
 
 export default function ResistanceTrainingDashboard({ patient, exerciseLogs = [] }) {
   const { data: sessionLogs = [] } = useQuery({
     queryKey: ['training-session-logs', patient?.clinic_id, patient?.id],
     queryFn: () => base44.entities.TrainingSessionLog.filter({
+      clinic_id: patient.clinic_id,
+      patient_id: patient.id,
+    }, '-date', 200),
+    enabled: Boolean(patient?.clinic_id && patient?.id),
+  });
+
+  const { data: morningCheckIns = [] } = useQuery({
+    queryKey: ['morning-check-ins', patient?.clinic_id, patient?.id],
+    queryFn: () => base44.entities.MorningCheckIn.filter({
       clinic_id: patient.clinic_id,
       patient_id: patient.id,
     }, '-date', 200),
@@ -138,9 +150,12 @@ export default function ResistanceTrainingDashboard({ patient, exerciseLogs = []
     sevenDaysAgo.setDate(now.getDate() - 6);
     const recentExerciseLogs = enriched.filter((log) => new Date(`${log.date}T12:00:00`) >= sevenDaysAgo);
     const recentSessions = sessionLogs.filter((session) => new Date(`${session.date}T12:00:00`) >= sevenDaysAgo);
+    const recentMornings = morningCheckIns.filter((entry) => new Date(`${entry.date}T12:00:00`) >= sevenDaysAgo);
     const sessionLoad = recentSessions.reduce((sum, session) => sum + (Number(session.internal_session_load) || 0), 0);
     const totalHardSets = recentExerciseLogs.reduce((sum, log) => sum + (Number(log.summary.hard_sets) || 0), 0);
-    const flaggedResponses = recentExerciseLogs.filter(responseFlagged).length + recentSessions.filter(sessionFlagged).length;
+    const flaggedResponses = recentExerciseLogs.filter(responseFlagged).length
+      + recentSessions.filter(sessionFlagged).length
+      + recentMornings.filter(morningFlagged).length;
     const strengthExercises = exerciseRows.filter((row) => row.rollingStrength != null).length;
 
     return {
@@ -152,7 +167,7 @@ export default function ResistanceTrainingDashboard({ patient, exerciseLogs = []
       recentSessionCount: recentSessions.length,
       flaggedResponses,
     };
-  }, [exerciseLogs, sessionLogs]);
+  }, [exerciseLogs, sessionLogs, morningCheckIns]);
 
   return (
     <section className="space-y-5">
@@ -171,12 +186,12 @@ export default function ResistanceTrainingDashboard({ patient, exerciseLogs = []
         <MetricCard icon={HeartPulse} label="Load Response" value={metrics.flaggedResponses} detail="Latest 7-day pain, fatigue, modification or symptom flags" tone="rose" />
       </div>
 
-      <TrainingMonitoringCharts exerciseLogs={exerciseLogs} sessionLogs={sessionLogs} />
+      <TrainingMonitoringCharts exerciseLogs={exerciseLogs} sessionLogs={sessionLogs} morningCheckIns={morningCheckIns} />
 
       <div className="overflow-hidden rounded-[24px] border border-white/[0.08] bg-[#242427]">
         <div className="border-b border-white/[0.08] p-5">
           <h4 className="font-bold text-white">Exercise-specific trends</h4>
-          <p className="mt-1 text-xs text-zinc-500">Loads are never added across different exercises, equipment, setups or sides.</p>
+          <p className="mt-1 text-xs text-zinc-500">Loads are never added across different exercises or sides.</p>
         </div>
 
         {metrics.exerciseRows.length ? (
