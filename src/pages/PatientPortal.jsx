@@ -26,6 +26,7 @@ import DayDetail from "@/components/patient/DayDetail";
 import MonthlyCalendarView from "@/components/calendar/MonthlyCalendarView";
 import PhaseStatusCard from "@/components/patient/PhaseStatusCard";
 import PatientProfilePanel from "@/components/patient/PatientProfilePanel";
+import PatientPortalSplash from "@/components/patient/PatientPortalSplash";
 import DayTypeBannerCard from "@/components/patient/DayTypeBannerCard";
 import PatientDashboardGrid from "@/components/patient/PatientDashboardGrid";
 
@@ -399,14 +400,7 @@ export default function PatientPortal() {
 
   // Show loading only while startup work is actually in progress.
   if (portalLoading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-teal-50/30 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin w-8 h-8 border-2 border-teal-500 border-t-transparent rounded-full mx-auto mb-4" />
-          <p className="text-slate-500">Loading your portal...</p>
-        </div>
-      </div>
-    );
+    return <PatientPortalSplash status="Preparing your rehabilitation plan" />;
   }
 
   if (portalError || !user) {
