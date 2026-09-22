@@ -5,6 +5,11 @@ import {
   estimateSetStrength,
   summariseWorkingSets,
 } from '../src/lib/trainingMetrics.js';
+import {
+  buildExerciseTrendGroups,
+  buildInternalLoadSeries,
+  buildReadinessSummary,
+} from '../src/lib/trainingTrendData.js';
 
 describe('rehabilitation training monitoring', () => {
   it('calculates RIR-adjusted Estimated Strength with confidence and validity', () => {
@@ -45,11 +50,53 @@ describe('rehabilitation training monitoring', () => {
     expect(calculateInternalSessionLoad(45, 7)).toBe(315);
   });
 
+  it('creates distinct daily, seven-day and 28-day internal-load views', () => {
+    const today = new Date().toISOString().slice(0, 10);
+    const logs = [{ date: today, internal_session_load: 315, immediate_pain: 2, fatigue: 5, recovery: 7 }];
+
+    expect(buildInternalLoadSeries(logs, 'daily').at(-1).value).toBe(315);
+    expect(buildInternalLoadSeries(logs, 'weekly').at(-1).value).toBe(315);
+    expect(buildInternalLoadSeries(logs, 'long').at(-1).value).toBe(315);
+  });
+
+  it('keeps exercise trend groups separate and builds a three-exposure strength trend', () => {
+    const logs = [60, 62, 65].map((load, index) => ({
+      date: `2026-09-${String(10 + index).padStart(2, '0')}`,
+      exercise_name: 'Seated calf raise',
+      exercise_key: 'seated calf raise | machine a',
+      equipment: 'Machine A',
+      side: 'left',
+      load_unit: 'kg',
+      movement_type: 'dynamic_external_load',
+      working_sets: [
+        { reps: 8, external_load: load, rir: 2, completed: true, technique_acceptable: true, rom_acceptable: true, pain_limited: false },
+        { reps: 8, external_load: load, rir: 2, completed: true, technique_acceptable: true, rom_acceptable: true, pain_limited: false },
+      ],
+    }));
+
+    const groups = buildExerciseTrendGroups(logs);
+    expect(groups).toHaveLength(1);
+    expect(groups[0].exposures).toHaveLength(3);
+    expect(groups[0].exposures.at(-1).rollingStrength).toBeGreaterThan(groups[0].exposures[0].rollingStrength);
+  });
+
+  it('uses transparent readiness contributors rather than an automatic score', () => {
+    const summary = buildReadinessSummary([
+      { date: '2026-09-22', immediate_pain: 5, fatigue: 8, recovery: 4 },
+      { date: '2026-09-21', next_morning_symptoms: 4, fatigue: 8, recovery: 4 },
+    ]);
+
+    expect(summary.status).toBe('review');
+    expect(summary.contributors).toContain('Fatigue 8.0/10');
+    expect(summary.contributors.length).toBeGreaterThan(1);
+  });
+
   it('adds patient capture and both patient and clinician dashboard views', () => {
     const dayDetail = readFileSync('src/components/patient/DayDetail.jsx', 'utf8');
     const exerciseForm = readFileSync('src/components/patient/ExercisePerformanceForm.jsx', 'utf8');
     const sessionForm = readFileSync('src/components/patient/PatientSessionSummary.jsx', 'utf8');
     const dashboard = readFileSync('src/components/analytics/ResistanceTrainingDashboard.jsx', 'utf8');
+    const charts = readFileSync('src/components/analytics/TrainingMonitoringCharts.jsx', 'utf8');
     const clinicianAnalytics = readFileSync('src/components/analytics/PatientAnalyticsTab.jsx', 'utf8');
     const patientInsights = readFileSync('src/pages/PatientInsights.jsx', 'utf8');
 
@@ -61,6 +108,11 @@ describe('rehabilitation training monitoring', () => {
     expect(sessionForm).toContain('next_morning_symptoms');
     expect(dashboard).toContain('Loads are never added across different exercises');
     expect(dashboard).toContain('exit criteria and clinician approval still control progression');
+    expect(dashboard).toContain('<TrainingMonitoringCharts');
+    expect(charts).toContain("['daily', 'Daily']");
+    expect(charts).toContain("['weekly', '7-day']");
+    expect(charts).toContain("['long', '28-day']");
+    expect(charts).toContain('This is a transparent review prompt, not a readiness score.');
     expect(clinicianAnalytics).toContain('<ResistanceTrainingDashboard');
     expect(patientInsights).toContain('<ResistanceTrainingDashboard');
   });
