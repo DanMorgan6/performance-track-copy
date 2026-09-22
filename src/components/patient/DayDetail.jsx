@@ -4,6 +4,7 @@ import { base44 } from '@/api/base44Client';
 import DayNotesEditor from '@/components/patient/DayNotesEditor';
 import ExerciseVideoPreview from '@/components/exercise/ExerciseVideoPreview';
 import ExercisePerformanceForm from '@/components/patient/ExercisePerformanceForm';
+import StandardExerciseCompletionForm from '@/components/patient/StandardExerciseCompletionForm';
 import PatientSessionSummary from '@/components/patient/PatientSessionSummary';
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, ChevronLeft, ChevronRight, CheckCircle, Info, TestTube, XCircle, AlertCircle, Calendar } from 'lucide-react';
@@ -17,8 +18,10 @@ import {
 import { format } from 'date-fns';
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/components/ui/use-toast";
+import { getMonitoringLevel, resolveExerciseTrackingMode } from '@/lib/planModes';
+import { parsePrescriptionReps } from '@/lib/trainingMetrics';
 
-export default function DayDetail({ day, dayIndex, currentPhase, onBack, onPrevious, onNext, hasPrevious = false, hasNext = false, patient, selectedDate = null, milestones = [] }) {
+export default function DayDetail({ day, dayIndex, currentPhase, plan, onBack, onPrevious, onNext, hasPrevious = false, hasNext = false, patient, selectedDate = null, milestones = [] }) {
   const queryClient = useQueryClient();
   const dateStr = day?.date || new Date().toISOString().split('T')[0];
 
@@ -51,6 +54,15 @@ export default function DayDetail({ day, dayIndex, currentPhase, onBack, onPrevi
     },
     enabled: !!patient?.id && !!dateStr
   });
+  const { data: exerciseHistory = [] } = useQuery({
+    queryKey: ['exercise-history', patient?.clinic_id, patient?.id],
+    queryFn: () => base44.entities.ExerciseLog.filter({
+      patient_id: patient.id,
+      clinic_id: patient.clinic_id,
+    }, '-date', 200),
+    enabled: !!patient?.id && !!patient?.clinic_id,
+  });
+
   const completedNames = new Set(
     (dayExerciseLogs || []).map((l) => l.exercise_name).filter(Boolean)
   );
@@ -80,9 +92,56 @@ export default function DayDetail({ day, dayIndex, currentPhase, onBack, onPrevi
     }
   });
 
-  const handleLogExercise = (exercise) => {
+  const openExerciseLog = (exercise) => {
     setSelectedExercise(exercise);
     setShowLogDialog(true);
+  };
+
+  const quickCompleteExercise = (exercise) => {
+    const previous = exerciseHistory.find((entry) => entry.exercise_name === exercise.name && entry.date !== dateStr);
+    const previousSets = (previous?.working_sets || []).filter((set) => set.completed !== false);
+    const plannedSetCount = Math.max(1, Number(exercise.sets) || 1);
+    const plannedReps = parsePrescriptionReps(exercise.reps);
+    const plannedLoad = Number.parseFloat(exercise.weight) || 0;
+    const workingSets = Array.from({ length: previousSets.length || plannedSetCount }, (_, index) => {
+      const prior = previousSets[index] || previousSets[0];
+      return {
+        set_number: index + 1,
+        completed: true,
+        reps: Number(prior?.reps) || plannedReps,
+        external_load: Number(prior?.external_load) || plannedLoad,
+        technique_acceptable: true,
+        rom_acceptable: true,
+        pain_limited: false,
+      };
+    });
+    const totalReps = workingSets.reduce((sum, set) => sum + set.reps, 0);
+    const volume = workingSets.reduce((sum, set) => sum + (set.reps * set.external_load), 0);
+    const averageLoad = workingSets.reduce((sum, set) => sum + set.external_load, 0) / workingSets.length;
+
+    createExerciseLogMutation.mutate({
+      exercise_name: exercise.name,
+      exercise_key: [exercise.name, exercise.side || 'not_applicable'].join(' | '),
+      movement_type: averageLoad > 0 ? 'dynamic_external_load' : 'bodyweight',
+      side: exercise.side || 'not_applicable',
+      load_unit: averageLoad > 0 ? 'kg' : 'bodyweight',
+      working_sets: workingSets,
+      planned_sets: plannedSetCount,
+      planned_reps: exercise.reps || '',
+      planned_weight: exercise.weight || '',
+      sets_completed: workingSets.length,
+      reps_completed: String(totalReps),
+      weight: averageLoad,
+      volume_load: volume,
+      hard_sets: 0,
+      estimated_strength_confidence: 'not_eligible',
+      pain_during: 0,
+      pain_limited: false,
+      technique_acceptable: true,
+      rom_acceptable: true,
+      modified: false,
+      completed: true,
+    });
   };
 
   return (
