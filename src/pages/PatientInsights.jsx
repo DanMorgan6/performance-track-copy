@@ -12,6 +12,7 @@ import OutcomeMeasuresTrends from '@/components/patient/OutcomeMeasuresTrends.js
 import InterventionsTimeline from '@/components/patient/InterventionsTimeline.jsx';
 import { TrendingUp, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import PatientPortalSplash from '@/components/patient/PatientPortalSplash';
 
 function responseData(response) {
   return response?.data || response || {};
@@ -146,14 +147,7 @@ export default function PatientInsights() {
   });
 
   if (loading) {
-    return (
-      <div className="min-h-[100dvh] bg-slate-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin w-8 h-8 border-2 border-purple-500 border-t-transparent rounded-full mx-auto mb-4" />
-          <p className="text-slate-500">Loading your insights...</p>
-        </div>
-      </div>
-    );
+    return <PatientPortalSplash status="Building your progress insights" />;
   }
 
   if (loadError || !user || !patient) {
