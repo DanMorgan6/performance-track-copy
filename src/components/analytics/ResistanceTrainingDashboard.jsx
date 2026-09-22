@@ -135,15 +135,16 @@ export default function ResistanceTrainingDashboard({ patient, exerciseLogs = []
     const now = new Date();
     const sevenDaysAgo = new Date(now);
     sevenDaysAgo.setDate(now.getDate() - 6);
+    const recentExerciseLogs = enriched.filter((log) => new Date(`${log.date}T12:00:00`) >= sevenDaysAgo);
     const recentSessions = sessionLogs.filter((session) => new Date(`${session.date}T12:00:00`) >= sevenDaysAgo);
     const sessionLoad = recentSessions.reduce((sum, session) => sum + (Number(session.internal_session_load) || 0), 0);
-    const totalHardSets = enriched.reduce((sum, log) => sum + (Number(log.summary.hard_sets) || 0), 0);
-    const flaggedResponses = enriched.filter(responseFlagged).length + sessionLogs.filter(sessionFlagged).length;
+    const totalHardSets = recentExerciseLogs.reduce((sum, log) => sum + (Number(log.summary.hard_sets) || 0), 0);
+    const flaggedResponses = recentExerciseLogs.filter(responseFlagged).length + recentSessions.filter(sessionFlagged).length;
     const strengthExercises = exerciseRows.filter((row) => row.rollingStrength != null).length;
 
     return {
       exerciseRows,
-      trackedExercises: exerciseRows.filter((row) => row.latestWeek > 0).length,
+      trackedExercises: new Set(recentExerciseLogs.map(exerciseComparisonKey)).size,
       totalHardSets,
       strengthExercises,
       sessionLoad,
@@ -162,11 +163,11 @@ export default function ResistanceTrainingDashboard({ patient, exerciseLogs = []
       </div>
 
       <div className="grid grid-cols-2 gap-3 xl:grid-cols-5">
-        <MetricCard icon={BarChart3} label="Gym Workload" value={metrics.trackedExercises} detail="Exercises with separate weekly volume-load totals" />
-        <MetricCard icon={Dumbbell} label="Strength Exposure" value={metrics.totalHardSets} detail="Logged working sets at RPE ≥7 / RIR ≤3" tone="teal" />
+        <MetricCard icon={BarChart3} label="Gym Workload" value={metrics.trackedExercises} detail="Exercises with separate volume-load totals in the latest 7 days" />
+        <MetricCard icon={Dumbbell} label="Strength Exposure" value={metrics.totalHardSets} detail="Latest 7 days at RPE ≥7 / RIR ≤3" tone="teal" />
         <MetricCard icon={Gauge} label="Estimated Strength" value={metrics.strengthExercises} detail="Exercises with a valid three-exposure trend" tone="purple" />
         <MetricCard icon={Activity} label="Session Load" value={`${formatValue(metrics.sessionLoad)} AU`} detail={`Internal load across ${metrics.recentSessionCount} recent sessions`} tone="amber" />
-        <MetricCard icon={HeartPulse} label="Load Response" value={metrics.flaggedResponses} detail="Pain, fatigue, modification or symptom flags for review" tone="rose" />
+        <MetricCard icon={HeartPulse} label="Load Response" value={metrics.flaggedResponses} detail="Latest 7-day pain, fatigue, modification or symptom flags" tone="rose" />
       </div>
 
       <div className="overflow-hidden rounded-[24px] border border-white/[0.08] bg-[#242427]">
