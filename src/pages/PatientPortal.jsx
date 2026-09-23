@@ -28,6 +28,7 @@ import PhaseStatusCard from "@/components/patient/PhaseStatusCard";
 import PatientProfilePanel from "@/components/patient/PatientProfilePanel";
 import PatientPortalSplash from "@/components/patient/PatientPortalSplash";
 import DayTypeBannerCard from "@/components/patient/DayTypeBannerCard";
+import PatientPathwayCard from "@/components/patient/PatientPathwayCard";
 import PatientDashboardGrid from "@/components/patient/PatientDashboardGrid";
 import MorningCheckInPrompt from "@/components/patient/MorningCheckInPrompt";
 
@@ -671,6 +672,13 @@ export default function PatientPortal() {
                     setActiveTab('today');
                     setSelectedDay(null);
                   }}
+                />
+
+                {/* Criteria-led pathway overview (phased plans with exit criteria) */}
+                <PatientPathwayCard
+                  activePlan={activePlan}
+                  currentPhase={currentPhase}
+                  phases={activePlanPhases}
                 />
 
                 {/* Messaging preview on dashboard */}
