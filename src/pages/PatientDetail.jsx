@@ -47,6 +47,7 @@ import AssessmentsTab from "@/components/patientdetail/AssessmentsTab";
 import PatientWorkspaceNav from "@/components/patientdetail/PatientWorkspaceNav";
 import CriteriaLedPhaseRibbon from "@/components/patientdetail/CriteriaLedPhaseRibbon";
 import LoadRecoveryPanel from "@/components/patientdetail/LoadRecoveryPanel";
+import MorningMonitoringPanel from "@/components/patientdetail/MorningMonitoringPanel";
 import ClinicalPhaseDecision from "@/components/patientdetail/ClinicalPhaseDecision";
 import ClinicianMessaging from "@/components/messaging/ClinicianMessaging";
 import PainTab from "@/components/patientdetail/PainTab";
@@ -997,7 +998,8 @@ Your Rehabilitation Team`;
                 />
               </TabsContent>
 
-              <TabsContent value="load-recovery" className="mt-6 mx-3 lg:mx-0">
+              <TabsContent value="load-recovery" className="mt-6 mx-3 lg:mx-0 space-y-6">
+                <MorningMonitoringPanel patient={patient} activePlan={activePlan} />
                 <LoadRecoveryPanel patient={patient} />
               </TabsContent>
 
